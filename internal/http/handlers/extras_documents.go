@@ -105,7 +105,7 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 	doc := documents.PurchaseOrderDoc{
 		Branding:      h.docSvc.GetBranding(ctx, tenantID),
 		PONumber:      po.PoNumber,
-		Date:          po.CreatedAt.Format("02 January 2006"),
+		Date:          effectivePODate(po).Format("02 January 2006"),
 		Currency:      po.Currency,
 		Status:        string(po.Status),
 		SupplierName:  supplierName,

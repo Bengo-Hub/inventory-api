@@ -63254,6 +63254,7 @@ type PurchaseOrderMutation struct {
 	po_number                      *string
 	status                         *purchaseorder.Status
 	expected_date                  *time.Time
+	order_date                     *time.Time
 	total_amount                   *float64
 	addtotal_amount                *float64
 	currency                       *string
@@ -63640,6 +63641,55 @@ func (m *PurchaseOrderMutation) ExpectedDateCleared() bool {
 func (m *PurchaseOrderMutation) ResetExpectedDate() {
 	m.expected_date = nil
 	delete(m.clearedFields, purchaseorder.FieldExpectedDate)
+}
+
+// SetOrderDate sets the "order_date" field.
+func (m *PurchaseOrderMutation) SetOrderDate(t time.Time) {
+	m.order_date = &t
+}
+
+// OrderDate returns the value of the "order_date" field in the mutation.
+func (m *PurchaseOrderMutation) OrderDate() (r time.Time, exists bool) {
+	v := m.order_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrderDate returns the old "order_date" field's value of the PurchaseOrder entity.
+// If the PurchaseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderMutation) OldOrderDate(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrderDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrderDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrderDate: %w", err)
+	}
+	return oldValue.OrderDate, nil
+}
+
+// ClearOrderDate clears the value of the "order_date" field.
+func (m *PurchaseOrderMutation) ClearOrderDate() {
+	m.order_date = nil
+	m.clearedFields[purchaseorder.FieldOrderDate] = struct{}{}
+}
+
+// OrderDateCleared returns if the "order_date" field was cleared in this mutation.
+func (m *PurchaseOrderMutation) OrderDateCleared() bool {
+	_, ok := m.clearedFields[purchaseorder.FieldOrderDate]
+	return ok
+}
+
+// ResetOrderDate resets all changes to the "order_date" field.
+func (m *PurchaseOrderMutation) ResetOrderDate() {
+	m.order_date = nil
+	delete(m.clearedFields, purchaseorder.FieldOrderDate)
 }
 
 // SetTotalAmount sets the "total_amount" field.
@@ -64417,7 +64467,7 @@ func (m *PurchaseOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 20)
 	if m.tenant_id != nil {
 		fields = append(fields, purchaseorder.FieldTenantID)
 	}
@@ -64435,6 +64485,9 @@ func (m *PurchaseOrderMutation) Fields() []string {
 	}
 	if m.expected_date != nil {
 		fields = append(fields, purchaseorder.FieldExpectedDate)
+	}
+	if m.order_date != nil {
+		fields = append(fields, purchaseorder.FieldOrderDate)
 	}
 	if m.total_amount != nil {
 		fields = append(fields, purchaseorder.FieldTotalAmount)
@@ -64495,6 +64548,8 @@ func (m *PurchaseOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case purchaseorder.FieldExpectedDate:
 		return m.ExpectedDate()
+	case purchaseorder.FieldOrderDate:
+		return m.OrderDate()
 	case purchaseorder.FieldTotalAmount:
 		return m.TotalAmount()
 	case purchaseorder.FieldCurrency:
@@ -64542,6 +64597,8 @@ func (m *PurchaseOrderMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldStatus(ctx)
 	case purchaseorder.FieldExpectedDate:
 		return m.OldExpectedDate(ctx)
+	case purchaseorder.FieldOrderDate:
+		return m.OldOrderDate(ctx)
 	case purchaseorder.FieldTotalAmount:
 		return m.OldTotalAmount(ctx)
 	case purchaseorder.FieldCurrency:
@@ -64618,6 +64675,13 @@ func (m *PurchaseOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetExpectedDate(v)
+		return nil
+	case purchaseorder.FieldOrderDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrderDate(v)
 		return nil
 	case purchaseorder.FieldTotalAmount:
 		v, ok := value.(float64)
@@ -64788,6 +64852,9 @@ func (m *PurchaseOrderMutation) ClearedFields() []string {
 	if m.FieldCleared(purchaseorder.FieldExpectedDate) {
 		fields = append(fields, purchaseorder.FieldExpectedDate)
 	}
+	if m.FieldCleared(purchaseorder.FieldOrderDate) {
+		fields = append(fields, purchaseorder.FieldOrderDate)
+	}
 	if m.FieldCleared(purchaseorder.FieldRequisitionID) {
 		fields = append(fields, purchaseorder.FieldRequisitionID)
 	}
@@ -64834,6 +64901,9 @@ func (m *PurchaseOrderMutation) ClearField(name string) error {
 		return nil
 	case purchaseorder.FieldExpectedDate:
 		m.ClearExpectedDate()
+		return nil
+	case purchaseorder.FieldOrderDate:
+		m.ClearOrderDate()
 		return nil
 	case purchaseorder.FieldRequisitionID:
 		m.ClearRequisitionID()
@@ -64884,6 +64954,9 @@ func (m *PurchaseOrderMutation) ResetField(name string) error {
 		return nil
 	case purchaseorder.FieldExpectedDate:
 		m.ResetExpectedDate()
+		return nil
+	case purchaseorder.FieldOrderDate:
+		m.ResetOrderDate()
 		return nil
 	case purchaseorder.FieldTotalAmount:
 		m.ResetTotalAmount()

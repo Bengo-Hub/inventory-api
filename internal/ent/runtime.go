@@ -1573,23 +1573,23 @@ func init() {
 	// purchaseorder.PoNumberValidator is a validator for the "po_number" field. It is called by the builders before save.
 	purchaseorder.PoNumberValidator = purchaseorderDescPoNumber.Validators[0].(func(string) error)
 	// purchaseorderDescTotalAmount is the schema descriptor for total_amount field.
-	purchaseorderDescTotalAmount := purchaseorderFields[7].Descriptor()
+	purchaseorderDescTotalAmount := purchaseorderFields[8].Descriptor()
 	// purchaseorder.DefaultTotalAmount holds the default value on creation for the total_amount field.
 	purchaseorder.DefaultTotalAmount = purchaseorderDescTotalAmount.Default.(float64)
 	// purchaseorderDescCurrency is the schema descriptor for currency field.
-	purchaseorderDescCurrency := purchaseorderFields[8].Descriptor()
+	purchaseorderDescCurrency := purchaseorderFields[9].Descriptor()
 	// purchaseorder.DefaultCurrency holds the default value on creation for the currency field.
 	purchaseorder.DefaultCurrency = purchaseorderDescCurrency.Default.(string)
 	// purchaseorderDescAdditionalShippingCharges is the schema descriptor for additional_shipping_charges field.
-	purchaseorderDescAdditionalShippingCharges := purchaseorderFields[15].Descriptor()
+	purchaseorderDescAdditionalShippingCharges := purchaseorderFields[16].Descriptor()
 	// purchaseorder.DefaultAdditionalShippingCharges holds the default value on creation for the additional_shipping_charges field.
 	purchaseorder.DefaultAdditionalShippingCharges = purchaseorderDescAdditionalShippingCharges.Default.(float64)
 	// purchaseorderDescCreatedAt is the schema descriptor for created_at field.
-	purchaseorderDescCreatedAt := purchaseorderFields[18].Descriptor()
+	purchaseorderDescCreatedAt := purchaseorderFields[19].Descriptor()
 	// purchaseorder.DefaultCreatedAt holds the default value on creation for the created_at field.
 	purchaseorder.DefaultCreatedAt = purchaseorderDescCreatedAt.Default.(func() time.Time)
 	// purchaseorderDescUpdatedAt is the schema descriptor for updated_at field.
-	purchaseorderDescUpdatedAt := purchaseorderFields[19].Descriptor()
+	purchaseorderDescUpdatedAt := purchaseorderFields[20].Descriptor()
 	// purchaseorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	purchaseorder.DefaultUpdatedAt = purchaseorderDescUpdatedAt.Default.(func() time.Time)
 	// purchaseorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

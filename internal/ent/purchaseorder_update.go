@@ -134,6 +134,26 @@ func (_u *PurchaseOrderUpdate) ClearExpectedDate() *PurchaseOrderUpdate {
 	return _u
 }
 
+// SetOrderDate sets the "order_date" field.
+func (_u *PurchaseOrderUpdate) SetOrderDate(v time.Time) *PurchaseOrderUpdate {
+	_u.mutation.SetOrderDate(v)
+	return _u
+}
+
+// SetNillableOrderDate sets the "order_date" field if the given value is not nil.
+func (_u *PurchaseOrderUpdate) SetNillableOrderDate(v *time.Time) *PurchaseOrderUpdate {
+	if v != nil {
+		_u.SetOrderDate(*v)
+	}
+	return _u
+}
+
+// ClearOrderDate clears the value of the "order_date" field.
+func (_u *PurchaseOrderUpdate) ClearOrderDate() *PurchaseOrderUpdate {
+	_u.mutation.ClearOrderDate()
+	return _u
+}
+
 // SetTotalAmount sets the "total_amount" field.
 func (_u *PurchaseOrderUpdate) SetTotalAmount(v float64) *PurchaseOrderUpdate {
 	_u.mutation.ResetTotalAmount()
@@ -504,6 +524,12 @@ func (_u *PurchaseOrderUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.ExpectedDateCleared() {
 		_spec.ClearField(purchaseorder.FieldExpectedDate, field.TypeTime)
 	}
+	if value, ok := _u.mutation.OrderDate(); ok {
+		_spec.SetField(purchaseorder.FieldOrderDate, field.TypeTime, value)
+	}
+	if _u.mutation.OrderDateCleared() {
+		_spec.ClearField(purchaseorder.FieldOrderDate, field.TypeTime)
+	}
 	if value, ok := _u.mutation.TotalAmount(); ok {
 		_spec.SetField(purchaseorder.FieldTotalAmount, field.TypeFloat64, value)
 	}
@@ -795,6 +821,26 @@ func (_u *PurchaseOrderUpdateOne) SetNillableExpectedDate(v *time.Time) *Purchas
 // ClearExpectedDate clears the value of the "expected_date" field.
 func (_u *PurchaseOrderUpdateOne) ClearExpectedDate() *PurchaseOrderUpdateOne {
 	_u.mutation.ClearExpectedDate()
+	return _u
+}
+
+// SetOrderDate sets the "order_date" field.
+func (_u *PurchaseOrderUpdateOne) SetOrderDate(v time.Time) *PurchaseOrderUpdateOne {
+	_u.mutation.SetOrderDate(v)
+	return _u
+}
+
+// SetNillableOrderDate sets the "order_date" field if the given value is not nil.
+func (_u *PurchaseOrderUpdateOne) SetNillableOrderDate(v *time.Time) *PurchaseOrderUpdateOne {
+	if v != nil {
+		_u.SetOrderDate(*v)
+	}
+	return _u
+}
+
+// ClearOrderDate clears the value of the "order_date" field.
+func (_u *PurchaseOrderUpdateOne) ClearOrderDate() *PurchaseOrderUpdateOne {
+	_u.mutation.ClearOrderDate()
 	return _u
 }
 
@@ -1197,6 +1243,12 @@ func (_u *PurchaseOrderUpdateOne) sqlSave(ctx context.Context) (_node *PurchaseO
 	}
 	if _u.mutation.ExpectedDateCleared() {
 		_spec.ClearField(purchaseorder.FieldExpectedDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.OrderDate(); ok {
+		_spec.SetField(purchaseorder.FieldOrderDate, field.TypeTime, value)
+	}
+	if _u.mutation.OrderDateCleared() {
+		_spec.ClearField(purchaseorder.FieldOrderDate, field.TypeTime)
 	}
 	if value, ok := _u.mutation.TotalAmount(); ok {
 		_spec.SetField(purchaseorder.FieldTotalAmount, field.TypeFloat64, value)

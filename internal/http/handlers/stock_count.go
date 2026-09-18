@@ -303,6 +303,23 @@ func (h *StockCountHandler) UpsertLine(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
+	count, err := h.orm.StockCount.Query().
+		Where(entcount.ID(countID), entcount.TenantID(tenantID)).
+		Only(ctx)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Stock count not found")
+		return
+	}
+	// Editable through counting AND review (client-requested: staff must be able to fix a
+	// mis-entered quantity while a count sits pending approval, not just before it's submitted —
+	// see the "editing button before approval" ask). Once approved, variance has already been
+	// posted as real stock adjustments — editing the line after that would silently desync the
+	// posted adjustment from what the line now shows, so it's blocked; same for cancelled.
+	if count.Status == entcount.StatusApproved || count.Status == entcount.StatusCancelled {
+		writeError(w, http.StatusBadRequest, "INVALID_STATUS",
+			"This stock count has already been "+strings.ToLower(string(count.Status))+" and can no longer be edited")
+		return
+	}
 	// Countable types only: a RECIPE/SERVICE/VOUCHER item holds no stock of its own,
 	// so counting it is meaningless (its INGREDIENTS are what gets counted). Reject
 	// with guidance instead of silently recording an uncorrectable variance.
@@ -335,9 +352,7 @@ func (h *StockCountHandler) UpsertLine(w http.ResponseWriter, r *http.Request) {
 		sysQty = *req.SystemQty
 	} else if existing != nil {
 		sysQty = existing.SystemQty
-	} else if count, cErr := h.orm.StockCount.Query().
-		Where(entcount.ID(countID), entcount.TenantID(tenantID)).
-		Only(ctx); cErr == nil {
+	} else {
 		// New line without an explicit snapshot qty (scan-added mid-count): snapshot the
 		// warehouse balance now so the variance is measured against something real.
 		if bal, bErr := h.orm.InventoryBalance.Query().

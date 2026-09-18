@@ -81,6 +81,11 @@ func ExpectedDate(v time.Time) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldEQ(FieldExpectedDate, v))
 }
 
+// OrderDate applies equality check predicate on the "order_date" field. It's identical to OrderDateEQ.
+func OrderDate(v time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldOrderDate, v))
+}
+
 // TotalAmount applies equality check predicate on the "total_amount" field. It's identical to TotalAmountEQ.
 func TotalAmount(v float64) predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldEQ(FieldTotalAmount, v))
@@ -379,6 +384,56 @@ func ExpectedDateIsNil() predicate.PurchaseOrder {
 // ExpectedDateNotNil applies the NotNil predicate on the "expected_date" field.
 func ExpectedDateNotNil() predicate.PurchaseOrder {
 	return predicate.PurchaseOrder(sql.FieldNotNull(FieldExpectedDate))
+}
+
+// OrderDateEQ applies the EQ predicate on the "order_date" field.
+func OrderDateEQ(v time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldEQ(FieldOrderDate, v))
+}
+
+// OrderDateNEQ applies the NEQ predicate on the "order_date" field.
+func OrderDateNEQ(v time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNEQ(FieldOrderDate, v))
+}
+
+// OrderDateIn applies the In predicate on the "order_date" field.
+func OrderDateIn(vs ...time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIn(FieldOrderDate, vs...))
+}
+
+// OrderDateNotIn applies the NotIn predicate on the "order_date" field.
+func OrderDateNotIn(vs ...time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotIn(FieldOrderDate, vs...))
+}
+
+// OrderDateGT applies the GT predicate on the "order_date" field.
+func OrderDateGT(v time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGT(FieldOrderDate, v))
+}
+
+// OrderDateGTE applies the GTE predicate on the "order_date" field.
+func OrderDateGTE(v time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldGTE(FieldOrderDate, v))
+}
+
+// OrderDateLT applies the LT predicate on the "order_date" field.
+func OrderDateLT(v time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLT(FieldOrderDate, v))
+}
+
+// OrderDateLTE applies the LTE predicate on the "order_date" field.
+func OrderDateLTE(v time.Time) predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldLTE(FieldOrderDate, v))
+}
+
+// OrderDateIsNil applies the IsNil predicate on the "order_date" field.
+func OrderDateIsNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldIsNull(FieldOrderDate))
+}
+
+// OrderDateNotNil applies the NotNil predicate on the "order_date" field.
+func OrderDateNotNil() predicate.PurchaseOrder {
+	return predicate.PurchaseOrder(sql.FieldNotNull(FieldOrderDate))
 }
 
 // TotalAmountEQ applies the EQ predicate on the "total_amount" field.

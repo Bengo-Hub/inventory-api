@@ -42,6 +42,16 @@ func (PurchaseOrder) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Expected delivery date"),
+		// order_date lets a tenant record when the order was actually raised, distinct from
+		// created_at (when the row was entered into the system) — mirrors StockTransfer's
+		// transfer_date: nil means "use created_at" (pre-feature POs, and any PO where nobody
+		// bothered to override it), a set value backdates the order for reporting/PDF/PO-number
+		// purposes. Client-requested (boi tenant, 2026-09-18): staff sometimes raise a PO in the
+		// system days after actually placing it with the supplier by phone/in person.
+		field.Time("order_date").
+			Optional().
+			Nillable().
+			Comment("Business date the order was raised — overrides created_at for display/reporting when set"),
 		field.Float("total_amount").
 			Default(0).
 			Comment("Sum of line totals"),

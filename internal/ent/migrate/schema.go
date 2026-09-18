@@ -2277,6 +2277,7 @@ var (
 		{Name: "po_number", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "sent", "partially_received", "received", "cancelled"}, Default: "draft"},
 		{Name: "expected_date", Type: field.TypeTime, Nullable: true},
+		{Name: "order_date", Type: field.TypeTime, Nullable: true},
 		{Name: "total_amount", Type: field.TypeFloat64, Default: 0},
 		{Name: "currency", Type: field.TypeString, Default: "KES"},
 		{Name: "requisition_id", Type: field.TypeUUID, Nullable: true},
@@ -2301,13 +2302,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_orders_suppliers_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[18]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[19]},
 				RefColumns: []*schema.Column{SuppliersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "purchase_orders_warehouses_purchase_orders",
-				Columns:    []*schema.Column{PurchaseOrdersColumns[19]},
+				Columns:    []*schema.Column{PurchaseOrdersColumns[20]},
 				RefColumns: []*schema.Column{WarehousesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -2326,12 +2327,12 @@ var (
 			{
 				Name:    "purchaseorder_tenant_id_supplier_id",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[18]},
+				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[19]},
 			},
 			{
 				Name:    "purchaseorder_tenant_id_quotation_id",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[10]},
+				Columns: []*schema.Column{PurchaseOrdersColumns[1], PurchaseOrdersColumns[11]},
 			},
 		},
 	}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -34,6 +35,9 @@ type purchaseOrderDTO struct {
 	WarehouseID               uuid.UUID  `json:"warehouse_id"`
 	Status                    string     `json:"status"`
 	TotalAmount               float64    `json:"total_amount"`
+	// OrderDate is the business date the order was raised — overrides CreatedAt for
+	// display/reporting when set (nil means "use created_at", the pre-feature default).
+	OrderDate                 *time.Time `json:"order_date"`
 	ExpectedDate              *time.Time `json:"expected_date"`
 	Notes                     string     `json:"notes"`
 	PayTermDays               *int       `json:"pay_term_days"`
@@ -43,6 +47,34 @@ type purchaseOrderDTO struct {
 	// surfaced for the same "who did what" audit trail as adjustments/goods receipts.
 	CreatedByName string    `json:"created_by_name,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
+}
+
+// effectivePODate returns the calendar day a purchase order counts toward on documents/reports:
+// the staff-set order_date override when present, else created_at. Mirrors transfers'
+// EffectiveTransferDate.
+func effectivePODate(po *ent.PurchaseOrder) time.Time {
+	if po.OrderDate != nil {
+		return *po.OrderDate
+	}
+	return po.CreatedAt
+}
+
+// orderByEffectivePODate orders purchase orders by their effective date — order_date when set,
+// else created_at — so a backdated PO groups with its real chronological neighbors instead of
+// floating to the top of the list under today's date. Mirrors transfers.orderByEffectiveDate
+// (ent's generated Asc/Desc only order by a single column, so a COALESCE-across-two-columns
+// ORDER BY needs OrderExprFunc instead).
+func orderByEffectivePODate(desc bool) entpurchaseorder.OrderOption {
+	dir := "ASC"
+	if desc {
+		dir = "DESC"
+	}
+	return func(s *sql.Selector) {
+		expr := "COALESCE(" + s.C(entpurchaseorder.FieldOrderDate) + ", " + s.C(entpurchaseorder.FieldCreatedAt) + ")"
+		s.OrderExprFunc(func(b *sql.Builder) {
+			b.WriteString(expr + " " + dir + ", " + s.C(entpurchaseorder.FieldCreatedAt) + " " + dir)
+		})
+	}
 }
 
 // ListPurchaseOrders handles GET /inventory/purchase-orders.
@@ -78,14 +110,20 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		))
 	}
 	if from, to, ok := parseCreatedAtRange(r); ok {
-		q = q.Where(entpurchaseorder.CreatedAtGTE(from), entpurchaseorder.CreatedAtLTE(to))
+		// Match on the EFFECTIVE date (order_date when set, else created_at) — a backdated PO
+		// filtered into "last month" must actually show up there, mirroring transfers'
+		// EffectiveTransferDate filter treatment.
+		q = q.Where(entpurchaseorder.Or(
+			entpurchaseorder.And(entpurchaseorder.OrderDateNotNil(), entpurchaseorder.OrderDateGTE(from), entpurchaseorder.OrderDateLTE(to)),
+			entpurchaseorder.And(entpurchaseorder.OrderDateIsNil(), entpurchaseorder.CreatedAtGTE(from), entpurchaseorder.CreatedAtLTE(to)),
+		))
 	}
 
 	total, _ := q.Clone().Count(r.Context())
 	orders, err := q.
 		WithSupplier().
 		WithWarehouse().
-		Order(ent.Desc(entpurchaseorder.FieldCreatedAt)).
+		Order(orderByEffectivePODate(true)).
 		Limit(p.Limit).
 		Offset(p.Offset).
 		All(r.Context())
@@ -132,6 +170,9 @@ func (h *InventoryExtrasHandler) ListPurchaseOrders(w http.ResponseWriter, r *ht
 		}
 		if o.ExpectedDate != nil {
 			dto.ExpectedDate = o.ExpectedDate
+		}
+		if o.OrderDate != nil {
+			dto.OrderDate = o.OrderDate
 		}
 		result = append(result, dto)
 	}
@@ -281,6 +322,9 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 	if po.ExpectedDate != nil {
 		dto.ExpectedDate = po.ExpectedDate
 	}
+	if po.OrderDate != nil {
+		dto.OrderDate = po.OrderDate
+	}
 
 	writeJSON(w, http.StatusOK, poDetailDTO{purchaseOrderDTO: dto, LineItems: lines})
 }
@@ -302,6 +346,11 @@ type createPOInput struct {
 	SupplierID                uuid.UUID           `json:"supplier_id"`
 	WarehouseID               uuid.UUID           `json:"warehouse_id"`
 	ExpectedDate              *string             `json:"expected_date"` // accepts "YYYY-MM-DD" or RFC3339
+	// OrderDate lets staff record the order under a business date other than today — e.g. a PO
+	// placed with the supplier by phone days ago, only entered into the system now. Accepts
+	// "YYYY-MM-DD" or RFC3339, same as ExpectedDate/PurchaseReturn's DateReturned. Blank/omitted
+	// leaves it unset — the PO reports under created_at, the pre-feature default.
+	OrderDate                 *string             `json:"order_date"`
 	Notes                     string              `json:"notes"`
 	PayTermDays               *int                `json:"pay_term_days"`
 	AdditionalShippingCharges float64             `json:"additional_shipping_charges"`
@@ -398,6 +447,14 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 			return
 		}
 		poCreate = poCreate.SetExpectedDate(expDate)
+	}
+	if req.OrderDate != nil && strings.TrimSpace(*req.OrderDate) != "" {
+		orderDate, ok := parseFlexibleDate(strings.TrimSpace(*req.OrderDate))
+		if !ok {
+			writeError(w, http.StatusBadRequest, "INVALID_DATE", "order_date must be YYYY-MM-DD or RFC3339")
+			return
+		}
+		poCreate = poCreate.SetOrderDate(orderDate)
 	}
 	po, err := poCreate.Save(r.Context())
 	if err != nil {
@@ -523,6 +580,15 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 			upd = upd.SetExpectedDate(t)
 		} else if t, e := time.Parse(time.RFC3339, *req.ExpectedDate); e == nil {
 			upd = upd.SetExpectedDate(t)
+		}
+	}
+	if req.OrderDate != nil && strings.TrimSpace(*req.OrderDate) != "" {
+		if orderDate, ok := parseFlexibleDate(strings.TrimSpace(*req.OrderDate)); ok {
+			upd = upd.SetOrderDate(orderDate)
+		} else {
+			_ = tx.Rollback()
+			writeError(w, http.StatusBadRequest, "INVALID_DATE", "order_date must be YYYY-MM-DD or RFC3339")
+			return
 		}
 	}
 	if _, err = upd.Save(r.Context()); err != nil {
