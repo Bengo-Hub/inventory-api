@@ -32,6 +32,8 @@ type PurchaseOrder struct {
 	Status purchaseorder.Status `json:"status,omitempty"`
 	// Expected delivery date
 	ExpectedDate *time.Time `json:"expected_date,omitempty"`
+	// Business date the order was raised — overrides created_at for display/reporting when set
+	OrderDate *time.Time `json:"order_date,omitempty"`
 	// Sum of line totals
 	TotalAmount float64 `json:"total_amount,omitempty"`
 	// Currency holds the value of the "currency" field.
@@ -121,7 +123,7 @@ func (*PurchaseOrder) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case purchaseorder.FieldPoNumber, purchaseorder.FieldStatus, purchaseorder.FieldCurrency, purchaseorder.FieldQuotationNumber, purchaseorder.FieldNotes:
 			values[i] = new(sql.NullString)
-		case purchaseorder.FieldExpectedDate, purchaseorder.FieldCreatedAt, purchaseorder.FieldUpdatedAt:
+		case purchaseorder.FieldExpectedDate, purchaseorder.FieldOrderDate, purchaseorder.FieldCreatedAt, purchaseorder.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case purchaseorder.FieldID, purchaseorder.FieldTenantID:
 			values[i] = new(uuid.UUID)
@@ -184,6 +186,13 @@ func (_m *PurchaseOrder) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ExpectedDate = new(time.Time)
 				*_m.ExpectedDate = value.Time
+			}
+		case purchaseorder.FieldOrderDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field order_date", values[i])
+			} else if value.Valid {
+				_m.OrderDate = new(time.Time)
+				*_m.OrderDate = value.Time
 			}
 		case purchaseorder.FieldTotalAmount:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -341,6 +350,11 @@ func (_m *PurchaseOrder) String() string {
 	builder.WriteString(", ")
 	if v := _m.ExpectedDate; v != nil {
 		builder.WriteString("expected_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.OrderDate; v != nil {
+		builder.WriteString("order_date=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

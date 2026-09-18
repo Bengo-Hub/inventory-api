@@ -95,6 +95,20 @@ func (_c *PurchaseOrderCreate) SetNillableExpectedDate(v *time.Time) *PurchaseOr
 	return _c
 }
 
+// SetOrderDate sets the "order_date" field.
+func (_c *PurchaseOrderCreate) SetOrderDate(v time.Time) *PurchaseOrderCreate {
+	_c.mutation.SetOrderDate(v)
+	return _c
+}
+
+// SetNillableOrderDate sets the "order_date" field if the given value is not nil.
+func (_c *PurchaseOrderCreate) SetNillableOrderDate(v *time.Time) *PurchaseOrderCreate {
+	if v != nil {
+		_c.SetOrderDate(*v)
+	}
+	return _c
+}
+
 // SetTotalAmount sets the "total_amount" field.
 func (_c *PurchaseOrderCreate) SetTotalAmount(v float64) *PurchaseOrderCreate {
 	_c.mutation.SetTotalAmount(v)
@@ -469,6 +483,10 @@ func (_c *PurchaseOrderCreate) createSpec() (*PurchaseOrder, *sqlgraph.CreateSpe
 		_spec.SetField(purchaseorder.FieldExpectedDate, field.TypeTime, value)
 		_node.ExpectedDate = &value
 	}
+	if value, ok := _c.mutation.OrderDate(); ok {
+		_spec.SetField(purchaseorder.FieldOrderDate, field.TypeTime, value)
+		_node.OrderDate = &value
+	}
 	if value, ok := _c.mutation.TotalAmount(); ok {
 		_spec.SetField(purchaseorder.FieldTotalAmount, field.TypeFloat64, value)
 		_node.TotalAmount = value
@@ -710,6 +728,24 @@ func (u *PurchaseOrderUpsert) UpdateExpectedDate() *PurchaseOrderUpsert {
 // ClearExpectedDate clears the value of the "expected_date" field.
 func (u *PurchaseOrderUpsert) ClearExpectedDate() *PurchaseOrderUpsert {
 	u.SetNull(purchaseorder.FieldExpectedDate)
+	return u
+}
+
+// SetOrderDate sets the "order_date" field.
+func (u *PurchaseOrderUpsert) SetOrderDate(v time.Time) *PurchaseOrderUpsert {
+	u.Set(purchaseorder.FieldOrderDate, v)
+	return u
+}
+
+// UpdateOrderDate sets the "order_date" field to the value that was provided on create.
+func (u *PurchaseOrderUpsert) UpdateOrderDate() *PurchaseOrderUpsert {
+	u.SetExcluded(purchaseorder.FieldOrderDate)
+	return u
+}
+
+// ClearOrderDate clears the value of the "order_date" field.
+func (u *PurchaseOrderUpsert) ClearOrderDate() *PurchaseOrderUpsert {
+	u.SetNull(purchaseorder.FieldOrderDate)
 	return u
 }
 
@@ -1076,6 +1112,27 @@ func (u *PurchaseOrderUpsertOne) UpdateExpectedDate() *PurchaseOrderUpsertOne {
 func (u *PurchaseOrderUpsertOne) ClearExpectedDate() *PurchaseOrderUpsertOne {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.ClearExpectedDate()
+	})
+}
+
+// SetOrderDate sets the "order_date" field.
+func (u *PurchaseOrderUpsertOne) SetOrderDate(v time.Time) *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetOrderDate(v)
+	})
+}
+
+// UpdateOrderDate sets the "order_date" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertOne) UpdateOrderDate() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateOrderDate()
+	})
+}
+
+// ClearOrderDate clears the value of the "order_date" field.
+func (u *PurchaseOrderUpsertOne) ClearOrderDate() *PurchaseOrderUpsertOne {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearOrderDate()
 	})
 }
 
@@ -1644,6 +1701,27 @@ func (u *PurchaseOrderUpsertBulk) UpdateExpectedDate() *PurchaseOrderUpsertBulk 
 func (u *PurchaseOrderUpsertBulk) ClearExpectedDate() *PurchaseOrderUpsertBulk {
 	return u.Update(func(s *PurchaseOrderUpsert) {
 		s.ClearExpectedDate()
+	})
+}
+
+// SetOrderDate sets the "order_date" field.
+func (u *PurchaseOrderUpsertBulk) SetOrderDate(v time.Time) *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.SetOrderDate(v)
+	})
+}
+
+// UpdateOrderDate sets the "order_date" field to the value that was provided on create.
+func (u *PurchaseOrderUpsertBulk) UpdateOrderDate() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.UpdateOrderDate()
+	})
+}
+
+// ClearOrderDate clears the value of the "order_date" field.
+func (u *PurchaseOrderUpsertBulk) ClearOrderDate() *PurchaseOrderUpsertBulk {
+	return u.Update(func(s *PurchaseOrderUpsert) {
+		s.ClearOrderDate()
 	})
 }
 

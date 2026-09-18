@@ -28,6 +28,8 @@ const (
 	FieldStatus = "status"
 	// FieldExpectedDate holds the string denoting the expected_date field in the database.
 	FieldExpectedDate = "expected_date"
+	// FieldOrderDate holds the string denoting the order_date field in the database.
+	FieldOrderDate = "order_date"
 	// FieldTotalAmount holds the string denoting the total_amount field in the database.
 	FieldTotalAmount = "total_amount"
 	// FieldCurrency holds the string denoting the currency field in the database.
@@ -94,6 +96,7 @@ var Columns = []string{
 	FieldPoNumber,
 	FieldStatus,
 	FieldExpectedDate,
+	FieldOrderDate,
 	FieldTotalAmount,
 	FieldCurrency,
 	FieldRequisitionID,
@@ -203,6 +206,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByExpectedDate orders the results by the expected_date field.
 func ByExpectedDate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpectedDate, opts...).ToFunc()
+}
+
+// ByOrderDate orders the results by the order_date field.
+func ByOrderDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOrderDate, opts...).ToFunc()
 }
 
 // ByTotalAmount orders the results by the total_amount field.
