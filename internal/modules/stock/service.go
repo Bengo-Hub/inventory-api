@@ -1879,13 +1879,29 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		ingredients, isBOM := s.explodeBOM(ctx, tenantID, whID, stockSKU, ci.Quantity)
 		if !isBOM {
 			// Direct line — convert a sale-line UOM (e.g. a 30 ml pour of a bottle
-			// stocked in pieces) into the item's stock unit when one is provided.
-			line := explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, FinishedItemSKU: stockSKU}
-			if ci.UOM != "" {
-				if itm, ierr := s.client.Item.Query().
-					Where(item.TenantID(tenantID), item.Sku(stockSKU)).
-					WithUnits().
-					Only(ctx); ierr == nil {
+			// stocked in pieces) into the item's stock unit when one is provided. Also
+			// resolved unconditionally (not just when ci.UOM is set) to catch a RECIPE-type
+			// item with no active recipe/ingredients configured: explodeBOM's fallback lets
+			// it silently consume its OWN balance like a plain GOODS item, so a menu item
+			// someone forgot to add ingredients to (or whose recipe row was deactivated)
+			// quietly stops tracking any ingredient at all — found fleet-wide 2026-09-23
+			// (11 urban-loft + 7 sofain-limited items, all oversold to a real negative on
+			// THEIR OWN balance with zero ingredient depletion). This can't block the sale
+			// (the item may be legitimately non-recipe, or the misconfiguration is the
+			// tenant's to fix, not a reason to fail checkout) — it must at least be loud.
+			if itm, ierr := s.client.Item.Query().
+				Where(item.TenantID(tenantID), item.Sku(stockSKU)).
+				WithUnits().
+				Only(ctx); ierr == nil {
+				if itm.Type == item.TypeRECIPE {
+					s.log.Warn("consumption: RECIPE item has no active recipe/ingredients — consuming its own balance directly instead of ingredients",
+						zap.String("sku", stockSKU),
+						zap.String("tenant_id", tenantID.String()),
+						zap.String("item_id", itm.ID.String()),
+					)
+				}
+				line := explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, FinishedItemSKU: stockSKU}
+				if ci.UOM != "" {
 					if converted, ok := ConvertToStockUnit(itm, ci.Quantity, ci.UOM); ok {
 						if converted != ci.Quantity {
 							line.RequestedQty, line.RequestedUOM = ci.Quantity, ci.UOM
@@ -1897,8 +1913,10 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 						line.Quantity = 0
 					}
 				}
+				flattened = append(flattened, line)
+			} else {
+				flattened = append(flattened, explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, FinishedItemSKU: stockSKU})
 			}
-			flattened = append(flattened, line)
 		} else {
 			// BOM lines already carry RecipeID/RecipeSKU from explodeBOM; FinishedItemSKU
 			// is the sale-line context only RecordConsumption knows.
