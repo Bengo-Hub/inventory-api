@@ -184,6 +184,58 @@ func (c *Client) ResolveAccount(ctx context.Context, tenantID uuid.UUID, account
 	return c.getRaw(ctx, url)
 }
 
+// flexString unmarshals a JSON string OR a bare number (decimal amounts) into a string.
+type flexString string
+
+func (f *flexString) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(strings.TrimSpace(string(b)), `"`)
+	if s == "null" {
+		s = ""
+	}
+	*f = flexString(s)
+	return nil
+}
+
+// VendorBalance mirrors the fields of treasury-api's VendorBalanceDTO that inventory caches.
+type VendorBalance struct {
+	VendorID           flexString `json:"vendor_id"`
+	VendorIdentifier   string     `json:"vendor_identifier"`
+	VendorName         string     `json:"vendor_name"`
+	BalanceOwed        flexString `json:"balance_owed"`
+	OutstandingPayable flexString `json:"outstanding_payable"`
+	Currency           string     `json:"currency"`
+}
+
+// ListVendorBalances returns every AP vendor balance treasury holds for the tenant, paging
+// through GET /s2s/{tenant}/ap/vendors. Not cached — callers use it to refresh
+// VendorBalanceCache, which is itself the cache.
+func (c *Client) ListVendorBalances(ctx context.Context, tenantID uuid.UUID) ([]VendorBalance, error) {
+	if !c.Enabled() {
+		return nil, nil
+	}
+	const pageSize = 100
+	var out []VendorBalance
+	for page := 1; page <= 50; page++ {
+		u := fmt.Sprintf("%s/api/v1/s2s/%s/ap/vendors?limit=%d&page=%d", c.baseURL, tenantID.String(), pageSize, page)
+		body, err := c.getRaw(ctx, u)
+		if err != nil {
+			return nil, fmt.Errorf("treasury: list vendor balances: %w", err)
+		}
+		var resp struct {
+			Data    []VendorBalance `json:"data"`
+			HasMore bool            `json:"hasMore"`
+		}
+		if err := json.Unmarshal(body, &resp); err != nil {
+			return nil, fmt.Errorf("treasury: decode vendor balances: %w", err)
+		}
+		out = append(out, resp.Data...)
+		if !resp.HasMore || len(resp.Data) == 0 {
+			break
+		}
+	}
+	return out, nil
+}
+
 // getRaw performs an S2S GET and returns the raw response body (status-checked).
 func (c *Client) getRaw(ctx context.Context, url string) (json.RawMessage, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

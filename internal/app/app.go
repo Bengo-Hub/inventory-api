@@ -48,6 +48,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/tickets"
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 	"github.com/bengobox/inventory-service/internal/modules/units"
+	"github.com/bengobox/inventory-service/internal/modules/vendorbalances"
 	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
@@ -267,6 +268,7 @@ func New(ctx context.Context) (*App, error) {
 	brandHandler := handlers.NewBrandHandler(log, ormClient, rbacService)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc, rbacService, approvals.NewService(ormClient))
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
+	inventoryExtrasHandler.SetVendorBalances(vendorbalances.NewService(ormClient, treasuryClient, log))
 	bundleSvc := bundles.NewService(ormClient, log)
 	inventoryExtrasHandler.SetBundleService(bundleSvc)
 	varianceSvc := recipes.NewVarianceService(ormClient, log, cfg.Services.OrderingURL, cfg.Services.POSURL, cfg.Auth.APIKey)
