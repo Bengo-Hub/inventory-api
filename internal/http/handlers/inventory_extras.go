@@ -23,6 +23,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/recipes"
 	"github.com/bengobox/inventory-service/internal/modules/reports"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
+	"github.com/bengobox/inventory-service/internal/modules/vendorbalances"
 )
 
 // InventoryExtrasHandler handles stock, lots, suppliers, purchase-orders, bundles, activity, and report endpoints.
@@ -38,12 +39,17 @@ type InventoryExtrasHandler struct {
 	stockSvc    *stock.Service
 	itemsSvc    *items.Service
 	auditSvc    *audit.Service
+	vendorBals  *vendorbalances.Service
 	// authForFeatureGet authenticates feature-gated GET routes. The tenant router group
 	// only authenticates non-GET requests, so a GET behind RequireFeatureCode must parse
 	// claims itself or every caller 401s (same gotcha inventory.go solves with
 	// requireAuthForFeatureGet).
 	authForFeatureGet func(http.Handler) http.Handler
 }
+
+// SetVendorBalances wires the treasury AP-balance mirror used to show what's owed to each
+// supplier on every supplier list/picker.
+func (h *InventoryExtrasHandler) SetVendorBalances(svc *vendorbalances.Service) { h.vendorBals = svc }
 
 // SetAuthForFeatureGets wires the auth middleware used in front of feature-gated GETs
 // (RequireAnyAuth: SSO or terminal PIN sessions).

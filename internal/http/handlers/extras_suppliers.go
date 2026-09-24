@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -53,6 +54,12 @@ type supplierDTO struct {
 	PaymentTermsDays             int       `json:"payment_terms_days"`
 	CreditLimit                  *float64  `json:"credit_limit"`
 	CreatedAt                    time.Time `json:"created_at"`
+	// What the business currently owes this supplier, from treasury (which owns AP) via the
+	// local VendorBalanceCache mirror. Signed: positive = owed to the supplier, negative = the
+	// supplier holds a credit. Omitted when treasury has no AP record for the supplier yet.
+	BalanceOwed        *string `json:"balance_owed,omitempty"`
+	OutstandingPayable *string `json:"outstanding_payable,omitempty"`
+	BalanceCurrency    string  `json:"balance_currency,omitempty"`
 }
 
 type supplierPayload struct {
@@ -164,7 +171,28 @@ func (h *InventoryExtrasHandler) ListSuppliers(w http.ResponseWriter, r *http.Re
 	for i, s := range suppliers {
 		result[i] = supplierToDTO(s)
 	}
+	h.attachVendorBalances(r.Context(), tenantID, suppliers, result)
 	writeJSON(w, http.StatusOK, pagination.NewResponse(result, total, p))
+}
+
+// attachVendorBalances fills each DTO's balance fields from the treasury AP mirror, and kicks off
+// a throttled background resync so a supplier whose balance event was missed still heals.
+func (h *InventoryExtrasHandler) attachVendorBalances(ctx context.Context, tenantID uuid.UUID, suppliers []*ent.Supplier, dtos []supplierDTO) {
+	if h.vendorBals == nil {
+		return
+	}
+	h.vendorBals.MaybeResync(tenantID)
+	bals := h.vendorBals.Lookup(ctx, tenantID, suppliers)
+	for i, sp := range suppliers {
+		b, ok := bals[sp.ID]
+		if !ok {
+			continue
+		}
+		owed, outstanding := b.BalanceOwed, b.OutstandingPayable
+		dtos[i].BalanceOwed = &owed
+		dtos[i].OutstandingPayable = &outstanding
+		dtos[i].BalanceCurrency = b.Currency
+	}
 }
 
 func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.Request) {
@@ -262,7 +290,9 @@ func (h *InventoryExtrasHandler) GetSupplier(w http.ResponseWriter, r *http.Requ
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Supplier not found")
 		return
 	}
-	writeJSON(w, http.StatusOK, supplierToDTO(s))
+	dto := []supplierDTO{supplierToDTO(s)}
+	h.attachVendorBalances(r.Context(), tenantID, []*ent.Supplier{s}, dto)
+	writeJSON(w, http.StatusOK, dto[0])
 }
 
 func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.Request) {

@@ -12,7 +12,7 @@ import (
 
 	eventslib "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
-	"github.com/bengobox/inventory-service/internal/ent/vendorbalancecache"
+	"github.com/bengobox/inventory-service/internal/modules/vendorbalances"
 )
 
 const (
@@ -114,46 +114,14 @@ func (c *TreasuryVendorBalanceEventsConsumer) handleMessage(msg *nats.Msg) {
 		return
 	}
 
-	q := c.db.VendorBalanceCache.Query().Where(vendorbalancecache.TenantID(tenantID))
-	if vendorID != nil {
-		q = q.Where(vendorbalancecache.VendorID(*vendorID))
-	} else {
-		q = q.Where(vendorbalancecache.VendorIdentifier(envelope.Payload.VendorIdentifier))
-	}
-	existing, ferr := q.First(ctx)
-	if ferr != nil && !ent.IsNotFound(ferr) {
-		c.log.Error("treasury vendor balance events: lookup cache row", zap.Error(ferr))
-		_ = msg.Nak()
-		return
-	}
-
-	currency := envelope.Payload.Currency
-	if currency == "" {
-		currency = "KES"
-	}
-
-	if existing != nil {
-		_, err = existing.Update().
-			SetNillableVendorID(vendorID).
-			SetVendorIdentifier(envelope.Payload.VendorIdentifier).
-			SetVendorName(envelope.Payload.VendorName).
-			SetBalanceOwed(envelope.Payload.BalanceOwed).
-			SetOutstandingPayable(envelope.Payload.OutstandingPayable).
-			SetCurrency(currency).
-			Save(ctx)
-	} else {
-		create := c.db.VendorBalanceCache.Create().
-			SetTenantID(tenantID).
-			SetVendorIdentifier(envelope.Payload.VendorIdentifier).
-			SetVendorName(envelope.Payload.VendorName).
-			SetBalanceOwed(envelope.Payload.BalanceOwed).
-			SetOutstandingPayable(envelope.Payload.OutstandingPayable).
-			SetCurrency(currency)
-		if vendorID != nil {
-			create = create.SetVendorID(*vendorID)
-		}
-		_, err = create.Save(ctx)
-	}
+	err = vendorbalances.Upsert(ctx, c.db, tenantID, vendorbalances.Entry{
+		VendorID:           vendorID,
+		VendorIdentifier:   envelope.Payload.VendorIdentifier,
+		VendorName:         envelope.Payload.VendorName,
+		BalanceOwed:        envelope.Payload.BalanceOwed,
+		OutstandingPayable: envelope.Payload.OutstandingPayable,
+		Currency:           envelope.Payload.Currency,
+	})
 	if err != nil {
 		// This is a read-then-write TOCTOU: two redeliveries of the same balance-updated event
 		// (AckWait=30s/MaxDeliver=3) racing the First() lookup above could both miss the existing
