@@ -438,6 +438,7 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		"item_id":         itm.ID.String(),
 		"sku":             itm.Sku,
 		"warehouse_id":    whID.String(),
+		"outlet_id":       s.outletIDForWarehouse(ctx, tx, whID), // "" = shared warehouse; lets consumers route per branch
 		"adjustment_id":   adj.ID.String(),
 		"quantity_before": qtyBefore,
 		"quantity_change": qtyChange,

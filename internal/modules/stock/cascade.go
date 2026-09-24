@@ -96,6 +96,7 @@ func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenant
 		"item_id":         itemID.String(),
 		"sku":             itm.Sku,
 		"warehouse_id":    warehouseID.String(),
+		"outlet_id":       s.outletIDForWarehouse(ctx, tx, warehouseID), // "" = shared warehouse; lets consumers route per branch
 		"quantity_before": qtyBefore,
 		"quantity_change": qtyAfter - qtyBefore,
 		"quantity_after":  qtyAfter,

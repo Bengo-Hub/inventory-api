@@ -258,12 +258,25 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 			consumeItems = append(consumeItems, stock.ConsumptionItem{SKU: sku, Quantity: float64(l.Quantity)})
 		}
 	}
+	// Returned goods leave the warehouse they were received into: the linked goods receipt's
+	// warehouse when there is one, else the tenant default (a return raised without a receipt).
+	var returnWarehouseID uuid.UUID
+	returnOutletID := ""
+	if updated.GoodsReceiptID != nil {
+		if grn, gerr := h.orm.GoodsReceipt.Get(r.Context(), *updated.GoodsReceiptID); gerr == nil && grn.WarehouseID != nil {
+			returnWarehouseID = *grn.WarehouseID
+			if wh, werr := h.orm.Warehouse.Get(r.Context(), returnWarehouseID); werr == nil && wh.OutletID != nil {
+				returnOutletID = wh.OutletID.String()
+			}
+		}
+	}
 	// Goods returned to the supplier leave our stock (stock-out), in-process.
 	if h.stockSvc != nil && len(consumeItems) > 0 {
 		if _, err := h.stockSvc.RecordConsumption(r.Context(), tenantID, stock.ConsumptionRequest{
 			TenantID:       tenantID,
 			OrderID:        updated.ID,
 			Items:          consumeItems,
+			WarehouseID:    returnWarehouseID,
 			Reason:         "purchase_return",
 			IdempotencyKey: "purchase-return-" + updated.ID.String(),
 		}); err != nil {
@@ -286,6 +299,10 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 	}
 	if updated.PurchaseOrderID != nil {
 		retPayload["purchase_order_id"] = updated.PurchaseOrderID.String()
+	}
+	if returnWarehouseID != uuid.Nil {
+		retPayload["warehouse_id"] = returnWarehouseID.String()
+		retPayload["outlet_id"] = returnOutletID // lets treasury transmit on the right eTIMS branch
 	}
 	h.publishOutbox(r.Context(), tenantID, "purchase_return", updated.ID, "inventory.purchase_return.approved", retPayload)
 	writeJSON(w, http.StatusOK, purchaseReturnToDTO(updated))
