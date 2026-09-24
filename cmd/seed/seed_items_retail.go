@@ -12,6 +12,9 @@ func retailItems() []itemDef {
 		{"RTL-SPF-001", "Sunscreen SPF50 75ml", "Broad-spectrum UVA/UVB protection", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 30, []string{"skincare"}, ptr(600.0)},
 		{"RTL-MSK-001", "Face Mask Sheet", "Hydrating sheet mask with hyaluronic acid", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 80, []string{"skincare"}, ptr(150.0)},
 		{"RTL-DEO-001", "Roll-On Deodorant 50ml", "48hr protection anti-perspirant roll-on", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 60, []string{"personal-care"}, ptr(180.0)},
+		// Sold on eTIMS branch 01 (Demo City Supermarket) as KRA itemCd KE2NTBA00000139; treasury
+		// links to it by this SKU. Cost 3225 × retailMarkup 1.6 = the 5160 retail price KRA recorded.
+		{"WIG-AARA-HD-100G", "Aara HD Lace Frontal Wig - Weight Option=100g", "HD lace frontal wig, 100g", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 10, []string{"haircare", "wigs"}, ptr(3225.0)},
 		{"RTL-NAP-001", "Nail Polish (assorted)", "Long-lasting gel-effect nail colour", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 100, []string{"nails", "beauty"}, ptr(250.0)},
 		{"RTL-ACC-001", "Hair Accessories Set", "Set of clips, bands, and pins", "retail", entitem.TypeGOODS, "PACK", mediaPlaceholder, 35, []string{"accessories"}, ptr(200.0)},
 		{"RTL-GFT-001", "Spa Gift Set", "Curated spa experience gift set with towel and products", "retail", entitem.TypeGOODS, "PIECE", mediaPlaceholder, 20, []string{"gift", "spa"}, ptr(1200.0)},
