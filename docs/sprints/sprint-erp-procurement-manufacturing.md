@@ -98,3 +98,15 @@ Delete Django apps + migrations + urls + INSTALLED_APPS entries and all importer
 - [Ownership map] ../../../../shared-docs/CROSS-SERVICE-DATA-OWNERSHIP.md
 - [ERP Module Removal Plan](../../../../erp/erp-api/docs/module-removal-plan.md)
 - [inventory-api ERP gaps](./sprint-erp-gaps.md)
+
+## Purchase returns workflow (fixed 2026-09-25)
+
+Tenant report (boi-enterprises): a purchase return showed as **SOLD** in the item's stock history, its date came out as the 24th instead of the 25th, the return did not record which outlet/location the goods left from, and the returned items were not shown anywhere.
+
+How it works now:
+
+- **Create** (`POST /inventory/purchase-returns`): header and lines save in one transaction. Every line must be a real item of the tenant with a quantity above zero (quantities are decimal, same as goods receipt lines). `warehouse_id` records the location the goods leave from; when omitted it defaults to the operating outlet's warehouse (X-Outlet-ID), then the tenant default. `date_returned` is a calendar day (`YYYY-MM-DD`, stored at 00:00 UTC) and cannot be in the future.
+- **Approve** (`POST /inventory/purchase-returns/{id}/approve`): the pending to approved flip is claimed atomically, so a double click can never take stock out twice (a second approve gets 409). Each line leaves stock as a `purchase_return` **stock adjustment** referencing the return number, not through the sales consumption path. The stock ledger therefore labels it "Purchase Return" with the return number and supplier. `purchase_return` is excluded from `stock.adjusted` GL events (treasury values the return through the vendor credit note) and treasury's eTIMS subscriber already skips `stock.updated` with that reason (the approved event carries the return-to-supplier stockIO 12). The approved event now also carries `date_returned`, `supplier_name`, `reason`, `warehouse_id`/`outlet_id` and per-item `item_name`/`sub_total` so treasury can raise an itemised credit note dated on the return day.
+- **List / Get**: the DTO carries `supplier_name`, `warehouse_name`, `outlet_id`, `date_returned_day`, `item_count`, `total_quantity`, `items_summary` and the full `lines` (item name, SKU, qty, unit cost, sub-total). Filters: `supplier_id`, `warehouse_id`, `outlet_id` (also matches older returns that only carry their goods receipt's warehouse), `search` (return number). The PDF shows the location.
+- **Legacy rows**: returns approved before this fix wrote `ConsumptionLine` rows with reason `purchase_return`. The stock ledger reclassifies them at read time (Purchase Return, real return number and supplier) and the ingredient utilization report excludes them. Their `item_consumption_daily` rollups still include them (not rewritten).
+- Schema: `purchase_returns.warehouse_id` (new, indexed with tenant), `purchase_return_lines.quantity` widened to double precision, `stock_adjustments.reason` gained `purchase_return` (migration `20260925120000_purchase_return_warehouse_and_decimal_qty.sql`).

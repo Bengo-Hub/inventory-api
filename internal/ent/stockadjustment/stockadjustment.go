@@ -99,6 +99,7 @@ const (
 	ReasonLocationMove        Reason = "location_move"
 	ReasonLocationHidden      Reason = "location_hidden"
 	ReasonLocationUnhidden    Reason = "location_unhidden"
+	ReasonPurchaseReturn      Reason = "purchase_return"
 	ReasonOther               Reason = "other"
 )
 
@@ -109,7 +110,7 @@ func (r Reason) String() string {
 // ReasonValidator is a validator for the "reason" field enum values. It is called by the builders before save.
 func ReasonValidator(r Reason) error {
 	switch r {
-	case ReasonDamaged, ReasonExpired, ReasonShrinkage, ReasonFound, ReasonCorrection, ReasonTransferIn, ReasonTransferOut, ReasonReturn, ReasonInitialCount, ReasonOpeningBalance, ReasonCountVariance, ReasonInternalConsumption, ReasonLocationMove, ReasonLocationHidden, ReasonLocationUnhidden, ReasonOther:
+	case ReasonDamaged, ReasonExpired, ReasonShrinkage, ReasonFound, ReasonCorrection, ReasonTransferIn, ReasonTransferOut, ReasonReturn, ReasonInitialCount, ReasonOpeningBalance, ReasonCountVariance, ReasonInternalConsumption, ReasonLocationMove, ReasonLocationHidden, ReasonLocationUnhidden, ReasonPurchaseReturn, ReasonOther:
 		return nil
 	default:
 		return fmt.Errorf("stockadjustment: invalid enum value for reason field: %q", r)

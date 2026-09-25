@@ -105,6 +105,9 @@ func (s *Service) GetSummary(ctx context.Context, tenantID, itemID, warehouseID 
 			entconsumptionline.Theoretical(false),
 			entconsumptionline.ConsumedAtGTE(from),
 			entconsumptionline.ConsumedAtLTE(to),
+			// Legacy purchase-return stock-outs (approved before 2026-09-25) were written through
+			// the consumption path; goods sent back to a supplier are not usage.
+			entconsumptionline.ReasonNEQ("purchase_return"),
 		).
 		Aggregate(sumAs(entconsumptionline.FieldQuantity, "qty"), sumAs(entconsumptionline.FieldTotalCost, "cost")).
 		Scan(ctx, &consumedAgg); err != nil {
