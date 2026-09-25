@@ -81,6 +81,11 @@ func SupplierID(v uuid.UUID) predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldEQ(FieldSupplierID, v))
 }
 
+// WarehouseID applies equality check predicate on the "warehouse_id" field. It's identical to WarehouseIDEQ.
+func WarehouseID(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldWarehouseID, v))
+}
+
 // AddedBy applies equality check predicate on the "added_by" field. It's identical to AddedByEQ.
 func AddedBy(v uuid.UUID) predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldEQ(FieldAddedBy, v))
@@ -374,6 +379,56 @@ func SupplierIDIsNil() predicate.PurchaseReturn {
 // SupplierIDNotNil applies the NotNil predicate on the "supplier_id" field.
 func SupplierIDNotNil() predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldNotNull(FieldSupplierID))
+}
+
+// WarehouseIDEQ applies the EQ predicate on the "warehouse_id" field.
+func WarehouseIDEQ(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldWarehouseID, v))
+}
+
+// WarehouseIDNEQ applies the NEQ predicate on the "warehouse_id" field.
+func WarehouseIDNEQ(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNEQ(FieldWarehouseID, v))
+}
+
+// WarehouseIDIn applies the In predicate on the "warehouse_id" field.
+func WarehouseIDIn(vs ...uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIn(FieldWarehouseID, vs...))
+}
+
+// WarehouseIDNotIn applies the NotIn predicate on the "warehouse_id" field.
+func WarehouseIDNotIn(vs ...uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotIn(FieldWarehouseID, vs...))
+}
+
+// WarehouseIDGT applies the GT predicate on the "warehouse_id" field.
+func WarehouseIDGT(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldGT(FieldWarehouseID, v))
+}
+
+// WarehouseIDGTE applies the GTE predicate on the "warehouse_id" field.
+func WarehouseIDGTE(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldGTE(FieldWarehouseID, v))
+}
+
+// WarehouseIDLT applies the LT predicate on the "warehouse_id" field.
+func WarehouseIDLT(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldLT(FieldWarehouseID, v))
+}
+
+// WarehouseIDLTE applies the LTE predicate on the "warehouse_id" field.
+func WarehouseIDLTE(v uuid.UUID) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldLTE(FieldWarehouseID, v))
+}
+
+// WarehouseIDIsNil applies the IsNil predicate on the "warehouse_id" field.
+func WarehouseIDIsNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIsNull(FieldWarehouseID))
+}
+
+// WarehouseIDNotNil applies the NotNil predicate on the "warehouse_id" field.
+func WarehouseIDNotNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotNull(FieldWarehouseID))
 }
 
 // AddedByEQ applies the EQ predicate on the "added_by" field.

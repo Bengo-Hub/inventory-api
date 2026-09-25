@@ -1631,19 +1631,19 @@ func init() {
 	purchasereturnFields := schema.PurchaseReturn{}.Fields()
 	_ = purchasereturnFields
 	// purchasereturnDescReturnAmount is the schema descriptor for return_amount field.
-	purchasereturnDescReturnAmount := purchasereturnFields[8].Descriptor()
+	purchasereturnDescReturnAmount := purchasereturnFields[9].Descriptor()
 	// purchasereturn.DefaultReturnAmount holds the default value on creation for the return_amount field.
 	purchasereturn.DefaultReturnAmount = purchasereturnDescReturnAmount.Default.(float64)
 	// purchasereturnDescReturnAmountDue is the schema descriptor for return_amount_due field.
-	purchasereturnDescReturnAmountDue := purchasereturnFields[9].Descriptor()
+	purchasereturnDescReturnAmountDue := purchasereturnFields[10].Descriptor()
 	// purchasereturn.DefaultReturnAmountDue holds the default value on creation for the return_amount_due field.
 	purchasereturn.DefaultReturnAmountDue = purchasereturnDescReturnAmountDue.Default.(float64)
 	// purchasereturnDescDateReturned is the schema descriptor for date_returned field.
-	purchasereturnDescDateReturned := purchasereturnFields[11].Descriptor()
+	purchasereturnDescDateReturned := purchasereturnFields[12].Descriptor()
 	// purchasereturn.DefaultDateReturned holds the default value on creation for the date_returned field.
 	purchasereturn.DefaultDateReturned = purchasereturnDescDateReturned.Default.(func() time.Time)
 	// purchasereturnDescUpdatedAt is the schema descriptor for updated_at field.
-	purchasereturnDescUpdatedAt := purchasereturnFields[12].Descriptor()
+	purchasereturnDescUpdatedAt := purchasereturnFields[13].Descriptor()
 	// purchasereturn.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	purchasereturn.DefaultUpdatedAt = purchasereturnDescUpdatedAt.Default.(func() time.Time)
 	// purchasereturn.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1657,7 +1657,7 @@ func init() {
 	// purchasereturnlineDescQuantity is the schema descriptor for quantity field.
 	purchasereturnlineDescQuantity := purchasereturnlineFields[5].Descriptor()
 	// purchasereturnline.DefaultQuantity holds the default value on creation for the quantity field.
-	purchasereturnline.DefaultQuantity = purchasereturnlineDescQuantity.Default.(int)
+	purchasereturnline.DefaultQuantity = purchasereturnlineDescQuantity.Default.(float64)
 	// purchasereturnlineDescSubTotal is the schema descriptor for sub_total field.
 	purchasereturnlineDescSubTotal := purchasereturnlineFields[6].Descriptor()
 	// purchasereturnline.DefaultSubTotal holds the default value on creation for the sub_total field.

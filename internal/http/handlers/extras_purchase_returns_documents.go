@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 
+	"github.com/bengobox/inventory-service/internal/ent"
 	entgr "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
@@ -83,13 +85,13 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 		line := documents.PurchaseReturnDocLine{
 			Desc:    ifEmptyStr(h.itemName(ctx, tenantID, l.ItemID, itemCache), l.ItemID.String()),
 			SubDesc: sub,
-			Qty:     formatQty(float64(l.Quantity)),
+			Qty:     formatQty(l.Quantity),
 			Amount:  formatMoney(l.SubTotal),
 		}
 		// The entity stores only the line sub-total, so the unit price is derived (and omitted
 		// entirely for a zero-quantity line rather than dividing by zero).
 		if l.Quantity > 0 {
-			line.UnitPrice = formatMoney(l.SubTotal / float64(l.Quantity))
+			line.UnitPrice = formatMoney(l.SubTotal / l.Quantity)
 		}
 		items = append(items, line)
 	}
@@ -103,6 +105,7 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 		Reason:              pr.Reason,
 		PurchaseOrderNumber: poNumber,
 		GrnNumber:           grnNumber,
+		Location:            h.purchaseReturnLocationLabel(ctx, tenantID, pr),
 		SupplierName:        supplierName,
 		SupplierAddr:        supplierAddr,
 		Items:               items,
@@ -132,4 +135,22 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 		return
 	}
 	writeDocFile(w, pr.ReturnNumber, format, fileBytes)
+}
+
+// purchaseReturnLocationLabel names the warehouse a return's goods leave from for the printed
+// document (blank when none resolves, which drops the row).
+func (h *InventoryExtrasHandler) purchaseReturnLocationLabel(ctx context.Context, tenantID uuid.UUID, pr *ent.PurchaseReturn) string {
+	whID := uuid.Nil
+	if pr.WarehouseID != nil {
+		whID = *pr.WarehouseID
+	} else if pr.GoodsReceiptID != nil {
+		if g, e := h.orm.GoodsReceipt.Query().
+			Where(entgr.ID(*pr.GoodsReceiptID), entgr.TenantID(tenantID)).Only(ctx); e == nil && g.WarehouseID != nil {
+			whID = *g.WarehouseID
+		}
+	}
+	if whID == uuid.Nil {
+		return ""
+	}
+	return h.warehouseNamesByID(ctx, tenantID, []uuid.UUID{whID})[whID]
 }

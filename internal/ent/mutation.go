@@ -66352,6 +66352,7 @@ type PurchaseReturnMutation struct {
 	purchase_order_id    *uuid.UUID
 	goods_receipt_id     *uuid.UUID
 	supplier_id          *uuid.UUID
+	warehouse_id         *uuid.UUID
 	added_by             *uuid.UUID
 	reason               *string
 	return_amount        *float64
@@ -66704,6 +66705,55 @@ func (m *PurchaseReturnMutation) SupplierIDCleared() bool {
 func (m *PurchaseReturnMutation) ResetSupplierID() {
 	m.supplier_id = nil
 	delete(m.clearedFields, purchasereturn.FieldSupplierID)
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (m *PurchaseReturnMutation) SetWarehouseID(u uuid.UUID) {
+	m.warehouse_id = &u
+}
+
+// WarehouseID returns the value of the "warehouse_id" field in the mutation.
+func (m *PurchaseReturnMutation) WarehouseID() (r uuid.UUID, exists bool) {
+	v := m.warehouse_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWarehouseID returns the old "warehouse_id" field's value of the PurchaseReturn entity.
+// If the PurchaseReturn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnMutation) OldWarehouseID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWarehouseID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWarehouseID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWarehouseID: %w", err)
+	}
+	return oldValue.WarehouseID, nil
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (m *PurchaseReturnMutation) ClearWarehouseID() {
+	m.warehouse_id = nil
+	m.clearedFields[purchasereturn.FieldWarehouseID] = struct{}{}
+}
+
+// WarehouseIDCleared returns if the "warehouse_id" field was cleared in this mutation.
+func (m *PurchaseReturnMutation) WarehouseIDCleared() bool {
+	_, ok := m.clearedFields[purchasereturn.FieldWarehouseID]
+	return ok
+}
+
+// ResetWarehouseID resets all changes to the "warehouse_id" field.
+func (m *PurchaseReturnMutation) ResetWarehouseID() {
+	m.warehouse_id = nil
+	delete(m.clearedFields, purchasereturn.FieldWarehouseID)
 }
 
 // SetAddedBy sets the "added_by" field.
@@ -67112,7 +67162,7 @@ func (m *PurchaseReturnMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseReturnMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.tenant_id != nil {
 		fields = append(fields, purchasereturn.FieldTenantID)
 	}
@@ -67127,6 +67177,9 @@ func (m *PurchaseReturnMutation) Fields() []string {
 	}
 	if m.supplier_id != nil {
 		fields = append(fields, purchasereturn.FieldSupplierID)
+	}
+	if m.warehouse_id != nil {
+		fields = append(fields, purchasereturn.FieldWarehouseID)
 	}
 	if m.added_by != nil {
 		fields = append(fields, purchasereturn.FieldAddedBy)
@@ -67167,6 +67220,8 @@ func (m *PurchaseReturnMutation) Field(name string) (ent.Value, bool) {
 		return m.GoodsReceiptID()
 	case purchasereturn.FieldSupplierID:
 		return m.SupplierID()
+	case purchasereturn.FieldWarehouseID:
+		return m.WarehouseID()
 	case purchasereturn.FieldAddedBy:
 		return m.AddedBy()
 	case purchasereturn.FieldReason:
@@ -67200,6 +67255,8 @@ func (m *PurchaseReturnMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldGoodsReceiptID(ctx)
 	case purchasereturn.FieldSupplierID:
 		return m.OldSupplierID(ctx)
+	case purchasereturn.FieldWarehouseID:
+		return m.OldWarehouseID(ctx)
 	case purchasereturn.FieldAddedBy:
 		return m.OldAddedBy(ctx)
 	case purchasereturn.FieldReason:
@@ -67257,6 +67314,13 @@ func (m *PurchaseReturnMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSupplierID(v)
+		return nil
+	case purchasereturn.FieldWarehouseID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWarehouseID(v)
 		return nil
 	case purchasereturn.FieldAddedBy:
 		v, ok := value.(uuid.UUID)
@@ -67376,6 +67440,9 @@ func (m *PurchaseReturnMutation) ClearedFields() []string {
 	if m.FieldCleared(purchasereturn.FieldSupplierID) {
 		fields = append(fields, purchasereturn.FieldSupplierID)
 	}
+	if m.FieldCleared(purchasereturn.FieldWarehouseID) {
+		fields = append(fields, purchasereturn.FieldWarehouseID)
+	}
 	if m.FieldCleared(purchasereturn.FieldAddedBy) {
 		fields = append(fields, purchasereturn.FieldAddedBy)
 	}
@@ -67408,6 +67475,9 @@ func (m *PurchaseReturnMutation) ClearField(name string) error {
 	case purchasereturn.FieldSupplierID:
 		m.ClearSupplierID()
 		return nil
+	case purchasereturn.FieldWarehouseID:
+		m.ClearWarehouseID()
+		return nil
 	case purchasereturn.FieldAddedBy:
 		m.ClearAddedBy()
 		return nil
@@ -67436,6 +67506,9 @@ func (m *PurchaseReturnMutation) ResetField(name string) error {
 		return nil
 	case purchasereturn.FieldSupplierID:
 		m.ResetSupplierID()
+		return nil
+	case purchasereturn.FieldWarehouseID:
+		m.ResetWarehouseID()
 		return nil
 	case purchasereturn.FieldAddedBy:
 		m.ResetAddedBy()
@@ -67555,8 +67628,8 @@ type PurchaseReturnLineMutation struct {
 	tenant_id              *uuid.UUID
 	item_id                *uuid.UUID
 	lot_id                 *uuid.UUID
-	quantity               *int
-	addquantity            *int
+	quantity               *float64
+	addquantity            *float64
 	sub_total              *float64
 	addsub_total           *float64
 	created_at             *time.Time
@@ -67830,13 +67903,13 @@ func (m *PurchaseReturnLineMutation) ResetLotID() {
 }
 
 // SetQuantity sets the "quantity" field.
-func (m *PurchaseReturnLineMutation) SetQuantity(i int) {
-	m.quantity = &i
+func (m *PurchaseReturnLineMutation) SetQuantity(f float64) {
+	m.quantity = &f
 	m.addquantity = nil
 }
 
 // Quantity returns the value of the "quantity" field in the mutation.
-func (m *PurchaseReturnLineMutation) Quantity() (r int, exists bool) {
+func (m *PurchaseReturnLineMutation) Quantity() (r float64, exists bool) {
 	v := m.quantity
 	if v == nil {
 		return
@@ -67847,7 +67920,7 @@ func (m *PurchaseReturnLineMutation) Quantity() (r int, exists bool) {
 // OldQuantity returns the old "quantity" field's value of the PurchaseReturnLine entity.
 // If the PurchaseReturnLine object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PurchaseReturnLineMutation) OldQuantity(ctx context.Context) (v int, err error) {
+func (m *PurchaseReturnLineMutation) OldQuantity(ctx context.Context) (v float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
 	}
@@ -67861,17 +67934,17 @@ func (m *PurchaseReturnLineMutation) OldQuantity(ctx context.Context) (v int, er
 	return oldValue.Quantity, nil
 }
 
-// AddQuantity adds i to the "quantity" field.
-func (m *PurchaseReturnLineMutation) AddQuantity(i int) {
+// AddQuantity adds f to the "quantity" field.
+func (m *PurchaseReturnLineMutation) AddQuantity(f float64) {
 	if m.addquantity != nil {
-		*m.addquantity += i
+		*m.addquantity += f
 	} else {
-		m.addquantity = &i
+		m.addquantity = &f
 	}
 }
 
 // AddedQuantity returns the value that was added to the "quantity" field in this mutation.
-func (m *PurchaseReturnLineMutation) AddedQuantity() (r int, exists bool) {
+func (m *PurchaseReturnLineMutation) AddedQuantity() (r float64, exists bool) {
 	v := m.addquantity
 	if v == nil {
 		return
@@ -68143,7 +68216,7 @@ func (m *PurchaseReturnLineMutation) SetField(name string, value ent.Value) erro
 		m.SetLotID(v)
 		return nil
 	case purchasereturnline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -68199,7 +68272,7 @@ func (m *PurchaseReturnLineMutation) AddedField(name string) (ent.Value, bool) {
 func (m *PurchaseReturnLineMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case purchasereturnline.FieldQuantity:
-		v, ok := value.(int)
+		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

@@ -23,7 +23,7 @@ func (PurchaseReturnLine) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("FK to InventoryLot for lot-tracked items — lets an RTV target a specific expiring batch (pharmacy DAWA use-case)"),
-		field.Int("quantity").Default(1),
+		field.Float("quantity").Default(1).Comment("Quantity returned in the item's stock unit; fractional for weighed/measured items, same as GoodsReceiptLine quantities"),
 		field.Float("sub_total").Default(0),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}

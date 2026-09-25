@@ -58,13 +58,13 @@ func (_c *PurchaseReturnLineCreate) SetNillableLotID(v *uuid.UUID) *PurchaseRetu
 }
 
 // SetQuantity sets the "quantity" field.
-func (_c *PurchaseReturnLineCreate) SetQuantity(v int) *PurchaseReturnLineCreate {
+func (_c *PurchaseReturnLineCreate) SetQuantity(v float64) *PurchaseReturnLineCreate {
 	_c.mutation.SetQuantity(v)
 	return _c
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_c *PurchaseReturnLineCreate) SetNillableQuantity(v *int) *PurchaseReturnLineCreate {
+func (_c *PurchaseReturnLineCreate) SetNillableQuantity(v *float64) *PurchaseReturnLineCreate {
 	if v != nil {
 		_c.SetQuantity(*v)
 	}
@@ -243,7 +243,7 @@ func (_c *PurchaseReturnLineCreate) createSpec() (*PurchaseReturnLine, *sqlgraph
 		_node.LotID = &value
 	}
 	if value, ok := _c.mutation.Quantity(); ok {
-		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
 	}
 	if value, ok := _c.mutation.SubTotal(); ok {
@@ -378,7 +378,7 @@ func (u *PurchaseReturnLineUpsert) ClearLotID() *PurchaseReturnLineUpsert {
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *PurchaseReturnLineUpsert) SetQuantity(v int) *PurchaseReturnLineUpsert {
+func (u *PurchaseReturnLineUpsert) SetQuantity(v float64) *PurchaseReturnLineUpsert {
 	u.Set(purchasereturnline.FieldQuantity, v)
 	return u
 }
@@ -390,7 +390,7 @@ func (u *PurchaseReturnLineUpsert) UpdateQuantity() *PurchaseReturnLineUpsert {
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *PurchaseReturnLineUpsert) AddQuantity(v int) *PurchaseReturnLineUpsert {
+func (u *PurchaseReturnLineUpsert) AddQuantity(v float64) *PurchaseReturnLineUpsert {
 	u.Add(purchasereturnline.FieldQuantity, v)
 	return u
 }
@@ -528,14 +528,14 @@ func (u *PurchaseReturnLineUpsertOne) ClearLotID() *PurchaseReturnLineUpsertOne 
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *PurchaseReturnLineUpsertOne) SetQuantity(v int) *PurchaseReturnLineUpsertOne {
+func (u *PurchaseReturnLineUpsertOne) SetQuantity(v float64) *PurchaseReturnLineUpsertOne {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *PurchaseReturnLineUpsertOne) AddQuantity(v int) *PurchaseReturnLineUpsertOne {
+func (u *PurchaseReturnLineUpsertOne) AddQuantity(v float64) *PurchaseReturnLineUpsertOne {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.AddQuantity(v)
 	})
@@ -851,14 +851,14 @@ func (u *PurchaseReturnLineUpsertBulk) ClearLotID() *PurchaseReturnLineUpsertBul
 }
 
 // SetQuantity sets the "quantity" field.
-func (u *PurchaseReturnLineUpsertBulk) SetQuantity(v int) *PurchaseReturnLineUpsertBulk {
+func (u *PurchaseReturnLineUpsertBulk) SetQuantity(v float64) *PurchaseReturnLineUpsertBulk {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.SetQuantity(v)
 	})
 }
 
 // AddQuantity adds v to the "quantity" field.
-func (u *PurchaseReturnLineUpsertBulk) AddQuantity(v int) *PurchaseReturnLineUpsertBulk {
+func (u *PurchaseReturnLineUpsertBulk) AddQuantity(v float64) *PurchaseReturnLineUpsertBulk {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.AddQuantity(v)
 	})

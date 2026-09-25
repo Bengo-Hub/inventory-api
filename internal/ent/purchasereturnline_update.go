@@ -92,14 +92,14 @@ func (_u *PurchaseReturnLineUpdate) ClearLotID() *PurchaseReturnLineUpdate {
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *PurchaseReturnLineUpdate) SetQuantity(v int) *PurchaseReturnLineUpdate {
+func (_u *PurchaseReturnLineUpdate) SetQuantity(v float64) *PurchaseReturnLineUpdate {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *PurchaseReturnLineUpdate) SetNillableQuantity(v *int) *PurchaseReturnLineUpdate {
+func (_u *PurchaseReturnLineUpdate) SetNillableQuantity(v *float64) *PurchaseReturnLineUpdate {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -107,7 +107,7 @@ func (_u *PurchaseReturnLineUpdate) SetNillableQuantity(v *int) *PurchaseReturnL
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *PurchaseReturnLineUpdate) AddQuantity(v int) *PurchaseReturnLineUpdate {
+func (_u *PurchaseReturnLineUpdate) AddQuantity(v float64) *PurchaseReturnLineUpdate {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -209,10 +209,10 @@ func (_u *PurchaseReturnLineUpdate) sqlSave(ctx context.Context) (_node int, err
 		_spec.ClearField(purchasereturnline.FieldLotID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(purchasereturnline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(purchasereturnline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.SubTotal(); ok {
 		_spec.SetField(purchasereturnline.FieldSubTotal, field.TypeFloat64, value)
@@ -332,14 +332,14 @@ func (_u *PurchaseReturnLineUpdateOne) ClearLotID() *PurchaseReturnLineUpdateOne
 }
 
 // SetQuantity sets the "quantity" field.
-func (_u *PurchaseReturnLineUpdateOne) SetQuantity(v int) *PurchaseReturnLineUpdateOne {
+func (_u *PurchaseReturnLineUpdateOne) SetQuantity(v float64) *PurchaseReturnLineUpdateOne {
 	_u.mutation.ResetQuantity()
 	_u.mutation.SetQuantity(v)
 	return _u
 }
 
 // SetNillableQuantity sets the "quantity" field if the given value is not nil.
-func (_u *PurchaseReturnLineUpdateOne) SetNillableQuantity(v *int) *PurchaseReturnLineUpdateOne {
+func (_u *PurchaseReturnLineUpdateOne) SetNillableQuantity(v *float64) *PurchaseReturnLineUpdateOne {
 	if v != nil {
 		_u.SetQuantity(*v)
 	}
@@ -347,7 +347,7 @@ func (_u *PurchaseReturnLineUpdateOne) SetNillableQuantity(v *int) *PurchaseRetu
 }
 
 // AddQuantity adds value to the "quantity" field.
-func (_u *PurchaseReturnLineUpdateOne) AddQuantity(v int) *PurchaseReturnLineUpdateOne {
+func (_u *PurchaseReturnLineUpdateOne) AddQuantity(v float64) *PurchaseReturnLineUpdateOne {
 	_u.mutation.AddQuantity(v)
 	return _u
 }
@@ -479,10 +479,10 @@ func (_u *PurchaseReturnLineUpdateOne) sqlSave(ctx context.Context) (_node *Purc
 		_spec.ClearField(purchasereturnline.FieldLotID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Quantity(); ok {
-		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeInt, value)
+		_spec.SetField(purchasereturnline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedQuantity(); ok {
-		_spec.AddField(purchasereturnline.FieldQuantity, field.TypeInt, value)
+		_spec.AddField(purchasereturnline.FieldQuantity, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.SubTotal(); ok {
 		_spec.SetField(purchasereturnline.FieldSubTotal, field.TypeFloat64, value)

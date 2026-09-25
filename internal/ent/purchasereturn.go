@@ -28,6 +28,8 @@ type PurchaseReturn struct {
 	GoodsReceiptID *uuid.UUID `json:"goods_receipt_id,omitempty"`
 	// SupplierID holds the value of the "supplier_id" field.
 	SupplierID *uuid.UUID `json:"supplier_id,omitempty"`
+	// Warehouse/location the returned goods leave from (the outlet's own warehouse by default). Nil on returns created before this field existed; approval then falls back to the linked GRN's warehouse, else the tenant default
+	WarehouseID *uuid.UUID `json:"warehouse_id,omitempty"`
 	// Auth user
 	AddedBy *uuid.UUID `json:"added_by,omitempty"`
 	// Reason holds the value of the "reason" field.
@@ -71,7 +73,7 @@ func (*PurchaseReturn) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case purchasereturn.FieldPurchaseOrderID, purchasereturn.FieldGoodsReceiptID, purchasereturn.FieldSupplierID, purchasereturn.FieldAddedBy:
+		case purchasereturn.FieldPurchaseOrderID, purchasereturn.FieldGoodsReceiptID, purchasereturn.FieldSupplierID, purchasereturn.FieldWarehouseID, purchasereturn.FieldAddedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case purchasereturn.FieldReturnAmount, purchasereturn.FieldReturnAmountDue:
 			values[i] = new(sql.NullFloat64)
@@ -134,6 +136,13 @@ func (_m *PurchaseReturn) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SupplierID = new(uuid.UUID)
 				*_m.SupplierID = *value.S.(*uuid.UUID)
+			}
+		case purchasereturn.FieldWarehouseID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field warehouse_id", values[i])
+			} else if value.Valid {
+				_m.WarehouseID = new(uuid.UUID)
+				*_m.WarehouseID = *value.S.(*uuid.UUID)
 			}
 		case purchasereturn.FieldAddedBy:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -237,6 +246,11 @@ func (_m *PurchaseReturn) String() string {
 	builder.WriteString(", ")
 	if v := _m.SupplierID; v != nil {
 		builder.WriteString("supplier_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.WarehouseID; v != nil {
+		builder.WriteString("warehouse_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

@@ -27,8 +27,8 @@ type PurchaseReturnLine struct {
 	ItemID uuid.UUID `json:"item_id,omitempty"`
 	// FK to InventoryLot for lot-tracked items — lets an RTV target a specific expiring batch (pharmacy DAWA use-case)
 	LotID *uuid.UUID `json:"lot_id,omitempty"`
-	// Quantity holds the value of the "quantity" field.
-	Quantity int `json:"quantity,omitempty"`
+	// Quantity returned in the item's stock unit; fractional for weighed/measured items, same as GoodsReceiptLine quantities
+	Quantity float64 `json:"quantity,omitempty"`
 	// SubTotal holds the value of the "sub_total" field.
 	SubTotal float64 `json:"sub_total,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -66,10 +66,8 @@ func (*PurchaseReturnLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case purchasereturnline.FieldLotID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case purchasereturnline.FieldSubTotal:
+		case purchasereturnline.FieldQuantity, purchasereturnline.FieldSubTotal:
 			values[i] = new(sql.NullFloat64)
-		case purchasereturnline.FieldQuantity:
-			values[i] = new(sql.NullInt64)
 		case purchasereturnline.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case purchasereturnline.FieldID, purchasereturnline.FieldTenantID, purchasereturnline.FieldPurchaseReturnID, purchasereturnline.FieldItemID:
@@ -121,10 +119,10 @@ func (_m *PurchaseReturnLine) assignValues(columns []string, values []any) error
 				*_m.LotID = *value.S.(*uuid.UUID)
 			}
 		case purchasereturnline.FieldQuantity:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
-				_m.Quantity = int(value.Int64)
+				_m.Quantity = value.Float64
 			}
 		case purchasereturnline.FieldSubTotal:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {

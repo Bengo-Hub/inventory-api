@@ -124,6 +124,26 @@ func (_u *PurchaseReturnUpdate) ClearSupplierID() *PurchaseReturnUpdate {
 	return _u
 }
 
+// SetWarehouseID sets the "warehouse_id" field.
+func (_u *PurchaseReturnUpdate) SetWarehouseID(v uuid.UUID) *PurchaseReturnUpdate {
+	_u.mutation.SetWarehouseID(v)
+	return _u
+}
+
+// SetNillableWarehouseID sets the "warehouse_id" field if the given value is not nil.
+func (_u *PurchaseReturnUpdate) SetNillableWarehouseID(v *uuid.UUID) *PurchaseReturnUpdate {
+	if v != nil {
+		_u.SetWarehouseID(*v)
+	}
+	return _u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (_u *PurchaseReturnUpdate) ClearWarehouseID() *PurchaseReturnUpdate {
+	_u.mutation.ClearWarehouseID()
+	return _u
+}
+
 // SetAddedBy sets the "added_by" field.
 func (_u *PurchaseReturnUpdate) SetAddedBy(v uuid.UUID) *PurchaseReturnUpdate {
 	_u.mutation.SetAddedBy(v)
@@ -352,6 +372,12 @@ func (_u *PurchaseReturnUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if _u.mutation.SupplierIDCleared() {
 		_spec.ClearField(purchasereturn.FieldSupplierID, field.TypeUUID)
 	}
+	if value, ok := _u.mutation.WarehouseID(); ok {
+		_spec.SetField(purchasereturn.FieldWarehouseID, field.TypeUUID, value)
+	}
+	if _u.mutation.WarehouseIDCleared() {
+		_spec.ClearField(purchasereturn.FieldWarehouseID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.AddedBy(); ok {
 		_spec.SetField(purchasereturn.FieldAddedBy, field.TypeUUID, value)
 	}
@@ -538,6 +564,26 @@ func (_u *PurchaseReturnUpdateOne) SetNillableSupplierID(v *uuid.UUID) *Purchase
 // ClearSupplierID clears the value of the "supplier_id" field.
 func (_u *PurchaseReturnUpdateOne) ClearSupplierID() *PurchaseReturnUpdateOne {
 	_u.mutation.ClearSupplierID()
+	return _u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (_u *PurchaseReturnUpdateOne) SetWarehouseID(v uuid.UUID) *PurchaseReturnUpdateOne {
+	_u.mutation.SetWarehouseID(v)
+	return _u
+}
+
+// SetNillableWarehouseID sets the "warehouse_id" field if the given value is not nil.
+func (_u *PurchaseReturnUpdateOne) SetNillableWarehouseID(v *uuid.UUID) *PurchaseReturnUpdateOne {
+	if v != nil {
+		_u.SetWarehouseID(*v)
+	}
+	return _u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (_u *PurchaseReturnUpdateOne) ClearWarehouseID() *PurchaseReturnUpdateOne {
+	_u.mutation.ClearWarehouseID()
 	return _u
 }
 
@@ -798,6 +844,12 @@ func (_u *PurchaseReturnUpdateOne) sqlSave(ctx context.Context) (_node *Purchase
 	}
 	if _u.mutation.SupplierIDCleared() {
 		_spec.ClearField(purchasereturn.FieldSupplierID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.WarehouseID(); ok {
+		_spec.SetField(purchasereturn.FieldWarehouseID, field.TypeUUID, value)
+	}
+	if _u.mutation.WarehouseIDCleared() {
+		_spec.ClearField(purchasereturn.FieldWarehouseID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.AddedBy(); ok {
 		_spec.SetField(purchasereturn.FieldAddedBy, field.TypeUUID, value)

@@ -87,6 +87,20 @@ func (_c *PurchaseReturnCreate) SetNillableSupplierID(v *uuid.UUID) *PurchaseRet
 	return _c
 }
 
+// SetWarehouseID sets the "warehouse_id" field.
+func (_c *PurchaseReturnCreate) SetWarehouseID(v uuid.UUID) *PurchaseReturnCreate {
+	_c.mutation.SetWarehouseID(v)
+	return _c
+}
+
+// SetNillableWarehouseID sets the "warehouse_id" field if the given value is not nil.
+func (_c *PurchaseReturnCreate) SetNillableWarehouseID(v *uuid.UUID) *PurchaseReturnCreate {
+	if v != nil {
+		_c.SetWarehouseID(*v)
+	}
+	return _c
+}
+
 // SetAddedBy sets the "added_by" field.
 func (_c *PurchaseReturnCreate) SetAddedBy(v uuid.UUID) *PurchaseReturnCreate {
 	_c.mutation.SetAddedBy(v)
@@ -356,6 +370,10 @@ func (_c *PurchaseReturnCreate) createSpec() (*PurchaseReturn, *sqlgraph.CreateS
 		_spec.SetField(purchasereturn.FieldSupplierID, field.TypeUUID, value)
 		_node.SupplierID = &value
 	}
+	if value, ok := _c.mutation.WarehouseID(); ok {
+		_spec.SetField(purchasereturn.FieldWarehouseID, field.TypeUUID, value)
+		_node.WarehouseID = &value
+	}
 	if value, ok := _c.mutation.AddedBy(); ok {
 		_spec.SetField(purchasereturn.FieldAddedBy, field.TypeUUID, value)
 		_node.AddedBy = &value
@@ -533,6 +551,24 @@ func (u *PurchaseReturnUpsert) UpdateSupplierID() *PurchaseReturnUpsert {
 // ClearSupplierID clears the value of the "supplier_id" field.
 func (u *PurchaseReturnUpsert) ClearSupplierID() *PurchaseReturnUpsert {
 	u.SetNull(purchasereturn.FieldSupplierID)
+	return u
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *PurchaseReturnUpsert) SetWarehouseID(v uuid.UUID) *PurchaseReturnUpsert {
+	u.Set(purchasereturn.FieldWarehouseID, v)
+	return u
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *PurchaseReturnUpsert) UpdateWarehouseID() *PurchaseReturnUpsert {
+	u.SetExcluded(purchasereturn.FieldWarehouseID)
+	return u
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *PurchaseReturnUpsert) ClearWarehouseID() *PurchaseReturnUpsert {
+	u.SetNull(purchasereturn.FieldWarehouseID)
 	return u
 }
 
@@ -778,6 +814,27 @@ func (u *PurchaseReturnUpsertOne) UpdateSupplierID() *PurchaseReturnUpsertOne {
 func (u *PurchaseReturnUpsertOne) ClearSupplierID() *PurchaseReturnUpsertOne {
 	return u.Update(func(s *PurchaseReturnUpsert) {
 		s.ClearSupplierID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *PurchaseReturnUpsertOne) SetWarehouseID(v uuid.UUID) *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertOne) UpdateWarehouseID() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *PurchaseReturnUpsertOne) ClearWarehouseID() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearWarehouseID()
 	})
 }
 
@@ -1206,6 +1263,27 @@ func (u *PurchaseReturnUpsertBulk) UpdateSupplierID() *PurchaseReturnUpsertBulk 
 func (u *PurchaseReturnUpsertBulk) ClearSupplierID() *PurchaseReturnUpsertBulk {
 	return u.Update(func(s *PurchaseReturnUpsert) {
 		s.ClearSupplierID()
+	})
+}
+
+// SetWarehouseID sets the "warehouse_id" field.
+func (u *PurchaseReturnUpsertBulk) SetWarehouseID(v uuid.UUID) *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetWarehouseID(v)
+	})
+}
+
+// UpdateWarehouseID sets the "warehouse_id" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertBulk) UpdateWarehouseID() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateWarehouseID()
+	})
+}
+
+// ClearWarehouseID clears the value of the "warehouse_id" field.
+func (u *PurchaseReturnUpsertBulk) ClearWarehouseID() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearWarehouseID()
 	})
 }
 

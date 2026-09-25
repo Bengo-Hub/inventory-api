@@ -29,7 +29,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.livenessResponse"
+                            "$ref": "#/definitions/handlers.livenessResponse"
                         }
                     }
                 }
@@ -69,13 +69,79 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.readinessResponse"
+                            "$ref": "#/definitions/handlers.readinessResponse"
                         }
                     },
                     "503": {
                         "description": "Service Unavailable",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.readinessResponse"
+                            "$ref": "#/definitions/handlers.readinessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/adjustments/document": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "stock"
+                ],
+                "summary": "Generate a stock adjustment note for a reference batch",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Adjustment batch reference",
+                        "name": "reference",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Narrow the batch to one warehouse",
+                        "name": "warehouse_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -127,7 +193,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_http_handlers.approvalRequestDTO"
+                                "$ref": "#/definitions/handlers.approvalRequestDTO"
                             }
                         }
                     }
@@ -162,7 +228,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_http_handlers.approvalRuleDTO"
+                                "$ref": "#/definitions/handlers.approvalRuleDTO"
                             }
                         }
                     }
@@ -191,7 +257,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.approvalRulePayload"
+                            "$ref": "#/definitions/handlers.approvalRulePayload"
                         }
                     }
                 ],
@@ -199,7 +265,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.approvalRuleDTO"
+                            "$ref": "#/definitions/handlers.approvalRuleDTO"
                         }
                     }
                 }
@@ -336,7 +402,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetCategoryPayload"
+                            "$ref": "#/definitions/handlers.assetCategoryPayload"
                         }
                     }
                 ],
@@ -400,7 +466,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetCategoryPayload"
+                            "$ref": "#/definitions/handlers.assetCategoryPayload"
                         }
                     }
                 ],
@@ -823,7 +889,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetPayload"
+                            "$ref": "#/definitions/handlers.assetPayload"
                         }
                     }
                 ],
@@ -937,7 +1003,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.assetPayload"
+                            "$ref": "#/definitions/handlers.assetPayload"
                         }
                     }
                 ],
@@ -1747,7 +1813,111 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.BulkImportResult"
+                            "$ref": "#/definitions/handlers.BulkImportResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/bulk-jobs/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stock"
+                ],
+                "summary": "Get a bulk job's status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ent.BulkJob"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/bundles/{bundleID}/spec.pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Generate a bundle/package spec sheet PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bundle ID",
+                        "name": "bundleID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -1832,7 +2002,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractPayload"
+                            "$ref": "#/definitions/handlers.contractPayload"
                         }
                     }
                 ],
@@ -1840,7 +2010,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -1891,7 +2061,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -1944,7 +2114,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractPayload"
+                            "$ref": "#/definitions/handlers.contractPayload"
                         }
                     }
                 ],
@@ -1952,7 +2122,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -2003,7 +2173,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -2127,7 +2297,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.contractDTO"
+                            "$ref": "#/definitions/handlers.contractDTO"
                         }
                     },
                     "400": {
@@ -2217,7 +2387,67 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.grnDTO"
+                            "$ref": "#/definitions/handlers.grnDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/goods-receipts/{grnID}/pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Generate a branded goods received note (GRN) PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "GRN ID",
+                        "name": "grnID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -2250,7 +2480,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.grnDTO"
+                            "$ref": "#/definitions/handlers.grnDTO"
                         }
                     }
                 }
@@ -2302,7 +2532,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.bulkItemActionRequest"
+                            "$ref": "#/definitions/handlers.bulkItemActionRequest"
                         }
                     }
                 ],
@@ -2310,7 +2540,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.BulkActionResult"
+                            "$ref": "#/definitions/items.BulkActionResult"
                         }
                     },
                     "400": {
@@ -2352,7 +2582,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.bulkItemActionRequest"
+                            "$ref": "#/definitions/handlers.bulkItemActionRequest"
                         }
                     }
                 ],
@@ -2360,7 +2590,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.BulkActionResult"
+                            "$ref": "#/definitions/items.BulkActionResult"
                         }
                     },
                     "400": {
@@ -2468,7 +2698,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.MenuItemCompositeRequest"
+                            "$ref": "#/definitions/handlers.MenuItemCompositeRequest"
                         }
                     }
                 ],
@@ -2476,7 +2706,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.MenuItemCompositeResponse"
+                            "$ref": "#/definitions/handlers.MenuItemCompositeResponse"
                         }
                     }
                 }
@@ -2524,17 +2754,104 @@ const docTemplate = `{
                         "description": "RFC3339 or YYYY-MM-DD upper bound",
                         "name": "date_to",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated movement types to include (opening_stock,purchase,sale,sell_return,purchase_return,transfer_in,transfer_out,adjustment)",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_stock.StockHistoryResult"
+                            "$ref": "#/definitions/stock.StockHistoryResult"
                         }
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/items/{sku}/stock-history/document": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "stock"
+                ],
+                "summary": "Export a product's stock history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item SKU",
+                        "name": "sku",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "pdf (default) | csv | xlsx",
+                        "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Scope to one warehouse",
+                        "name": "warehouse_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 or YYYY-MM-DD lower bound",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "RFC3339 or YYYY-MM-DD upper bound",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated movement types",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -2817,7 +3134,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchPayload"
+                            "$ref": "#/definitions/handlers.productionBatchPayload"
                         }
                     }
                 ],
@@ -2825,7 +3142,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -2876,7 +3193,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -2938,7 +3255,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -3001,7 +3318,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -3063,7 +3380,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_http_handlers.batchRawMaterialDTO"
+                                "$ref": "#/definitions/handlers.batchRawMaterialDTO"
                             }
                         }
                     },
@@ -3117,7 +3434,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_http_handlers.qualityCheckDTO"
+                                "$ref": "#/definitions/handlers.qualityCheckDTO"
                             }
                         }
                     },
@@ -3179,7 +3496,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.qualityCheckDTO"
+                            "$ref": "#/definitions/handlers.qualityCheckDTO"
                         }
                     },
                     "400": {
@@ -3239,7 +3556,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.productionBatchDTO"
+                            "$ref": "#/definitions/handlers.productionBatchDTO"
                         }
                     },
                     "400": {
@@ -3301,7 +3618,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/internal_http_handlers.rawMaterialUsageDTO"
+                                "$ref": "#/definitions/handlers.rawMaterialUsageDTO"
                             }
                         }
                     }
@@ -3399,7 +3716,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.createPOInput"
+                            "$ref": "#/definitions/handlers.createPOInput"
                         }
                     }
                 ],
@@ -3459,7 +3776,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseOrderDTO"
+                            "$ref": "#/definitions/handlers.purchaseOrderDTO"
                         }
                     },
                     "400": {
@@ -3514,7 +3831,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.createPOInput"
+                            "$ref": "#/definitions/handlers.createPOInput"
                         }
                     }
                 ],
@@ -3632,7 +3949,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.grnPayload"
+                            "$ref": "#/definitions/handlers.grnPayload"
                         }
                     }
                 ],
@@ -3640,7 +3957,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.grnDTO"
+                            "$ref": "#/definitions/handlers.grnDTO"
                         }
                     }
                 }
@@ -3923,6 +4240,30 @@ const docTemplate = `{
                         "description": "Filter by payment status",
                         "name": "payment_status",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by supplier",
+                        "name": "supplier_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by the warehouse the goods left from",
+                        "name": "warehouse_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by outlet (any of its warehouses)",
+                        "name": "outlet_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Match the return number",
+                        "name": "search",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3976,7 +4317,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnPayload"
+                            "$ref": "#/definitions/handlers.purchaseReturnPayload"
                         }
                     }
                 ],
@@ -3984,7 +4325,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnDTO"
+                            "$ref": "#/definitions/handlers.purchaseReturnDTO"
                         }
                     },
                     "400": {
@@ -4035,7 +4376,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnDTO"
+                            "$ref": "#/definitions/handlers.purchaseReturnDTO"
                         }
                     },
                     "400": {
@@ -4086,7 +4427,76 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.purchaseReturnDTO"
+                            "$ref": "#/definitions/handlers.purchaseReturnDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/purchase-returns/{returnID}/pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Generate a branded purchase return (debit note) PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Purchase return ID",
+                        "name": "returnID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
                         }
                     },
                     "400": {
@@ -4299,7 +4709,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.RecipeBreakdownRow"
+                                "$ref": "#/definitions/reports.RecipeBreakdownRow"
                             }
                         }
                     }
@@ -4344,7 +4754,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.IngredientUtilizationSummary"
+                            "$ref": "#/definitions/reports.IngredientUtilizationSummary"
                         }
                     }
                 }
@@ -4404,7 +4814,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesResponse"
+                            "$ref": "#/definitions/reports.TimeseriesResponse"
                         }
                     }
                 }
@@ -4565,7 +4975,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionPayload"
+                            "$ref": "#/definitions/handlers.requisitionPayload"
                         }
                     }
                 ],
@@ -4573,7 +4983,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -4624,7 +5034,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -4675,7 +5085,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -4772,6 +5182,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/requisitions/{reqID}/pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Generate a branded requisition PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Requisition ID",
+                        "name": "reqID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/requisitions/{reqID}/reject": {
             "post": {
                 "security": [
@@ -4799,7 +5269,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -4850,7 +5320,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -4901,7 +5371,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.requisitionDTO"
+                            "$ref": "#/definitions/handlers.requisitionDTO"
                         }
                     },
                     "400": {
@@ -4915,6 +5385,66 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/rfqs/{rfqID}/pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Generate a branded request-for-quotation PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "RFQ ID",
+                        "name": "rfqID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -4998,7 +5528,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.serviceDeliveryPayload"
+                            "$ref": "#/definitions/handlers.serviceDeliveryPayload"
                         }
                     }
                 ],
@@ -5006,7 +5536,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.serviceDeliveryDTO"
+                            "$ref": "#/definitions/handlers.serviceDeliveryDTO"
                         }
                     },
                     "400": {
@@ -5069,7 +5599,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.serviceDeliveryDTO"
+                            "$ref": "#/definitions/handlers.serviceDeliveryDTO"
                         }
                     },
                     "400": {
@@ -5083,6 +5613,122 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/stock-counts/{id}/pdf": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "stock"
+                ],
+                "summary": "Generate a stock take count sheet or variance report PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Stock count ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "blank | variance (defaults by count status)",
+                        "name": "mode",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/stock/bulk-adjust": {
+            "post": {
+                "description": "Queues a per-item adjustment (sku + delta) across many items against one shared warehouse/reason as a background job. Returns 202 with a job id; poll GET /inventory/bulk-jobs/{id} or listen for the bulk_job.completed WebSocket notification.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stock"
+                ],
+                "summary": "Bulk stock adjustment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Lines + shared warehouse/reason",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.bulkAdjustStockRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.bulkJobAccepted"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -5179,6 +5825,106 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/stock/relocate": {
+            "post": {
+                "description": "Moves each item's entire balance (on_hand/available, whatever it currently is, including zero) from the source warehouse to the destination, marking the source removed_from_location. Not a stock transfer — no quantity is chosen, nothing can be \"insufficient\".",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stock"
+                ],
+                "summary": "Relocate item(s) to another warehouse",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Item ids + source/destination warehouse",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.relocateItemLocationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stock.RelocateItemLocationResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/stock/set-membership": {
+            "post": {
+                "description": "Queues a background job that reconciles each item's current warehouse footprint against the given target set — check an outlet to add it, uncheck to remove. Returns 202 with a job id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stock"
+                ],
+                "summary": "Set which outlets an item is stocked in",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Item ids + target warehouse set",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.setItemOutletMembershipRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.bulkJobAccepted"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/supplier-performance": {
             "get": {
                 "security": [
@@ -5252,7 +5998,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.supplierPerfPayload"
+                            "$ref": "#/definitions/handlers.supplierPerfPayload"
                         }
                     }
                 ],
@@ -5260,7 +6006,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/internal_http_handlers.supplierPerfDTO"
+                            "$ref": "#/definitions/handlers.supplierPerfDTO"
                         }
                     },
                     "400": {
@@ -5311,904 +6057,108 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_bengobox_inventory-service_internal_modules_items.BulkActionResult": {
+        "bulkjob.Status": {
+            "type": "string",
+            "enum": [
+                "queued",
+                "queued",
+                "running",
+                "completed",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "DefaultStatus",
+                "StatusQueued",
+                "StatusRunning",
+                "StatusCompleted",
+                "StatusFailed"
+            ]
+        },
+        "ent.BulkJob": {
             "type": "object",
             "properties": {
+                "completed_at": {
+                    "description": "CompletedAt holds the value of the \"completed_at\" field.",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt holds the value of the \"created_at\" field.",
+                    "type": "string"
+                },
+                "created_by": {
+                    "description": "CreatedBy holds the value of the \"created_by\" field.",
+                    "type": "string"
+                },
+                "error": {
+                    "description": "Set when status=failed and the job aborted entirely (not per-line skips, which live in result)",
+                    "type": "string"
+                },
+                "failed_count": {
+                    "description": "Skipped/failed line items so far",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "ID of the ent.",
+                    "type": "string"
+                },
+                "job_type": {
+                    "description": "e.g. item_relocation, bulk_stock_adjust — free-form, not an enum, so a new bulk action can adopt this without a migration",
+                    "type": "string"
+                },
+                "payload": {
+                    "description": "The original request, for the runner to replay/inspect",
+                    "type": "object",
+                    "additionalProperties": true
+                },
                 "processed": {
+                    "description": "Successfully applied line items so far",
                     "type": "integer"
                 },
-                "skipped": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.BulkSkipped"
-                    }
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_items.BulkSkipped": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "reason": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_items.ItemDTO": {
-            "type": "object",
-            "properties": {
-                "add_to_all_outlets": {
-                    "type": "boolean"
-                },
-                "allow_backorder": {
-                    "description": "order when out of stock",
-                    "type": "boolean"
-                },
-                "available": {
-                    "description": "Current stock levels (aggregated across all warehouses).\nPopulated by ListItems; nil when no balance row exists.",
-                    "type": "number"
-                },
-                "barcode": {
-                    "description": "Extended fields for POS, logistics, compliance",
-                    "type": "string"
-                },
-                "barcode_type": {
-                    "type": "string"
-                },
-                "booked_capacity": {
-                    "type": "integer"
-                },
-                "brand_code": {
-                    "type": "string"
-                },
-                "brand_id": {
-                    "type": "string"
-                },
-                "brand_name": {
-                    "type": "string"
-                },
-                "category_id": {
-                    "type": "string"
-                },
-                "category_name": {
-                    "type": "string"
-                },
-                "condition": {
-                    "description": "NEW | REFURBISHED | USED | OPEN_BOX",
-                    "type": "string"
-                },
-                "cost_price": {
-                    "description": "Cost / pricing fields",
-                    "type": "number"
-                },
-                "country_of_origin": {
-                    "description": "customs / marketplace compliance",
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "dimensions_cm": {
+                "result": {
+                    "description": "Per-line skip/failure details once the job finishes",
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "number",
-                        "format": "float64"
-                    }
+                    "additionalProperties": true
                 },
-                "duration_minutes": {
-                    "description": "service duration (salon/barber)",
-                    "type": "integer"
-                },
-                "end_of_life_at": {
-                    "description": "End-of-Life: non-null = the item is marked EOL (hidden everywhere; is_active is false)\nand awaiting hard-delete by the purge scheduler once past the retention window.",
-                    "type": "string"
-                },
-                "etims_item_cls_cd": {
-                    "description": "KRA eTIMS catalog classification (drives treasury's eTIMS item registration —\ninventory is the item source of truth; empty values fall back at registration).",
-                    "type": "string"
-                },
-                "etims_pkg_unit_cd": {
-                    "description": "KRA packaging unit (NT/CT/BX…)",
-                    "type": "string"
-                },
-                "etims_qty_unit_cd": {
-                    "description": "KRA quantity unit override (else the unit's mapping)",
-                    "type": "string"
-                },
-                "event_end_at": {
-                    "type": "string"
-                },
-                "event_start_at": {
-                    "type": "string"
-                },
-                "event_venue": {
-                    "type": "string"
-                },
-                "extra_bed_allowed": {
-                    "type": "boolean"
-                },
-                "gtin": {
-                    "description": "E-commerce / online-store attributes",
-                    "type": "string"
-                },
-                "has_variants": {
-                    "description": "Product variations — surfaced from the ItemVariant edge so retail can sell variations.\nHasVariants is always populated; Variants is populated when variants are eager-loaded\n(inline for single-item reads, or for the list when ?include=variants is requested).",
-                    "type": "boolean"
-                },
-                "hs_code": {
-                    "description": "customs tariff code",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "images": {
-                    "description": "Images surfaces the item's IMAGE assets (multi-image gallery). Populated when the\n` + "`" + `assets` + "`" + ` edge is eager-loaded; primary first. ImageURL above remains the primary\nimage URL for backward compatibility with single-image clients.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemImageDTO"
-                    }
-                },
-                "initial_quantity": {
-                    "description": "opening on-hand in the item's base unit; fractional allowed (e.g. 4.5 L)",
-                    "type": "number"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "is_controlled_substance": {
-                    "description": "pharmacy: scheduled drugs",
-                    "type": "boolean"
-                },
-                "is_discontinued": {
-                    "description": "hidden from new listings, stock still sellable",
-                    "type": "boolean"
-                },
-                "is_perishable": {
-                    "type": "boolean"
-                },
-                "is_returnable": {
-                    "description": "Pointers so a partial update (a client that doesn't send them) never clobbers the\nstored flag, and so create can distinguish \"unset\" (use schema default) from an\nexplicit false — same rationale as NonBillable below. A plain bool can't do either.",
-                    "type": "boolean"
-                },
-                "manufacturer": {
-                    "description": "Item-attribute fields (retail / pharmacy)",
-                    "type": "string"
-                },
-                "max_adults": {
-                    "type": "integer"
-                },
-                "max_children": {
-                    "type": "integer"
-                },
-                "max_selling_price": {
-                    "description": "hard ceiling enforced at price upsert \u0026 POS",
-                    "type": "number"
-                },
-                "meal_plan": {
-                    "description": "RO | BB | HB | FB | AI",
-                    "type": "string"
-                },
-                "meta_description": {
-                    "description": "SEO",
-                    "type": "string"
-                },
-                "meta_title": {
-                    "description": "SEO",
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "min_selling_price": {
-                    "description": "Selling-price guardrails + goods margin (Phase 4).",
-                    "type": "number"
-                },
-                "model": {
-                    "description": "retail only",
-                    "type": "string"
-                },
-                "modifier_groups": {
-                    "description": "ModifierGroups: this item's selectable modifiers (e.g. \"Extra Honey\" on a Dawa),\nenriched by enrichModifierGroups. Populated by ListItems for every catalog-facing\ncaller (pos-api's terminal catalog proxy included) — see modifier_enrich.go.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemModifierGroup"
-                    }
-                },
-                "mpn": {
-                    "description": "manufacturer part number",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "net_price": {
-                    "description": "selling price excluding tax",
-                    "type": "number"
-                },
-                "non_billable": {
-                    "description": "Non-billable: never charged at POS even when a selling price exists (free\naccompaniments like ugali, consumable supplies like tissue/packaging); stock still\ndeducts. Pointer so partial updates never clobber the stored flag.",
-                    "type": "boolean"
-                },
-                "not_for_sale": {
-                    "description": "Not-for-sale: excluded from EVERY sales surface (POS terminal, back-office sales,\nordering storefront) while remaining fully stockable/purchasable — raw ingredients,\ncleaning supplies, internal consumables. Distinct from NonBillable (still sold at 0)\nand is_active=false (hidden everywhere). Pointer for partial-update semantics.",
-                    "type": "boolean"
-                },
-                "occupancy_basis": {
-                    "type": "string"
-                },
-                "on_hand": {
-                    "type": "number"
-                },
-                "preferred_supplier_id": {
-                    "description": "Preferred Supplier for procurement (drives per-vendor PO split in procure-to-order).\nAccepted on create/update; PreferredSupplierName is read-only (populated when the edge is loaded).",
-                    "type": "string"
-                },
-                "preferred_supplier_name": {
-                    "type": "string"
-                },
-                "purchase_pack_size": {
-                    "type": "number"
-                },
-                "purchase_price": {
-                    "description": "Purchase / supplier fields — enable auto EP-cost calculation",
-                    "type": "number"
-                },
-                "purchase_unit": {
-                    "type": "string"
-                },
-                "reorder_level": {
-                    "type": "integer"
-                },
-                "reorder_quantity": {
-                    "type": "integer"
-                },
-                "requires_age_verification": {
-                    "type": "boolean"
-                },
-                "return_window_days": {
-                    "description": "nil = tenant default",
-                    "type": "integer"
-                },
-                "selling_price": {
-                    "description": "Effective customer-facing price + tax split — enriched at read time for the POS/ordering\nproxies (recipe selling price → default pricing tier → cost+margin suggestion).",
-                    "type": "number"
-                },
-                "shelf_life_days": {
-                    "description": "default shelf life; seeds lot expiry at receipt",
-                    "type": "integer"
-                },
-                "short_description": {
-                    "description": "product-card description",
-                    "type": "string"
-                },
-                "single_supplement": {
-                    "type": "number"
-                },
-                "sku": {
-                    "type": "string"
-                },
-                "slug": {
-                    "description": "storefront URL slug / SEO",
-                    "type": "string"
-                },
-                "stock_tracking_mode": {
-                    "description": "Stock tracking mode: \"default\" (RECIPE items follow the tenant non-depletion\npolicy) | \"tracked\" | \"non_depleting\" (sells without stock effect).",
-                    "type": "string"
-                },
-                "suggested_price": {
-                    "type": "number"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "target_margin_percent": {
-                    "description": "GOODS auto-pricing margin %",
-                    "type": "number"
-                },
-                "tax_amount": {
-                    "description": "tax portion of the selling price",
-                    "type": "number"
-                },
-                "tax_code_id": {
-                    "description": "KRA eTIMS tax fields",
-                    "type": "string"
-                },
-                "tax_inclusive": {
-                    "type": "boolean"
-                },
-                "tax_rate": {
-                    "description": "VAT rate % applied (resolved from treasury-api)",
-                    "type": "number"
-                },
-                "total_capacity": {
-                    "description": "Event capacity fields — SERVICE type only",
-                    "type": "integer"
-                },
-                "track_lots": {
-                    "type": "boolean"
-                },
-                "track_serial_numbers": {
-                    "type": "boolean"
-                },
-                "type": {
-                    "description": "GOODS | SERVICE | RECIPE | INGREDIENT",
-                    "type": "string"
-                },
-                "unit_content_qty": {
-                    "description": "Content-per-unit: how much of UnitContentUOM ONE stock unit contains (a 750ml\nwhiskey bottle stocked in pieces → 750 + \"ml\"). Lets ml/g recipe lines (tots,\npours) deduct fractional stock units.",
-                    "type": "number"
-                },
-                "unit_content_uom": {
-                    "type": "string"
-                },
-                "unit_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "usable_in_recipes": {
-                    "description": "Usable-in-recipes: a RECIPE-type item flagged here may be picked as an ingredient\nin other recipes (reusable menu component, e.g. Black Tea inside an Iced Passion\nTea). Pointer for the same partial-update semantics as NonBillable.",
-                    "type": "boolean"
-                },
-                "use_case": {
-                    "description": "Hospitality fields — room-type / facility / amenity SERVICE items",
-                    "type": "string"
-                },
-                "variants": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.VariantDTO"
-                    }
-                },
-                "weight_kg": {
-                    "type": "number"
-                },
-                "yield_pct": {
-                    "description": "0 \u003c y \u003c= 1; default 1.0",
-                    "type": "number"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_items.ItemImageDTO": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "display_order": {
-                    "type": "integer"
-                },
-                "file_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_primary": {
-                    "type": "boolean"
-                },
-                "mime_type": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_items.ItemModifierGroup": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "is_required": {
-                    "type": "boolean"
-                },
-                "max_selections": {
-                    "type": "integer"
-                },
-                "min_selections": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "options": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemModifierOption"
-                    }
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_items.ItemModifierOption": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "is_default": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "price_adjustment": {
-                    "type": "number"
-                },
-                "sku": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_items.VariantDTO": {
-            "type": "object",
-            "properties": {
-                "attributes": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "barcode": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "number"
-                },
-                "sku": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO": {
-            "type": "object",
-            "properties": {
-                "allergens": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "cost_per_portion": {
-                    "type": "number"
-                },
-                "food_cost_pct": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ingredients": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO"
-                    }
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "item_id": {
-                    "type": "string"
-                },
-                "item_name": {
-                    "type": "string"
-                },
-                "kind": {
-                    "description": "menu | bom",
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "output_qty": {
-                    "type": "number"
-                },
-                "prep_time_minutes": {
-                    "type": "integer"
-                },
-                "requires_qc": {
-                    "type": "boolean"
-                },
-                "selling_price": {
-                    "description": "Selling-price based costing (user-provided; never overwritten by system)",
-                    "type": "number"
-                },
-                "servings": {
-                    "type": "number"
-                },
-                "sku": {
+                "started_at": {
+                    "description": "StartedAt holds the value of the \"started_at\" field.",
                     "type": "string"
                 },
                 "status": {
-                    "description": "OK - healthy | OK - above target FC% | LOSS - cost \u003e= price",
-                    "type": "string"
-                },
-                "suggested_price": {
-                    "type": "number"
-                },
-                "target_margin_percent": {
-                    "type": "number"
+                    "description": "Status holds the value of the \"status\" field.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/bulkjob.Status"
+                        }
+                    ]
                 },
                 "tenant_id": {
+                    "description": "TenantID holds the value of the \"tenant_id\" field.",
                     "type": "string"
-                },
-                "total_cost": {
-                    "type": "number"
-                },
-                "unit_of_measure": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_recipes.RecipeIngredientDTO": {
-            "type": "object",
-            "properties": {
-                "display_order": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "item_cost_price": {
-                    "type": "number"
-                },
-                "item_id": {
-                    "type": "string"
-                },
-                "item_name": {
-                    "type": "string"
-                },
-                "item_sku": {
-                    "type": "string"
-                },
-                "item_unit_content_qty": {
-                    "description": "Content-per-unit bridge from the ingredient item (a 700 ml bottle stocked in\nbtl → 700 + \"ml\"). Clients need this to know a cross-dimension line (30 ml of\na btl-stocked bottle) deducts fractional stock units instead of flagging it\nas un-deductible — mirrors stock.ConvertToStockUnit.",
-                    "type": "number"
-                },
-                "item_unit_content_uom": {
-                    "type": "string"
-                },
-                "item_unit_id": {
-                    "description": "The ingredient item's own base/stock unit. ItemCostPrice is per this unit,\nso a line written in another unit (e.g. ml against a per-L item) must be\nconverted before multiplying — clients need this to preview line costs.",
-                    "type": "string"
-                },
-                "notes": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "sub_recipe_id": {
-                    "type": "string"
-                },
-                "sub_recipe_name": {
-                    "type": "string"
-                },
-                "unit_id": {
-                    "type": "string"
-                },
-                "unit_of_measure": {
-                    "type": "string"
-                },
-                "waste_percent": {
-                    "type": "number"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_reports.IngredientUtilizationSummary": {
-            "type": "object",
-            "properties": {
-                "available": {
-                    "type": "number"
-                },
-                "consumed_cost": {
-                    "type": "number"
-                },
-                "consumed_qty": {
-                    "type": "number"
-                },
-                "daily_velocity": {
-                    "type": "number"
-                },
-                "item_id": {
-                    "type": "string"
-                },
-                "item_name": {
-                    "type": "string"
-                },
-                "item_sku": {
-                    "type": "string"
-                },
-                "last_restock_at": {
-                    "type": "string"
-                },
-                "on_hand": {
-                    "type": "number"
-                },
-                "period_end": {
-                    "type": "string"
-                },
-                "period_start": {
-                    "type": "string"
-                },
-                "projected_days_of_cover": {
-                    "type": "number"
-                },
-                "purchased_cost": {
-                    "type": "number"
-                },
-                "purchased_qty": {
-                    "type": "number"
-                },
-                "reorder_level": {
-                    "type": "integer"
-                },
-                "unit": {
-                    "type": "string"
-                },
-                "warehouse_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_reports.RecipeBreakdownRow": {
-            "type": "object",
-            "properties": {
-                "cost": {
-                    "type": "number"
-                },
-                "pct_of_total": {
-                    "type": "number"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "recipe_id": {
-                    "type": "string"
-                },
-                "recipe_name": {
-                    "type": "string"
-                },
-                "recipe_sku": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_reports.StockLevelEventDTO": {
-            "type": "object",
-            "properties": {
-                "event_type": {
-                    "type": "string"
-                },
-                "occurred_at": {
-                    "type": "string"
-                },
-                "on_hand_at_event": {
-                    "type": "number"
-                },
-                "reorder_level_at_event": {
-                    "type": "number"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesPoint": {
-            "type": "object",
-            "properties": {
-                "bucket_end": {
-                    "type": "string"
-                },
-                "bucket_start": {
-                    "type": "string"
-                },
-                "by_recipe": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesRecipeSlice"
-                    }
-                },
-                "cost": {
-                    "type": "number"
-                },
-                "quantity": {
-                    "type": "number"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesRecipeSlice": {
-            "type": "object",
-            "properties": {
-                "cost": {
-                    "type": "number"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "recipe_id": {
-                    "type": "string"
-                },
-                "recipe_name": {
-                    "type": "string"
-                },
-                "recipe_sku": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesResponse": {
-            "type": "object",
-            "properties": {
-                "granularity": {
-                    "type": "string"
-                },
-                "points": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.TimeseriesPoint"
-                    }
-                },
-                "reorder_level": {
-                    "type": "integer"
-                },
-                "stock_level_events": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_reports.StockLevelEventDTO"
-                    }
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_stock.MovementRow": {
-            "type": "object",
-            "properties": {
-                "actor_id": {
-                    "description": "ActorID is the adjusting/receiving/initiating user when recorded.",
-                    "type": "string"
-                },
-                "counterparty": {
-                    "description": "Counterparty: supplier name (purchases) or order reference (sales).",
-                    "type": "string"
-                },
-                "label": {
-                    "description": "Human label, e.g. \"Adjustment (damaged)\".",
-                    "type": "string"
-                },
-                "occurred_at": {
-                    "type": "string"
-                },
-                "quantity_after": {
-                    "description": "Stock level after the movement — known only for StockAdjustment rows.",
-                    "type": "number"
-                },
-                "quantity_change": {
-                    "type": "number"
-                },
-                "reference": {
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type: opening_stock | purchase | sale | sell_return | purchase_return |\ntransfer_in | transfer_out | adjustment.",
-                    "type": "string"
-                },
-                "warehouse_id": {
-                    "type": "string"
-                },
-                "warehouse_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_stock.StockHistoryItem": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "sku": {
-                    "type": "string"
-                },
-                "unit_abbreviation": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_bengobox_inventory-service_internal_modules_stock.StockHistoryResult": {
-            "type": "object",
-            "properties": {
-                "item": {
-                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_stock.StockHistoryItem"
-                },
-                "movements": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_stock.MovementRow"
-                    }
-                },
-                "summary": {
-                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_stock.StockHistorySummary"
                 },
                 "total": {
+                    "description": "Total line items in the job",
                     "type": "integer"
                 }
             }
         },
-        "github_com_bengobox_inventory-service_internal_modules_stock.StockHistorySummary": {
-            "type": "object",
-            "properties": {
-                "current_stock": {
-                    "type": "number"
-                },
-                "opening_stock": {
-                    "type": "number"
-                },
-                "total_adjusted": {
-                    "description": "Net of miscellaneous adjustments (damage, shrinkage, found, corrections…).",
-                    "type": "number"
-                },
-                "total_purchase_returns": {
-                    "type": "number"
-                },
-                "total_purchased": {
-                    "type": "number"
-                },
-                "total_sell_returns": {
-                    "type": "number"
-                },
-                "total_sold": {
-                    "type": "number"
-                },
-                "transfers_in": {
-                    "type": "number"
-                },
-                "transfers_out": {
-                    "type": "number"
-                }
-            }
-        },
-        "internal_http_handlers.BulkImportResult": {
+        "handlers.BulkImportResult": {
             "type": "object",
             "properties": {
                 "items": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 },
                 "modifiers": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 },
                 "recipes": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 },
                 "stock": {
-                    "$ref": "#/definitions/internal_http_handlers.importResult"
+                    "$ref": "#/definitions/handlers.importResult"
                 }
             }
         },
-        "internal_http_handlers.MenuItemCompositeRequest": {
+        "handlers.MenuItemCompositeRequest": {
             "type": "object",
             "properties": {
                 "category_name": {
@@ -6224,7 +6174,7 @@ const docTemplate = `{
                     "description": "── Ingredient lines ──────────────────────────────────────────────────────",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.MenuItemIngredientInput"
+                        "$ref": "#/definitions/handlers.MenuItemIngredientInput"
                     }
                 },
                 "is_perishable": {
@@ -6234,7 +6184,7 @@ const docTemplate = `{
                     "description": "── Modifiers (optional) ──────────────────────────────────────────────────",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.MenuItemModifierInput"
+                        "$ref": "#/definitions/handlers.MenuItemModifierInput"
                     }
                 },
                 "name": {
@@ -6282,19 +6232,19 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.MenuItemCompositeResponse": {
+        "handlers.MenuItemCompositeResponse": {
             "type": "object",
             "properties": {
                 "item": {
-                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_items.ItemDTO"
+                    "$ref": "#/definitions/items.ItemDTO"
                 },
                 "recipe": {
-                    "$ref": "#/definitions/github_com_bengobox_inventory-service_internal_modules_recipes.RecipeDTO"
+                    "$ref": "#/definitions/recipes.RecipeDTO"
                 },
                 "reorder_seeds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.ReorderSeed"
+                        "$ref": "#/definitions/handlers.ReorderSeed"
                     }
                 },
                 "warnings": {
@@ -6305,7 +6255,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.MenuItemIngredientInput": {
+        "handlers.MenuItemIngredientInput": {
             "type": "object",
             "properties": {
                 "cost_price": {
@@ -6350,7 +6300,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.MenuItemModifierInput": {
+        "handlers.MenuItemModifierInput": {
             "type": "object",
             "properties": {
                 "group_name": {
@@ -6368,12 +6318,12 @@ const docTemplate = `{
                 "options": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.MenuItemModifierOptionInput"
+                        "$ref": "#/definitions/handlers.MenuItemModifierOptionInput"
                     }
                 }
             }
         },
-        "internal_http_handlers.MenuItemModifierOptionInput": {
+        "handlers.MenuItemModifierOptionInput": {
             "type": "object",
             "properties": {
                 "is_default": {
@@ -6391,7 +6341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.ReorderSeed": {
+        "handlers.ReorderSeed": {
             "type": "object",
             "properties": {
                 "reorder_level": {
@@ -6409,7 +6359,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.approvalActionDTO": {
+        "handlers.approvalActionDTO": {
             "type": "object",
             "properties": {
                 "acted_at": {
@@ -6438,13 +6388,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.approvalRequestDTO": {
+        "handlers.approvalRequestDTO": {
             "type": "object",
             "properties": {
                 "actions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.approvalActionDTO"
+                        "$ref": "#/definitions/handlers.approvalActionDTO"
                     }
                 },
                 "amount": {
@@ -6457,7 +6407,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "current_step": {
-                    "$ref": "#/definitions/internal_http_handlers.approvalActionDTO"
+                    "$ref": "#/definitions/handlers.approvalActionDTO"
                 },
                 "decided_at": {
                     "type": "string"
@@ -6479,9 +6429,12 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.approvalRuleDTO": {
+        "handlers.approvalRuleDTO": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -6503,12 +6456,12 @@ const docTemplate = `{
                 "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.approvalStepDTO"
+                        "$ref": "#/definitions/handlers.approvalStepDTO"
                     }
                 }
             }
         },
-        "internal_http_handlers.approvalRulePayload": {
+        "handlers.approvalRulePayload": {
             "type": "object",
             "properties": {
                 "is_active": {
@@ -6529,12 +6482,12 @@ const docTemplate = `{
                 "steps": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.approvalStepPayload"
+                        "$ref": "#/definitions/handlers.approvalStepPayload"
                     }
                 }
             }
         },
-        "internal_http_handlers.approvalStepDTO": {
+        "handlers.approvalStepDTO": {
             "type": "object",
             "properties": {
                 "approver_role": {
@@ -6551,7 +6504,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.approvalStepPayload": {
+        "handlers.approvalStepPayload": {
             "type": "object",
             "properties": {
                 "approver_role": {
@@ -6565,7 +6518,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.assetCategoryPayload": {
+        "handlers.assetCategoryPayload": {
             "type": "object",
             "properties": {
                 "depreciation_rate": {
@@ -6585,7 +6538,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.assetPayload": {
+        "handlers.assetPayload": {
             "type": "object",
             "properties": {
                 "asset_tag": {
@@ -6654,7 +6607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.batchRawMaterialDTO": {
+        "handlers.batchRawMaterialDTO": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -6674,7 +6627,42 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.bulkItemActionRequest": {
+        "handlers.bulkAdjustStockRequest": {
+            "type": "object",
+            "properties": {
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "adjustment": {
+                                "type": "number"
+                            },
+                            "destination_warehouse_id": {
+                                "description": "DestinationWarehouseID, when set, moves this line's quantity from WarehouseID to this\nwarehouse (transfer_out + transfer_in) instead of an in-place add/remove — see\nstock.BulkAdjustLine's doc comment.",
+                                "type": "string"
+                            },
+                            "sku": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "warehouse_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.bulkItemActionRequest": {
             "type": "object",
             "properties": {
                 "action": {
@@ -6690,7 +6678,21 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.contractDTO": {
+        "handlers.bulkJobAccepted": {
+            "type": "object",
+            "properties": {
+                "job_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.contractDTO": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -6728,7 +6730,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.contractPayload": {
+        "handlers.contractPayload": {
             "type": "object",
             "properties": {
                 "end_date": {
@@ -6757,7 +6759,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.createPOInput": {
+        "handlers.createPOInput": {
             "type": "object",
             "properties": {
                 "additional_shipping_charges": {
@@ -6770,10 +6772,14 @@ const docTemplate = `{
                 "line_items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.createPOLineInput"
+                        "$ref": "#/definitions/handlers.createPOLineInput"
                     }
                 },
                 "notes": {
+                    "type": "string"
+                },
+                "order_date": {
+                    "description": "OrderDate lets staff record the order under a business date other than today — e.g. a PO\nplaced with the supplier by phone days ago, only entered into the system now. Accepts\n\"YYYY-MM-DD\" or RFC3339, same as ExpectedDate/PurchaseReturn's DateReturned. Blank/omitted\nleaves it unset — the PO reports under created_at, the pre-feature default.",
                     "type": "string"
                 },
                 "pay_term_days": {
@@ -6787,10 +6793,17 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.createPOLineInput": {
+        "handlers.createPOLineInput": {
             "type": "object",
             "properties": {
                 "item_id": {
+                    "type": "string"
+                },
+                "new_selling_price": {
+                    "description": "Selling-price adjustment decided at order time. Applied only when this line is actually\nreceived (see postGoodsReceiptCore) — nothing changes at PO creation/amend time.",
+                    "type": "number"
+                },
+                "price_scope": {
                     "type": "string"
                 },
                 "quantity": {
@@ -6805,7 +6818,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.grnDTO": {
+        "handlers.grnDTO": {
             "type": "object",
             "properties": {
                 "grn_number": {
@@ -6817,13 +6830,20 @@ const docTemplate = `{
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.grnLineDTO"
+                        "$ref": "#/definitions/handlers.grnLineDTO"
                     }
                 },
                 "notes": {
                     "type": "string"
                 },
                 "purchase_order_id": {
+                    "type": "string"
+                },
+                "received_by": {
+                    "type": "string"
+                },
+                "received_by_name": {
+                    "description": "ReceivedByName is ReceivedBy resolved to a display name — who actually received this\nstock, surfaced so admins/managers can audit purchases the same way as adjustments.",
                     "type": "string"
                 },
                 "received_date": {
@@ -6837,10 +6857,14 @@ const docTemplate = `{
                 },
                 "warehouse_id": {
                     "type": "string"
+                },
+                "warehouse_name": {
+                    "description": "WarehouseName is the receiving outlet/warehouse's human name — enriched by the API so\nlist/detail views never have to render (or re-fetch) a raw warehouse UUID.",
+                    "type": "string"
                 }
             }
         },
-        "internal_http_handlers.grnLineDTO": {
+        "handlers.grnLineDTO": {
             "type": "object",
             "properties": {
                 "barcode": {
@@ -6857,6 +6881,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "lot_number": {
+                    "type": "string"
+                },
+                "new_selling_price": {
+                    "type": "number"
+                },
+                "price_scope": {
                     "type": "string"
                 },
                 "purchase_order_line_id": {
@@ -6888,7 +6918,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.grnLinePayload": {
+        "handlers.grnLinePayload": {
             "type": "object",
             "properties": {
                 "expiry_date": {
@@ -6899,6 +6929,13 @@ const docTemplate = `{
                 },
                 "lot_number": {
                     "description": "Lot/batch capture for lot-tracked items: a lot number + optional expiry. Becomes an\nInventoryLot layer (for FIFO/FEFO costing) when the GRN is posted.",
+                    "type": "string"
+                },
+                "new_selling_price": {
+                    "description": "NewSellingPrice + PriceScope let the merchant adjust the customer-facing price for this\nitem alongside the receipt's cost. Applied at post time (see postGoodsReceiptCore):\n\"all_stock\" (default) applies immediately and everywhere; \"new_stock_only\" queues it via\nPendingPriceChange so stock already on hand keeps selling at its current price until it's\nsold through.",
+                    "type": "number"
+                },
+                "price_scope": {
                     "type": "string"
                 },
                 "purchase_order_line_id": {
@@ -6928,13 +6965,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.grnPayload": {
+        "handlers.grnPayload": {
             "type": "object",
             "properties": {
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.grnLinePayload"
+                        "$ref": "#/definitions/handlers.grnLinePayload"
                     }
                 },
                 "notes": {
@@ -6948,7 +6985,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.importResult": {
+        "handlers.importResult": {
             "type": "object",
             "properties": {
                 "created": {
@@ -6968,7 +7005,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.livenessResponse": {
+        "handlers.livenessResponse": {
             "type": "object",
             "properties": {
                 "service": {
@@ -6981,7 +7018,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.materialVarianceDTO": {
+        "handlers.materialVarianceDTO": {
             "type": "object",
             "properties": {
                 "actual": {
@@ -7001,7 +7038,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.productionBatchDTO": {
+        "handlers.productionBatchDTO": {
             "type": "object",
             "properties": {
                 "actual_quantity": {
@@ -7025,7 +7062,7 @@ const docTemplate = `{
                 "material_variance": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.materialVarianceDTO"
+                        "$ref": "#/definitions/handlers.materialVarianceDTO"
                     }
                 },
                 "notes": {
@@ -7043,13 +7080,13 @@ const docTemplate = `{
                 "quality_checks": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.qualityCheckDTO"
+                        "$ref": "#/definitions/handlers.qualityCheckDTO"
                     }
                 },
                 "raw_materials": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.batchRawMaterialDTO"
+                        "$ref": "#/definitions/handlers.batchRawMaterialDTO"
                     }
                 },
                 "recipe_id": {
@@ -7080,7 +7117,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.productionBatchPayload": {
+        "handlers.productionBatchPayload": {
             "type": "object",
             "properties": {
                 "created_by": {
@@ -7112,13 +7149,20 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.purchaseOrderDTO": {
+        "handlers.purchaseOrderDTO": {
             "type": "object",
             "properties": {
                 "additional_shipping_charges": {
                     "type": "number"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "created_by_name": {
+                    "description": "CreatedByName is CreatedBy resolved to a display name — who raised this purchase order,\nsurfaced for the same \"who did what\" audit trail as adjustments/goods receipts.",
                     "type": "string"
                 },
                 "expected_date": {
@@ -7128,6 +7172,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "notes": {
+                    "type": "string"
+                },
+                "order_date": {
+                    "description": "OrderDate is the business date the order was raised — overrides CreatedAt for\ndisplay/reporting when set (nil means \"use created_at\", the pre-feature default).",
                     "type": "string"
                 },
                 "pay_term_days": {
@@ -7156,13 +7204,41 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.purchaseReturnDTO": {
+        "handlers.purchaseReturnDTO": {
             "type": "object",
             "properties": {
+                "added_by": {
+                    "type": "string"
+                },
+                "added_by_name": {
+                    "type": "string"
+                },
                 "date_returned": {
+                    "description": "DateReturned is the calendar day the goods went back (stored at 00:00 UTC for a\ndate-only entry). DateReturnedDay is that day as YYYY-MM-DD so clients can render it\nwithout timezone conversion shifting it to the previous day.",
+                    "type": "string"
+                },
+                "date_returned_day": {
+                    "type": "string"
+                },
+                "goods_receipt_id": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "item_count": {
+                    "type": "integer"
+                },
+                "items_summary": {
+                    "type": "string"
+                },
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.purchaseReturnLineDTO"
+                    }
+                },
+                "outlet_id": {
                     "type": "string"
                 },
                 "payment_status": {
@@ -7180,32 +7256,89 @@ const docTemplate = `{
                 "return_number": {
                     "type": "string"
                 },
+                "stock_warnings": {
+                    "description": "StockWarnings lists items whose stock-out failed on approval (logged too), so the\napprover sees it immediately instead of discovering a stock gap later.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "supplier_id": {
+                    "type": "string"
+                },
+                "supplier_name": {
+                    "type": "string"
+                },
+                "total_quantity": {
+                    "type": "number"
+                },
+                "warehouse_id": {
+                    "description": "WarehouseID is the location the goods leave from: the return's own warehouse, else (for a\nreturn raised before warehouse capture existed) the linked goods receipt's warehouse.",
+                    "type": "string"
+                },
+                "warehouse_name": {
                     "type": "string"
                 }
             }
         },
-        "internal_http_handlers.purchaseReturnLinePayload": {
+        "handlers.purchaseReturnLineDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "lot_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "sub_total": {
+                    "type": "number"
+                },
+                "unit_cost": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.purchaseReturnLinePayload": {
             "type": "object",
             "properties": {
                 "item_id": {
                     "type": "string"
                 },
+                "lot_id": {
+                    "description": "LotID optionally targets a specific batch of a lot-tracked item (pharmacy RTV of an\nexpiring batch).",
+                    "type": "string"
+                },
                 "quantity": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "sub_total": {
                     "type": "number"
                 }
             }
         },
-        "internal_http_handlers.purchaseReturnPayload": {
+        "handlers.purchaseReturnPayload": {
             "type": "object",
             "properties": {
+                "date_returned": {
+                    "description": "DateReturned accepts \"YYYY-MM-DD\" (stored as that calendar day) or RFC3339; when omitted\nthe return defaults to now.",
+                    "type": "string"
+                },
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.purchaseReturnLinePayload"
+                        "$ref": "#/definitions/handlers.purchaseReturnLinePayload"
                     }
                 },
                 "purchase_order_id": {
@@ -7216,10 +7349,14 @@ const docTemplate = `{
                 },
                 "supplier_id": {
                     "type": "string"
+                },
+                "warehouse_id": {
+                    "description": "WarehouseID is the location the goods leave from. Omitted, it defaults to the operating\noutlet's own warehouse (X-Outlet-ID), then the tenant default: the same resolution a\ngoods receipt uses, so a return always comes out of the outlet that raised it.",
+                    "type": "string"
                 }
             }
         },
-        "internal_http_handlers.qualityCheckDTO": {
+        "handlers.qualityCheckDTO": {
             "type": "object",
             "properties": {
                 "check_date": {
@@ -7239,7 +7376,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.rawMaterialUsageDTO": {
+        "handlers.rawMaterialUsageDTO": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -7268,7 +7405,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.readinessResponse": {
+        "handlers.readinessResponse": {
             "type": "object",
             "properties": {
                 "dependencies": {
@@ -7283,7 +7420,27 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionDTO": {
+        "handlers.relocateItemLocationRequest": {
+            "type": "object",
+            "properties": {
+                "destination_warehouse_id": {
+                    "type": "string"
+                },
+                "item_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "source_warehouse_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.requisitionDTO": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -7295,7 +7452,7 @@ const docTemplate = `{
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.requisitionLineDTO"
+                        "$ref": "#/definitions/handlers.requisitionLineDTO"
                     }
                 },
                 "notes": {
@@ -7324,7 +7481,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionLineDTO": {
+        "handlers.requisitionLineDTO": {
             "type": "object",
             "properties": {
                 "description": {
@@ -7365,7 +7522,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionLinePayload": {
+        "handlers.requisitionLinePayload": {
             "type": "object",
             "properties": {
                 "description": {
@@ -7406,13 +7563,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.requisitionPayload": {
+        "handlers.requisitionPayload": {
             "type": "object",
             "properties": {
                 "lines": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_http_handlers.requisitionLinePayload"
+                        "$ref": "#/definitions/handlers.requisitionLinePayload"
                     }
                 },
                 "notes": {
@@ -7442,7 +7599,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.serviceDeliveryDTO": {
+        "handlers.serviceDeliveryDTO": {
             "type": "object",
             "properties": {
                 "deliverables": {
@@ -7468,7 +7625,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.serviceDeliveryPayload": {
+        "handlers.serviceDeliveryPayload": {
             "type": "object",
             "properties": {
                 "deliverables": {
@@ -7488,7 +7645,39 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.supplierPerfDTO": {
+        "handlers.setItemOutletMembershipRequest": {
+            "type": "object",
+            "properties": {
+                "item_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "move_quantity": {
+                    "description": "MoveQuantity: only applies to a clean 1-dropped+1-added pair — moves exactly this amount,\nleaving the remainder active at the source, instead of carrying everything. Omit (or a\nvalue \u003e= the source's on-hand) for today's default full-move behavior.",
+                    "type": "number"
+                },
+                "move_with_stock": {
+                    "description": "MoveWithStock: opt-in — dropped outlets' quantity is carried to the newly-added outlet(s)\ninstead of the default (just hide, quantity untouched). Requires at least one warehouse in\nTargetWarehouseIDs; mutually exclusive with ZeroStockMode. Omitting both flags is the safe\ndefault: an unchecked outlet is hidden only, never moved or cleared.",
+                    "type": "boolean"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "target_warehouse_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "zero_stock_mode": {
+                    "description": "ZeroStockMode: opt-in for the general many-to-many case — dropped outlets' stock is\ndiscarded rather than pooled, and newly-added outlets start at zero. The UI must confirm\nthis with the user before sending it, since it's the one mode that can make real on-hand\nquantity vanish rather than relocate.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "handlers.supplierPerfDTO": {
             "type": "object",
             "properties": {
                 "average_lead_time_days": {
@@ -7517,7 +7706,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_http_handlers.supplierPerfPayload": {
+        "handlers.supplierPerfPayload": {
             "type": "object",
             "properties": {
                 "average_lead_time_days": {
@@ -7539,6 +7728,957 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "total_spend": {
+                    "type": "number"
+                }
+            }
+        },
+        "items.BulkActionResult": {
+            "type": "object",
+            "properties": {
+                "processed": {
+                    "type": "integer"
+                },
+                "skipped": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.BulkSkipped"
+                    }
+                }
+            }
+        },
+        "items.BulkSkipped": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "items.ItemDTO": {
+            "type": "object",
+            "properties": {
+                "active_ingredient": {
+                    "type": "string"
+                },
+                "add_to_all_outlets": {
+                    "type": "boolean"
+                },
+                "allow_backorder": {
+                    "description": "order when out of stock",
+                    "type": "boolean"
+                },
+                "available": {
+                    "description": "Current stock levels (aggregated across all warehouses).\nPopulated by ListItems; nil when no balance row exists.",
+                    "type": "number"
+                },
+                "available_content_qty": {
+                    "description": "AvailableContentQty is Available expressed in the item's content-bridge unit (e.g. a\n0.86 btl balance with unit_content_qty=50/uom=ml -\u003e 43 ml) — nil unless the item has a\nunit_content bridge configured. Lets the UI show \"0.86 btl (~43 ml)\" instead of a bare\nfractional stock-unit count that reads as meaningless to anyone not versed in the\ncontent-bridge model.",
+                    "type": "number"
+                },
+                "barcode": {
+                    "description": "Extended fields for POS, logistics, compliance",
+                    "type": "string"
+                },
+                "barcode_type": {
+                    "type": "string"
+                },
+                "booked_capacity": {
+                    "type": "integer"
+                },
+                "brand_code": {
+                    "type": "string"
+                },
+                "brand_id": {
+                    "type": "string"
+                },
+                "brand_name": {
+                    "type": "string"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "category_name": {
+                    "type": "string"
+                },
+                "condition": {
+                    "description": "NEW | REFURBISHED | USED | OPEN_BOX",
+                    "type": "string"
+                },
+                "controlled_substance_schedule": {
+                    "type": "string"
+                },
+                "cost_price": {
+                    "description": "Cost / pricing fields",
+                    "type": "number"
+                },
+                "country_of_origin": {
+                    "description": "customs / marketplace compliance",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "dimensions_cm": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "number",
+                        "format": "float64"
+                    }
+                },
+                "dosage_form": {
+                    "description": "e.g. Tablet, Capsule, Syrup",
+                    "type": "string"
+                },
+                "drug_class": {
+                    "type": "string"
+                },
+                "duration_minutes": {
+                    "description": "service duration (salon/barber)",
+                    "type": "integer"
+                },
+                "end_of_life_at": {
+                    "description": "End-of-Life: non-null = the item is marked EOL (hidden everywhere; is_active is false)\nand awaiting hard-delete by the purge scheduler once past the retention window.",
+                    "type": "string"
+                },
+                "etims_item_cls_cd": {
+                    "description": "KRA eTIMS catalog classification (drives treasury's eTIMS item registration —\ninventory is the item source of truth; empty values fall back at registration).",
+                    "type": "string"
+                },
+                "etims_pkg_unit_cd": {
+                    "description": "KRA packaging unit (NT/CT/BX…)",
+                    "type": "string"
+                },
+                "etims_qty_unit_cd": {
+                    "description": "KRA quantity unit override (else the unit's mapping)",
+                    "type": "string"
+                },
+                "event_end_at": {
+                    "type": "string"
+                },
+                "event_start_at": {
+                    "type": "string"
+                },
+                "event_venue": {
+                    "type": "string"
+                },
+                "extra_bed_allowed": {
+                    "type": "boolean"
+                },
+                "generic_name": {
+                    "description": "Drug-master fields (pharmacy) — surfaced so the POS prescription drug picker can\nauto-fill dosage/form from the catalog instead of requiring manual re-entry.",
+                    "type": "string"
+                },
+                "gtin": {
+                    "description": "E-commerce / online-store attributes",
+                    "type": "string"
+                },
+                "has_variants": {
+                    "description": "Product variations — surfaced from the ItemVariant edge so retail can sell variations.\nHasVariants is always populated; Variants is populated when variants are eager-loaded\n(inline for single-item reads, or for the list when ?include=variants is requested).",
+                    "type": "boolean"
+                },
+                "hs_code": {
+                    "description": "customs tariff code",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "images": {
+                    "description": "Images surfaces the item's IMAGE assets (multi-image gallery). Populated when the\n` + "`" + `assets` + "`" + ` edge is eager-loaded; primary first. ImageURL above remains the primary\nimage URL for backward compatibility with single-image clients.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.ItemImageDTO"
+                    }
+                },
+                "initial_quantity": {
+                    "description": "opening on-hand in the item's base unit; fractional allowed (e.g. 4.5 L)",
+                    "type": "number"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_controlled_substance": {
+                    "description": "pharmacy: scheduled drugs",
+                    "type": "boolean"
+                },
+                "is_discontinued": {
+                    "description": "hidden from new listings, stock still sellable",
+                    "type": "boolean"
+                },
+                "is_perishable": {
+                    "type": "boolean"
+                },
+                "is_returnable": {
+                    "description": "Pointers so a partial update (a client that doesn't send them) never clobbers the\nstored flag, and so create can distinguish \"unset\" (use schema default) from an\nexplicit false — same rationale as NonBillable below. A plain bool can't do either.",
+                    "type": "boolean"
+                },
+                "manufacturer": {
+                    "description": "Item-attribute fields (retail / pharmacy)",
+                    "type": "string"
+                },
+                "max_adults": {
+                    "type": "integer"
+                },
+                "max_children": {
+                    "type": "integer"
+                },
+                "max_selling_price": {
+                    "description": "hard ceiling enforced at price upsert \u0026 POS",
+                    "type": "number"
+                },
+                "meal_plan": {
+                    "description": "RO | BB | HB | FB | AI",
+                    "type": "string"
+                },
+                "meta_description": {
+                    "description": "SEO",
+                    "type": "string"
+                },
+                "meta_title": {
+                    "description": "SEO",
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "min_selling_price": {
+                    "description": "Selling-price guardrails + goods margin (Phase 4).",
+                    "type": "number"
+                },
+                "model": {
+                    "description": "retail only",
+                    "type": "string"
+                },
+                "modifier_groups": {
+                    "description": "ModifierGroups: this item's selectable modifiers (e.g. \"Extra Honey\" on a Dawa),\nenriched by enrichModifierGroups. Populated by ListItems for every catalog-facing\ncaller (pos-api's terminal catalog proxy included) — see modifier_enrich.go.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.ItemModifierGroup"
+                    }
+                },
+                "mpn": {
+                    "description": "manufacturer part number",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "net_price": {
+                    "description": "selling price excluding tax",
+                    "type": "number"
+                },
+                "non_billable": {
+                    "description": "Non-billable: never charged at POS even when a selling price exists (free\naccompaniments like ugali, consumable supplies like tissue/packaging); stock still\ndeducts. Pointer so partial updates never clobber the stored flag.",
+                    "type": "boolean"
+                },
+                "not_for_sale": {
+                    "description": "Not-for-sale: excluded from EVERY sales surface (POS terminal, back-office sales,\nordering storefront) while remaining fully stockable/purchasable — raw ingredients,\ncleaning supplies, internal consumables. Distinct from NonBillable (still sold at 0)\nand is_active=false (hidden everywhere). Pointer for partial-update semantics.",
+                    "type": "boolean"
+                },
+                "occupancy_basis": {
+                    "type": "string"
+                },
+                "on_hand": {
+                    "type": "number"
+                },
+                "on_hand_content_qty": {
+                    "type": "number"
+                },
+                "preferred_supplier_id": {
+                    "description": "Preferred Supplier for procurement (drives per-vendor PO split in procure-to-order).\nAccepted on create/update; PreferredSupplierName is read-only (populated when the edge is loaded).",
+                    "type": "string"
+                },
+                "preferred_supplier_name": {
+                    "type": "string"
+                },
+                "purchase_pack_size": {
+                    "type": "number"
+                },
+                "purchase_price": {
+                    "description": "Purchase / supplier fields — enable auto EP-cost calculation",
+                    "type": "number"
+                },
+                "purchase_unit": {
+                    "type": "string"
+                },
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "reorder_quantity": {
+                    "type": "integer"
+                },
+                "requires_age_verification": {
+                    "type": "boolean"
+                },
+                "return_window_days": {
+                    "description": "nil = tenant default",
+                    "type": "integer"
+                },
+                "selling_price": {
+                    "description": "Effective customer-facing price + tax split — enriched at read time for the POS/ordering\nproxies (recipe selling price → default pricing tier → cost+margin suggestion).",
+                    "type": "number"
+                },
+                "shelf_life_days": {
+                    "description": "default shelf life; seeds lot expiry at receipt",
+                    "type": "integer"
+                },
+                "short_description": {
+                    "description": "product-card description",
+                    "type": "string"
+                },
+                "single_supplement": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "slug": {
+                    "description": "storefront URL slug / SEO",
+                    "type": "string"
+                },
+                "stock_tracking_mode": {
+                    "description": "Stock tracking mode: \"default\" (RECIPE items follow the tenant non-depletion\npolicy) | \"tracked\" | \"non_depleting\" (sells without stock effect).",
+                    "type": "string"
+                },
+                "strength": {
+                    "description": "e.g. 500mg",
+                    "type": "string"
+                },
+                "suggested_price": {
+                    "type": "number"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "target_margin_percent": {
+                    "description": "GOODS auto-pricing margin %",
+                    "type": "number"
+                },
+                "tax_amount": {
+                    "description": "tax portion of the selling price",
+                    "type": "number"
+                },
+                "tax_code_id": {
+                    "description": "KRA eTIMS tax fields",
+                    "type": "string"
+                },
+                "tax_inclusive": {
+                    "type": "boolean"
+                },
+                "tax_rate": {
+                    "description": "VAT rate % applied (resolved from treasury-api)",
+                    "type": "number"
+                },
+                "total_capacity": {
+                    "description": "Event capacity fields — SERVICE type only",
+                    "type": "integer"
+                },
+                "track_lots": {
+                    "type": "boolean"
+                },
+                "track_serial_numbers": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "GOODS | SERVICE | RECIPE | INGREDIENT",
+                    "type": "string"
+                },
+                "unit_abbreviation": {
+                    "description": "UnitAbbreviation/UnitName resolve UnitID to display text (e.g. \"btl\"/\"BOTTLE\") so a\nbridged item's on_hand/available (a fractional STOCK-unit count, not the content unit)\nnever renders as a bare, unlabeled number — see AvailableContentQty below for the\ncontent-bridge companion figure. Populated by ListItems/buildDTOs; empty when the item\nhas no unit_id.",
+                    "type": "string"
+                },
+                "unit_content_qty": {
+                    "description": "Content-per-unit: how much of UnitContentUOM ONE stock unit contains (a 750ml\nwhiskey bottle stocked in pieces → 750 + \"ml\"). Lets ml/g recipe lines (tots,\npours) deduct fractional stock units.",
+                    "type": "number"
+                },
+                "unit_content_uom": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "unit_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "usable_in_recipes": {
+                    "description": "Usable-in-recipes: a RECIPE-type item flagged here may be picked as an ingredient\nin other recipes (reusable menu component, e.g. Black Tea inside an Iced Passion\nTea). Pointer for the same partial-update semantics as NonBillable.",
+                    "type": "boolean"
+                },
+                "use_case": {
+                    "description": "Hospitality fields — room-type / facility / amenity SERVICE items",
+                    "type": "string"
+                },
+                "variants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.VariantDTO"
+                    }
+                },
+                "weight_kg": {
+                    "type": "number"
+                },
+                "yield_pct": {
+                    "description": "0 \u003c y \u003c= 1; default 1.0",
+                    "type": "number"
+                }
+            }
+        },
+        "items.ItemImageDTO": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "display_order": {
+                    "type": "integer"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_primary": {
+                    "type": "boolean"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "items.ItemModifierGroup": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_required": {
+                    "type": "boolean"
+                },
+                "max_selections": {
+                    "type": "integer"
+                },
+                "min_selections": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.ItemModifierOption"
+                    }
+                }
+            }
+        },
+        "items.ItemModifierOption": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_adjustment": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "items.VariantDTO": {
+            "type": "object",
+            "properties": {
+                "attributes": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "recipes.RecipeDTO": {
+            "type": "object",
+            "properties": {
+                "allergens": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cost_per_portion": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "food_cost_pct": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ingredients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/recipes.RecipeIngredientDTO"
+                    }
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "menu | bom",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "output_qty": {
+                    "type": "number"
+                },
+                "prep_time_minutes": {
+                    "type": "integer"
+                },
+                "requires_qc": {
+                    "type": "boolean"
+                },
+                "selling_price": {
+                    "description": "Selling-price based costing (user-provided; never overwritten by system)",
+                    "type": "number"
+                },
+                "servings": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "OK - healthy | OK - above target FC% | LOSS - cost \u003e= price",
+                    "type": "string"
+                },
+                "suggested_price": {
+                    "type": "number"
+                },
+                "target_margin_percent": {
+                    "type": "number"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "total_cost": {
+                    "type": "number"
+                },
+                "unit_of_measure": {
+                    "type": "string"
+                }
+            }
+        },
+        "recipes.RecipeIngredientDTO": {
+            "type": "object",
+            "properties": {
+                "display_order": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "item_cost_price": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "item_sku": {
+                    "type": "string"
+                },
+                "item_unit_content_qty": {
+                    "description": "Content-per-unit bridge from the ingredient item (a 700 ml bottle stocked in\nbtl → 700 + \"ml\"). Clients need this to know a cross-dimension line (30 ml of\na btl-stocked bottle) deducts fractional stock units instead of flagging it\nas un-deductible — mirrors stock.ConvertToStockUnit.",
+                    "type": "number"
+                },
+                "item_unit_content_uom": {
+                    "type": "string"
+                },
+                "item_unit_id": {
+                    "description": "The ingredient item's own base/stock unit. ItemCostPrice is per this unit,\nso a line written in another unit (e.g. ml against a per-L item) must be\nconverted before multiplying — clients need this to preview line costs.",
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "sub_recipe_id": {
+                    "type": "string"
+                },
+                "sub_recipe_name": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "unit_of_measure": {
+                    "type": "string"
+                },
+                "waste_percent": {
+                    "type": "number"
+                }
+            }
+        },
+        "reports.IngredientUtilizationSummary": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "number"
+                },
+                "consumed_cost": {
+                    "type": "number"
+                },
+                "consumed_qty": {
+                    "type": "number"
+                },
+                "daily_velocity": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_name": {
+                    "type": "string"
+                },
+                "item_sku": {
+                    "type": "string"
+                },
+                "last_restock_at": {
+                    "type": "string"
+                },
+                "on_hand": {
+                    "type": "number"
+                },
+                "period_end": {
+                    "type": "string"
+                },
+                "period_start": {
+                    "type": "string"
+                },
+                "projected_days_of_cover": {
+                    "type": "number"
+                },
+                "purchased_cost": {
+                    "type": "number"
+                },
+                "purchased_qty": {
+                    "type": "number"
+                },
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "warehouse_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "reports.RecipeBreakdownRow": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "pct_of_total": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "recipe_id": {
+                    "type": "string"
+                },
+                "recipe_name": {
+                    "type": "string"
+                },
+                "recipe_sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "reports.StockLevelEventDTO": {
+            "type": "object",
+            "properties": {
+                "event_type": {
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "type": "string"
+                },
+                "on_hand_at_event": {
+                    "type": "number"
+                },
+                "reorder_level_at_event": {
+                    "type": "number"
+                }
+            }
+        },
+        "reports.TimeseriesPoint": {
+            "type": "object",
+            "properties": {
+                "bucket_end": {
+                    "type": "string"
+                },
+                "bucket_start": {
+                    "type": "string"
+                },
+                "by_recipe": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reports.TimeseriesRecipeSlice"
+                    }
+                },
+                "cost": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "number"
+                }
+            }
+        },
+        "reports.TimeseriesRecipeSlice": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "recipe_id": {
+                    "type": "string"
+                },
+                "recipe_name": {
+                    "type": "string"
+                },
+                "recipe_sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "reports.TimeseriesResponse": {
+            "type": "object",
+            "properties": {
+                "granularity": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reports.TimeseriesPoint"
+                    }
+                },
+                "reorder_level": {
+                    "type": "integer"
+                },
+                "stock_level_events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/reports.StockLevelEventDTO"
+                    }
+                }
+            }
+        },
+        "stock.MovementRow": {
+            "type": "object",
+            "properties": {
+                "actor_id": {
+                    "description": "ActorID is the adjusting/receiving/initiating/serving user when recorded.",
+                    "type": "string"
+                },
+                "actor_name": {
+                    "description": "ActorName is ActorID resolved to a display name — who performed this movement,\nsurfaced so admins/managers can audit which user did what on critical transactions.",
+                    "type": "string"
+                },
+                "counterparty": {
+                    "description": "Counterparty: supplier name (purchases) or customer name (sales/sell returns).",
+                    "type": "string"
+                },
+                "entered_at": {
+                    "description": "EnteredAt is the real ship/receive event timestamp, present only when OccurredAt was\noverridden away from it by a transfer's transfer_date (see ledgerMovementDate) — never\nhides the real audit timestamp, just stops it from being the misleading headline date.",
+                    "type": "string"
+                },
+                "label": {
+                    "description": "Human label, e.g. \"Adjustment (damaged)\".",
+                    "type": "string"
+                },
+                "occurred_at": {
+                    "type": "string"
+                },
+                "quantity_after": {
+                    "description": "Stock level after the movement — known only for StockAdjustment rows.",
+                    "type": "number"
+                },
+                "quantity_change": {
+                    "type": "number"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type: opening_stock | purchase | sale | sell_return | purchase_return |\ntransfer_in | transfer_out | adjustment.",
+                    "type": "string"
+                },
+                "warehouse_id": {
+                    "type": "string"
+                },
+                "warehouse_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "stock.RelocateItemLocationResult": {
+            "type": "object",
+            "properties": {
+                "processed": {
+                    "type": "integer"
+                },
+                "skipped": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stock.RelocateSkipped"
+                    }
+                }
+            }
+        },
+        "stock.RelocateSkipped": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "stock.StockHistoryItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "unit_abbreviation": {
+                    "type": "string"
+                }
+            }
+        },
+        "stock.StockHistoryResult": {
+            "type": "object",
+            "properties": {
+                "item": {
+                    "$ref": "#/definitions/stock.StockHistoryItem"
+                },
+                "movements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stock.MovementRow"
+                    }
+                },
+                "summary": {
+                    "$ref": "#/definitions/stock.StockHistorySummary"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stock.StockHistorySummary": {
+            "type": "object",
+            "properties": {
+                "current_stock": {
+                    "type": "number"
+                },
+                "opening_stock": {
+                    "type": "number"
+                },
+                "total_adjusted": {
+                    "description": "Net of miscellaneous adjustments (damage, shrinkage, found, corrections…).",
+                    "type": "number"
+                },
+                "total_purchase_returns": {
+                    "type": "number"
+                },
+                "total_purchased": {
+                    "type": "number"
+                },
+                "total_sell_returns": {
+                    "type": "number"
+                },
+                "total_sold": {
+                    "type": "number"
+                },
+                "transfers_in": {
+                    "type": "number"
+                },
+                "transfers_out": {
                     "type": "number"
                 }
             }

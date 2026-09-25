@@ -12,10 +12,12 @@ import (
 	entconsumptionline "github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	entgoodsreceipt "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	entgoodsreceiptline "github.com/bengobox/inventory-service/internal/ent/goodsreceiptline"
-	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
+	entpurchasereturn "github.com/bengobox/inventory-service/internal/ent/purchasereturn"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	entstocktransfer "github.com/bengobox/inventory-service/internal/ent/stocktransfer"
 	entstocktransferline "github.com/bengobox/inventory-service/internal/ent/stocktransferline"
@@ -44,16 +46,17 @@ import (
 //     those are the shipment/receipt paperwork itself, not a reporting view.
 //   - ConsumptionLine   — sales depletion (POS/ordering BOM path); reversal
 //     rows (reason "reversal" / negative qty) surface as sell returns. Rows
-//     flagged `theoretical` never moved stock and are EXCLUDED.
+//     flagged `theoretical` never moved stock and are EXCLUDED. Legacy rows with
+//     reason "purchase_return" are supplier returns, not sales (see below).
 
 // MovementRow is one unified stock-history ledger entry.
 type MovementRow struct {
 	// Type: opening_stock | purchase | sale | sell_return | purchase_return |
 	// transfer_in | transfer_out | adjustment.
-	Type           string     `json:"type"`
+	Type string `json:"type"`
 	// Human label, e.g. "Adjustment (damaged)".
-	Label          string     `json:"label"`
-	QuantityChange float64    `json:"quantity_change"`
+	Label          string  `json:"label"`
+	QuantityChange float64 `json:"quantity_change"`
 	// Stock level after the movement — known only for StockAdjustment rows.
 	QuantityAfter *float64   `json:"quantity_after,omitempty"`
 	OccurredAt    time.Time  `json:"occurred_at"`
@@ -61,7 +64,7 @@ type MovementRow struct {
 	WarehouseID   *uuid.UUID `json:"warehouse_id,omitempty"`
 	WarehouseName string     `json:"warehouse_name,omitempty"`
 	// ActorID is the adjusting/receiving/initiating/serving user when recorded.
-	ActorID      *uuid.UUID `json:"actor_id,omitempty"`
+	ActorID *uuid.UUID `json:"actor_id,omitempty"`
 	// ActorName is ActorID resolved to a display name — who performed this movement,
 	// surfaced so admins/managers can audit which user did what on critical transactions.
 	ActorName string `json:"actor_name,omitempty"`
@@ -147,6 +150,8 @@ func classifyAdjustment(reason string, change float64) (mvType, label string) {
 		return "adjustment", "Hidden from Outlet"
 	case "location_unhidden":
 		return "adjustment", "Unhidden — Stock Restored"
+	case "purchase_return":
+		return "purchase_return", "Purchase Return"
 	case "return":
 		// Positive = customer/sell return coming back in; negative = stock
 		// leaving for a supplier/purchase return.
@@ -247,6 +252,12 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 	}
 
 	var rows []MovementRow
+	// Purchase-return rows get their return number + supplier resolved in one batch after all
+	// sources are merged: adjustment rows already carry the return number as their reference,
+	// legacy consumption rows (approved before 2026-09-25, when the stock-out went through the
+	// sales consumption path) carry only the return's id as their order id.
+	returnRowsByNumber := map[string][]int{}
+	returnRowsByID := map[uuid.UUID][]int{}
 
 	// 1) StockAdjustment — adjustments/opening/breakdowns/returns.
 	adjQ := s.client.StockAdjustment.Query().
@@ -266,6 +277,9 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		after := a.QuantityAfter
 		actor := a.AdjustedBy
 		wid := a.WarehouseID
+		if a.Reason == stockadjustment.ReasonPurchaseReturn && a.Reference != "" {
+			returnRowsByNumber[a.Reference] = append(returnRowsByNumber[a.Reference], len(rows))
+		}
 		rows = append(rows, MovementRow{
 			Type: mvType, Label: label,
 			QuantityChange: a.QuantityChange, QuantityAfter: &after,
@@ -448,6 +462,19 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		if c.ServedByUserID != nil {
 			actorID = c.ServedByUserID
 		}
+		// Legacy purchase-return stock-out: before 2026-09-25 an approved supplier return was
+		// deducted through RecordConsumption (reason "purchase_return", order id = the return's
+		// id), so it surfaced here as "Sold / Order <id>". It is goods going back to the
+		// supplier, not a sale; the return number and supplier are resolved below.
+		if c.Reason == purchaseReturnConsumptionReason && c.Quantity > 0 {
+			returnRowsByID[c.OrderID] = append(returnRowsByID[c.OrderID], len(rows))
+			rows = append(rows, MovementRow{
+				Type: "purchase_return", Label: "Purchase Return",
+				QuantityChange: -c.Quantity, OccurredAt: c.ConsumedAt,
+				Reference: "Return " + shortID(c.OrderID), WarehouseID: wid,
+			})
+			continue
+		}
 		if c.Reason == reversalReason || c.Quantity < 0 {
 			qty := c.Quantity
 			if qty < 0 {
@@ -468,6 +495,8 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			ActorID: actorID, ActorName: c.ServedByName,
 		})
 	}
+
+	s.resolvePurchaseReturnRefs(ctx, tenantID, rows, returnRowsByNumber, returnRowsByID)
 
 	// Summary over the FULL filtered range (not just the page).
 	for _, r := range rows {
@@ -582,6 +611,70 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 	}
 	res.Movements = rows[start:end]
 	return res, nil
+}
+
+// purchaseReturnConsumptionReason is the Consumption/ConsumptionLine reason the legacy
+// purchase-return approval path stamped (see ItemStockHistory's consumption source).
+const purchaseReturnConsumptionReason = "purchase_return"
+
+// resolvePurchaseReturnRefs fills the return number (reference) and supplier (counterparty) of
+// every purchase-return ledger row in one batched pass: rows indexed by return number (stock
+// adjustments) and by return id (legacy consumption rows). Best-effort: a lookup failure just
+// leaves the row's existing reference in place.
+func (s *Service) resolvePurchaseReturnRefs(ctx context.Context, tenantID uuid.UUID, rows []MovementRow, byNumber map[string][]int, byID map[uuid.UUID][]int) {
+	if len(byNumber) == 0 && len(byID) == 0 {
+		return
+	}
+	preds := make([]predicate.PurchaseReturn, 0, 2)
+	if len(byNumber) > 0 {
+		nums := make([]string, 0, len(byNumber))
+		for n := range byNumber {
+			nums = append(nums, n)
+		}
+		preds = append(preds, entpurchasereturn.ReturnNumberIn(nums...))
+	}
+	if len(byID) > 0 {
+		ids := make([]uuid.UUID, 0, len(byID))
+		for id := range byID {
+			ids = append(ids, id)
+		}
+		preds = append(preds, entpurchasereturn.IDIn(ids...))
+	}
+	returns, err := s.client.PurchaseReturn.Query().
+		Where(entpurchasereturn.TenantID(tenantID), entpurchasereturn.Or(preds...)).
+		All(ctx)
+	if err != nil || len(returns) == 0 {
+		return
+	}
+	supplierIDs := make([]uuid.UUID, 0, len(returns))
+	for _, pr := range returns {
+		if pr.SupplierID != nil {
+			supplierIDs = append(supplierIDs, *pr.SupplierID)
+		}
+	}
+	supplierNames := map[uuid.UUID]string{}
+	if len(supplierIDs) > 0 {
+		if sups, sErr := s.client.Supplier.Query().Where(entsupplier.IDIn(supplierIDs...)).All(ctx); sErr == nil {
+			for _, sp := range sups {
+				supplierNames[sp.ID] = sp.Name
+			}
+		}
+	}
+	for _, pr := range returns {
+		supplier := ""
+		if pr.SupplierID != nil {
+			supplier = supplierNames[*pr.SupplierID]
+		}
+		idxs := append(append([]int{}, byNumber[pr.ReturnNumber]...), byID[pr.ID]...)
+		for _, i := range idxs {
+			if pr.ReturnNumber != "" {
+				rows[i].Reference = pr.ReturnNumber
+			}
+			if supplier != "" {
+				rows[i].Counterparty = supplier
+			}
+		}
+	}
 }
 
 // shortID renders the first uuid segment for a compact order reference.

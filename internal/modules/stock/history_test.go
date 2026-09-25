@@ -22,6 +22,7 @@ func TestClassifyAdjustment(t *testing.T) {
 		{"return", 2, "sell_return"},        // positive: customer return back in
 		{"return", -2, "purchase_return"},   // negative: back to supplier
 		{"return", 0, "sell_return"},        // zero treated as inbound (no stock effect)
+		{"purchase_return", -3, "purchase_return"}, // approved supplier return (dedicated reason)
 		{"damaged", -1, "adjustment"},
 		{"expired", -4, "adjustment"},
 		{"shrinkage", -2, "adjustment"},

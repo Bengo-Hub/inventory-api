@@ -21,6 +21,7 @@ func (PurchaseReturn) Fields() []ent.Field {
 		field.UUID("purchase_order_id", uuid.UUID{}).Optional().Nillable().Comment("FK to originating PurchaseOrder"),
 		field.UUID("goods_receipt_id", uuid.UUID{}).Optional().Nillable().Comment("FK to the GoodsReceipt whose rejected lines auto-created this return (idempotency key: one auto return per GRN)"),
 		field.UUID("supplier_id", uuid.UUID{}).Optional().Nillable(),
+		field.UUID("warehouse_id", uuid.UUID{}).Optional().Nillable().Comment("Warehouse/location the returned goods leave from (the outlet's own warehouse by default). Nil on returns created before this field existed; approval then falls back to the linked GRN's warehouse, else the tenant default"),
 		field.UUID("added_by", uuid.UUID{}).Optional().Nillable().Comment("Auth user"),
 		field.Text("reason").Optional(),
 		field.Float("return_amount").Default(0),
@@ -39,6 +40,7 @@ func (PurchaseReturn) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "purchase_order_id"),
 		index.Fields("tenant_id", "payment_status"),
+		index.Fields("tenant_id", "warehouse_id"),
 		// Unique (not just indexed): enforces "one auto return per GRN" at the DB level, closing
 		// the race in autoCreateReturnForRejected's Exist()-then-Create() check. Postgres unique
 		// indexes treat every NULL as distinct, so manual returns (goods_receipt_id unset) are

@@ -92,7 +92,11 @@ func expenseBearingReason(r stockadjustment.Reason) bool {
 // Wastage & Shrinkage, credited instead of debited when the adjustment is upward) -- posts.
 func glPostableReason(r stockadjustment.Reason) bool {
 	switch r {
-	case stockadjustment.ReasonTransferIn, stockadjustment.ReasonTransferOut, stockadjustment.ReasonReturn:
+	case stockadjustment.ReasonTransferIn, stockadjustment.ReasonTransferOut, stockadjustment.ReasonReturn,
+		// A purchase return is valued in treasury by the return's own vendor credit note
+		// (Dr Accounts Payable / Cr Inventory); a stock.adjusted posting too would credit
+		// Inventory twice for the same goods.
+		stockadjustment.ReasonPurchaseReturn:
 		return false
 	}
 	return true

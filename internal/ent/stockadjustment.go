@@ -30,7 +30,7 @@ type StockAdjustment struct {
 	QuantityChange float64 `json:"quantity_change,omitempty"`
 	// Stock level after adjustment
 	QuantityAfter float64 `json:"quantity_after,omitempty"`
-	// Reason for adjustment. internal_consumption = floor-stock issue of consumables (serviettes, tissues) — expensed as operating supplies via treasury. location_move = the item's location was relocated wholesale (RelocateItemLocation) or an explicit outlet-membership move-with-stock, not a stock transfer between two co-existing balances. location_hidden/location_unhidden = SetItemOutletMembership toggling an outlet's visibility with the quantity frozen, not moved (quantity_change is always 0 for these two).
+	// Reason for adjustment. internal_consumption = floor-stock issue of consumables (serviettes, tissues) — expensed as operating supplies via treasury. location_move = the item's location was relocated wholesale (RelocateItemLocation) or an explicit outlet-membership move-with-stock, not a stock transfer between two co-existing balances. location_hidden/location_unhidden = SetItemOutletMembership toggling an outlet's visibility with the quantity frozen, not moved (quantity_change is always 0 for these two). purchase_return = goods sent back to the supplier on an approved purchase return (always negative); valued in treasury by the return's vendor credit note, never by stock.adjusted.
 	Reason stockadjustment.Reason `json:"reason,omitempty"`
 	// External reference (e.g. PO number, transfer ID)
 	Reference string `json:"reference,omitempty"`

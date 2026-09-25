@@ -77,7 +77,7 @@ func LotID(v uuid.UUID) predicate.PurchaseReturnLine {
 }
 
 // Quantity applies equality check predicate on the "quantity" field. It's identical to QuantityEQ.
-func Quantity(v int) predicate.PurchaseReturnLine {
+func Quantity(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldQuantity, v))
 }
 
@@ -242,42 +242,42 @@ func LotIDNotNil() predicate.PurchaseReturnLine {
 }
 
 // QuantityEQ applies the EQ predicate on the "quantity" field.
-func QuantityEQ(v int) predicate.PurchaseReturnLine {
+func QuantityEQ(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldQuantity, v))
 }
 
 // QuantityNEQ applies the NEQ predicate on the "quantity" field.
-func QuantityNEQ(v int) predicate.PurchaseReturnLine {
+func QuantityNEQ(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldNEQ(FieldQuantity, v))
 }
 
 // QuantityIn applies the In predicate on the "quantity" field.
-func QuantityIn(vs ...int) predicate.PurchaseReturnLine {
+func QuantityIn(vs ...float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldIn(FieldQuantity, vs...))
 }
 
 // QuantityNotIn applies the NotIn predicate on the "quantity" field.
-func QuantityNotIn(vs ...int) predicate.PurchaseReturnLine {
+func QuantityNotIn(vs ...float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldNotIn(FieldQuantity, vs...))
 }
 
 // QuantityGT applies the GT predicate on the "quantity" field.
-func QuantityGT(v int) predicate.PurchaseReturnLine {
+func QuantityGT(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldGT(FieldQuantity, v))
 }
 
 // QuantityGTE applies the GTE predicate on the "quantity" field.
-func QuantityGTE(v int) predicate.PurchaseReturnLine {
+func QuantityGTE(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldGTE(FieldQuantity, v))
 }
 
 // QuantityLT applies the LT predicate on the "quantity" field.
-func QuantityLT(v int) predicate.PurchaseReturnLine {
+func QuantityLT(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldLT(FieldQuantity, v))
 }
 
 // QuantityLTE applies the LTE predicate on the "quantity" field.
-func QuantityLTE(v int) predicate.PurchaseReturnLine {
+func QuantityLTE(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldLTE(FieldQuantity, v))
 }
 

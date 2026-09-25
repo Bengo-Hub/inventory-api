@@ -19,6 +19,8 @@ type PurchaseReturnDoc struct {
 
 	PurchaseOrderNumber string
 	GrnNumber           string
+	// Location is the warehouse/outlet the goods were sent back from.
+	Location string
 
 	SupplierName string
 	SupplierAddr []string
@@ -89,6 +91,9 @@ func purchaseReturnSimpleDoc(doc *PurchaseReturnDoc) simpleDoc {
 	}
 	if strings.TrimSpace(doc.GrnNumber) != "" {
 		meta = append(meta, [2]string{"GRN No.", doc.GrnNumber})
+	}
+	if strings.TrimSpace(doc.Location) != "" {
+		meta = append(meta, [2]string{"Location", doc.Location})
 	}
 	if strings.TrimSpace(doc.PaymentStatus) != "" {
 		meta = append(meta, [2]string{"Credit", strings.ToUpper(doc.PaymentStatus)})

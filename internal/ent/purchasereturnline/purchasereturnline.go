@@ -66,7 +66,7 @@ func ValidColumn(column string) bool {
 
 var (
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
-	DefaultQuantity int
+	DefaultQuantity float64
 	// DefaultSubTotal holds the default value on creation for the "sub_total" field.
 	DefaultSubTotal float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
