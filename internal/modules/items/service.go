@@ -2446,38 +2446,33 @@ func validatePriceBand(dto *ItemDTO) error {
 	return nil
 }
 
-// resolveEPCost sets cost_price, which is ALWAYS per stock (base) unit, from the purchase data:
-// purchase_price / purchase_pack_size / yield_pct. An explicit cost_price is kept unless it is
-// clearly a per-PURCHASE-unit figure: more than epMismatchFactor times the derived per-base-unit
-// cost (e.g. KES 350 entered for passion fruit bought at 200 per 1000 g and stocked in grams,
-// where the base-unit cost is 0.29). Such a cost made every stock movement 1000x too valuable and
-// pushed tens of millions of phantom inventory and wastage into the ledger (urban-loft, 2026-09).
-func resolveEPCost(dto *ItemDTO) {
-	ep, ok := epCost(dto.PurchasePrice, dto.PurchasePackSize, dto.YieldPct)
+// resolveEPCost sets cost_price, which is ALWAYS per stock (base) unit. Without an explicit cost
+// it is derived from the purchase data (purchase_price / purchase_pack_size / yield_pct); an
+// explicit cost is kept unless, on a measure-stocked item, it is clearly a per-PURCHASE-unit
+// figure (units.CostPerBaseUnit), e.g. KES 350 per kg on passion fruit stocked in grams.
+func resolveEPCost(dto *ItemDTO, stockUnit string) {
+	ep, ok := units.PurchaseCostPerBaseUnit(dto.PurchasePrice, dto.PurchasePackSize, dto.YieldPct)
 	if !ok {
 		return
 	}
-	if dto.CostPrice != nil && *dto.CostPrice <= ep*epMismatchFactor {
-		return // explicit per-base-unit cost (e.g. a negotiated or weighted cost) — respect it
+	if dto.CostPrice == nil {
+		dto.CostPrice = &ep
+		return
 	}
-	dto.CostPrice = &ep
+	fixed := units.CostPerBaseUnit(*dto.CostPrice, dto.PurchasePrice, dto.PurchasePackSize, dto.YieldPct, stockUnit)
+	dto.CostPrice = &fixed
 }
 
-// epMismatchFactor is how far above the derived per-base-unit cost an explicit cost_price may be
-// before it is treated as a per-purchase-unit entry. 5x leaves room for price moves and yield.
-const epMismatchFactor = 5.0
-
-// epCost is the edible-portion (per base unit) cost from purchase data; ok is false when the
-// purchase price or pack size is missing or not positive.
-func epCost(purchasePrice, packSize, yieldPct *float64) (float64, bool) {
-	if purchasePrice == nil || packSize == nil || *packSize <= 0 || *purchasePrice <= 0 {
-		return 0, false
+// stockUnitAbbr resolves the abbreviation of the item's stock unit ("" when unset or unknown).
+func (s *Service) stockUnitAbbr(ctx context.Context, unitID *uuid.UUID) string {
+	if unitID == nil {
+		return ""
 	}
-	y := 1.0
-	if yieldPct != nil && *yieldPct > 0 && *yieldPct <= 1 {
-		y = *yieldPct
+	u, err := s.client.Unit.Query().Where(entunit.ID(*unitID)).Only(ctx)
+	if err != nil {
+		return ""
 	}
-	return *purchasePrice / *packSize / y, true
+	return u.Abbreviation
 }
 
 // resolveReorderLevel returns the effective reorder_level for a new item.
@@ -2582,7 +2577,7 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 		return nil, fmt.Errorf("items: %w", err)
 	}
 	// Auto-compute EP cost from purchase fields when not explicitly set.
-	resolveEPCost(&dto)
+	resolveEPCost(&dto, s.stockUnitAbbr(ctx, dto.UnitID))
 
 	// Reject a fractional opening quantity for a discrete/count-based item (e.g. a phone stocked
 	// in PIECE) before creating anything — covers manual item creation AND the bulk-import Items
@@ -3041,7 +3036,7 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		return nil, fmt.Errorf("items: %w", err)
 	}
 	// Auto-compute EP cost from purchase fields if not explicitly provided.
-	resolveEPCost(&dto)
+	resolveEPCost(&dto, s.stockUnitAbbr(ctx, dto.UnitID))
 
 	// Capture the pre-update standard cost so a real change can be audited below. Best-effort:
 	// a lookup failure just means no before/after audit row, never a blocked update.
