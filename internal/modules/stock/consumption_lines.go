@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
 // consumptionLineInput carries everything needed to persist one ConsumptionLine row and
@@ -148,26 +149,24 @@ func (s *Service) upsertDailyRollup(ctx context.Context, tx *ent.Tx, tenantID uu
 }
 
 // itemCostPrice is the item's cost per STOCK (base) unit, the single figure every valuation in
-// this module multiplies base-unit quantities by. Nil cost (never priced, e.g. a non-billable
-// accompaniment) is 0. A cost_price that is clearly per PURCHASE unit (more than 5x the
-// purchase_price / pack_size / yield cost, e.g. KES 350 per kg on a gram-stocked item) is
-// replaced by that per-base-unit cost, so legacy items saved before the items-service guard can
-// no longer value stock 1000x too high.
+// this module multiplies base-unit quantities by, using the item's loaded unit edge (see
+// itemCostPerStockUnit). Nil cost (never priced, e.g. a non-billable accompaniment) is 0.
 func itemCostPrice(itm *ent.Item) float64 {
+	unit := ""
+	if itm != nil && itm.Edges.Units != nil {
+		unit = itm.Edges.Units.Abbreviation
+	}
+	return itemCostPerStockUnit(itm, unit)
+}
+
+// itemCostPerStockUnit applies units.CostPerBaseUnit: a measure-stocked item whose cost_price is
+// clearly per PURCHASE unit (KES 350 per kg on a gram item) is valued at its per-base-unit cost,
+// so items saved before the items-service guard can no longer value stock 1000x too high.
+func itemCostPerStockUnit(itm *ent.Item, stockUnit string) float64 {
 	if itm == nil || itm.CostPrice == nil {
 		return 0
 	}
-	cost := *itm.CostPrice
-	if itm.PurchasePrice != nil && itm.PurchasePackSize != nil && *itm.PurchasePrice > 0 && *itm.PurchasePackSize > 0 {
-		y := 1.0
-		if itm.YieldPct != nil && *itm.YieldPct > 0 && *itm.YieldPct <= 1 {
-			y = *itm.YieldPct
-		}
-		if ep := *itm.PurchasePrice / *itm.PurchasePackSize / y; cost > ep*5 {
-			return ep
-		}
-	}
-	return cost
+	return units.CostPerBaseUnit(*itm.CostPrice, itm.PurchasePrice, itm.PurchasePackSize, itm.YieldPct, stockUnit)
 }
 
 // resolveOutletID parses the string outlet id already resolved by outletIDForWarehouse

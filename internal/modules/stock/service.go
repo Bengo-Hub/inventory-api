@@ -470,6 +470,15 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	// the sale-time costing method); upward adjustments have no lot to draw from (stock is being
 	// added, not removed) so they value at the item's current cost price.
 	if qtyChange != 0 && glPostableReason(adjReason) {
+		// The stock unit both labels the event and decides how the cost is read (per base unit,
+		// see itemCostPerStockUnit), so it is resolved first.
+		uom := ""
+		if itm.UnitID != nil {
+			if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
+				uom = u.Abbreviation
+			}
+		}
+		unitCost := itemCostPerStockUnit(itm, uom)
 		var costValue float64
 		if qtyChange < 0 {
 			var layeredValue, layeredQty float64
@@ -481,21 +490,15 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 			}
 			remainder := -qtyChange - layeredQty
 			if remainder > 0 {
-				layeredValue += remainder * itemCostPrice(itm)
+				layeredValue += remainder * unitCost
 			}
 			costValue = round4(layeredValue)
 		} else {
-			costValue = round4(qtyChange * itemCostPrice(itm)) // per base unit, see itemCostPrice
+			costValue = round4(qtyChange * unitCost)
 		}
 		// Nothing valued to post (item has no cost basis at all) -- skip rather than post a
 		// meaningless zero-amount journal entry.
 		if costValue > 0.009 {
-			uom := ""
-			if itm.UnitID != nil {
-				if u, uErr := tx.Unit.Get(ctx, *itm.UnitID); uErr == nil {
-					uom = u.Abbreviation
-				}
-			}
 			direction := "increase"
 			if qtyChange < 0 {
 				direction = "decrease"
