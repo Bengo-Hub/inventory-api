@@ -2446,22 +2446,38 @@ func validatePriceBand(dto *ItemDTO) error {
 	return nil
 }
 
+// resolveEPCost sets cost_price, which is ALWAYS per stock (base) unit, from the purchase data:
+// purchase_price / purchase_pack_size / yield_pct. An explicit cost_price is kept unless it is
+// clearly a per-PURCHASE-unit figure: more than epMismatchFactor times the derived per-base-unit
+// cost (e.g. KES 350 entered for passion fruit bought at 200 per 1000 g and stocked in grams,
+// where the base-unit cost is 0.29). Such a cost made every stock movement 1000x too valuable and
+// pushed tens of millions of phantom inventory and wastage into the ledger (urban-loft, 2026-09).
 func resolveEPCost(dto *ItemDTO) {
-	if dto.CostPrice != nil {
-		return // caller provided cost_price explicitly — respect it
-	}
-	if dto.PurchasePrice == nil || dto.PurchasePackSize == nil {
+	ep, ok := epCost(dto.PurchasePrice, dto.PurchasePackSize, dto.YieldPct)
+	if !ok {
 		return
 	}
-	if *dto.PurchasePackSize <= 0 {
-		return
+	if dto.CostPrice != nil && *dto.CostPrice <= ep*epMismatchFactor {
+		return // explicit per-base-unit cost (e.g. a negotiated or weighted cost) — respect it
 	}
-	yieldPct := 1.0
-	if dto.YieldPct != nil && *dto.YieldPct > 0 && *dto.YieldPct <= 1 {
-		yieldPct = *dto.YieldPct
-	}
-	ep := *dto.PurchasePrice / *dto.PurchasePackSize / yieldPct
 	dto.CostPrice = &ep
+}
+
+// epMismatchFactor is how far above the derived per-base-unit cost an explicit cost_price may be
+// before it is treated as a per-purchase-unit entry. 5x leaves room for price moves and yield.
+const epMismatchFactor = 5.0
+
+// epCost is the edible-portion (per base unit) cost from purchase data; ok is false when the
+// purchase price or pack size is missing or not positive.
+func epCost(purchasePrice, packSize, yieldPct *float64) (float64, bool) {
+	if purchasePrice == nil || packSize == nil || *packSize <= 0 || *purchasePrice <= 0 {
+		return 0, false
+	}
+	y := 1.0
+	if yieldPct != nil && *yieldPct > 0 && *yieldPct <= 1 {
+		y = *yieldPct
+	}
+	return *purchasePrice / *packSize / y, true
 }
 
 // resolveReorderLevel returns the effective reorder_level for a new item.

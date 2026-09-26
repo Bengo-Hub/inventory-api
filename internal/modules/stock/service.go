@@ -480,12 +480,12 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 				}
 			}
 			remainder := -qtyChange - layeredQty
-			if remainder > 0 && itm.CostPrice != nil {
-				layeredValue += remainder * *itm.CostPrice
+			if remainder > 0 {
+				layeredValue += remainder * itemCostPrice(itm)
 			}
 			costValue = round4(layeredValue)
-		} else if itm.CostPrice != nil {
-			costValue = round4(qtyChange * *itm.CostPrice)
+		} else {
+			costValue = round4(qtyChange * itemCostPrice(itm)) // per base unit, see itemCostPrice
 		}
 		// Nothing valued to post (item has no cost basis at all) -- skip rather than post a
 		// meaningless zero-amount journal entry.
