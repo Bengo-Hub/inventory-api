@@ -1545,12 +1545,15 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 					dto.OnHandContentQty = &onHandContent
 				}
 			}
-			// Cost-plus-margin suggested price for GOODS ONLY: prefer the item's own
-			// target_margin_percent, falling back to the tenant default. price = cost/(1-m).
-			// INGREDIENT/EQUIPMENT items are consumed to make recipe items, never sold —
-			// deriving a retail figure for them pollutes lists with meaningless prices;
-			// their only meaningful money field is cost_price per BASE unit.
-			if it.Type == item.TypeGOODS && it.CostPrice != nil && *it.CostPrice > 0 {
+			// Cost-plus-margin suggested price for SELLABLE non-recipe types (GOODS, SERVICE,
+			// VOUCHER): prefer the item's own target_margin_percent, falling back to the tenant
+			// default. price = cost/(1-m). SERVICE/VOUCHER carry an internal cost (what it costs
+			// the business to deliver the service or back the voucher) just like goods, so they
+			// get the same last-resort suggestion; an explicit selling price always wins
+			// (effectivePrice). INGREDIENT/EQUIPMENT items are consumed to make recipe items,
+			// never sold, so no retail figure is derived for them.
+			if (it.Type == item.TypeGOODS || it.Type == item.TypeSERVICE || it.Type == item.TypeVOUCHER) &&
+				it.CostPrice != nil && *it.CostPrice > 0 {
 				var m float64
 				if it.TargetMarginPercent != nil && *it.TargetMarginPercent > 0 && *it.TargetMarginPercent < 100 {
 					m = *it.TargetMarginPercent
@@ -2406,6 +2409,28 @@ func (s *Service) GenerateSKU(ctx context.Context, tenantID uuid.UUID, categoryI
 // resolveEPCost auto-computes cost_price (EP unit cost) from purchase fields when all three
 // are present and cost_price was not explicitly provided.
 // Formula: cost_price = purchase_price / purchase_pack_size / yield_pct
+// applyRequestedSellingPrice persists a `selling_price` sent on create. SellingPrice is otherwise a
+// read-time enriched field (effectivePrice), and the stored price lives in max/min_selling_price,
+// so an API caller that sends only `selling_price` (treasury-ui's invoice "create item" modal,
+// S2S) used to have the price silently dropped: the item was saved with its cost only, and every
+// consumer that fell back to cost then quoted the COST as the price (an invoice for a service
+// costing 20,000 billed at 20,000). Mirrors inventory-ui's own form: a blank Retail/Max and
+// Wholesale/Min both default to the selling price. Explicit max/min always win.
+func applyRequestedSellingPrice(dto *ItemDTO) {
+	if dto.SellingPrice == nil || *dto.SellingPrice <= 0 {
+		return
+	}
+	if dto.MaxSellingPrice != nil {
+		return // an explicit Retail/Max price is the stored price; selling_price is then informational
+	}
+	price := *dto.SellingPrice
+	dto.MaxSellingPrice = &price
+	if dto.MinSellingPrice == nil {
+		minP := price
+		dto.MinSellingPrice = &minP
+	}
+}
+
 // validatePriceBand enforces a coherent selling-price guardrail: min must not exceed max.
 // Returned errors are surfaced as 400s by the handlers.
 func validatePriceBand(dto *ItemDTO) error {
@@ -2536,6 +2561,7 @@ func (s *Service) CreateItem(ctx context.Context, tenantID uuid.UUID, dto ItemDT
 // of CreateItem so the SKU-collision retry loop above can call it repeatedly without duplicating
 // the rest of item creation (opening balance, events, ...).
 func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto ItemDTO) (*ItemDTO, error) {
+	applyRequestedSellingPrice(&dto)
 	if err := validatePriceBand(&dto); err != nil {
 		return nil, fmt.Errorf("items: %w", err)
 	}

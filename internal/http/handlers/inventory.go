@@ -1402,6 +1402,16 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
 		return
 	}
+	// A caller sending only `selling_price` (API/S2S; inventory-ui sends max_selling_price) used
+	// to have it silently ignored, since SellingPrice is a read-time field. Route it through the
+	// canonical setter (guardrails, tier rows, audit, catalog event) so the price actually sticks.
+	if req.SellingPrice != nil && *req.SellingPrice > 0 && req.MaxSellingPrice == nil {
+		if priced, perr := h.itemsSvc.SetSellingPriceBySKU(r.Context(), tenantID, result.SKU, *req.SellingPrice); perr != nil {
+			h.log.Warn("update item: selling price not applied", zap.String("sku", result.SKU), zap.Error(perr))
+		} else {
+			result = priced
+		}
+	}
 
 	// Cascade: if cost_price changed on an INGREDIENT, recalculate all recipe costs that use it.
 	if req.CostPrice != nil && h.recipeSvc != nil {
