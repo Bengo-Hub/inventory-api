@@ -7,9 +7,11 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
 // StockValuationItem is a single line in the stock valuation. Value is computed from the item's
@@ -65,7 +67,7 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 	if warehouseID != uuid.Nil {
 		balQuery = balQuery.Where(inventorybalance.WarehouseID(warehouseID))
 	}
-	balances, err := balQuery.WithItem().All(ctx)
+	balances, err := balQuery.WithItem(func(q *ent.ItemQuery) { q.WithUnits() }).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock valuation: query balances: %w", err)
 	}
@@ -115,9 +117,15 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 		}
 		a := perItem[it.ID]
 		if a == nil {
+			// Fallback cost is per STOCK unit (units.CostPerBaseUnit), the same rule stock
+			// movements are valued with, so the report and the ledger agree.
 			cost := 0.0
 			if it.CostPrice != nil {
-				cost = *it.CostPrice
+				unit := ""
+				if it.Edges.Units != nil {
+					unit = it.Edges.Units.Abbreviation
+				}
+				cost = units.CostPerBaseUnit(*it.CostPrice, it.PurchasePrice, it.PurchasePackSize, it.YieldPct, unit)
 			}
 			cn := ""
 			if it.CategoryID != nil {
