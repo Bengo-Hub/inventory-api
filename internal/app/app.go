@@ -113,7 +113,7 @@ type App struct {
 	treasuryVendorBalanceConsumer *consumers.TreasuryVendorBalanceEventsConsumer
 	etimsItemConsumer             *consumers.EtimsItemRegisteredConsumer
 	tenantPurgeConsumer           *consumers.TenantPurgeConsumer
-	quotationConsumer             *consumers.QuotationAcceptedConsumer
+	goodsCommittedConsumer        *consumers.GoodsCommittedConsumer
 	deliveryNoteConsumer          *consumers.DeliveryNoteDispatchedConsumer
 	notifHub                      *notifmod.Hub
 	stockNotifyConsumer           *consumers.StockNotifyEventsConsumer
@@ -339,10 +339,11 @@ func New(ctx context.Context) (*App, error) {
 	bulkJobsSvc := bulkjobs.NewService(ormClient, log, notifHub)
 	inventoryHandler.SetBulkJobsService(bulkJobsSvc)
 
-	// Procure-to-order consumer — on an ACCEPTED treasury sales quotation, auto-creates a draft
-	// PurchaseOrder to buy the quoted items at their buying (cost) price. Gated by entitlement (fail-open).
-	quotationConsumer := consumers.NewQuotationAcceptedConsumer(log, ormClient)
-	quotationConsumer.SetFeatureGate(consumerFeatureGate)
+	// Procure for the job: on treasury.goods_committed (accepted quotation, confirmed sales order or
+	// issued invoice) orders only the goods not in stock as draft purchase orders; cancels them when
+	// the business buys the goods directly. Gated by entitlement (fail-open).
+	goodsCommittedConsumer := consumers.NewGoodsCommittedConsumer(log, ormClient)
+	goodsCommittedConsumer.SetFeatureGate(consumerFeatureGate)
 
 	// Goods-issue consumer — on a DISPATCHED treasury delivery note, deducts the dispatched
 	// quantities from the issuing warehouse via the canonical stock-adjustment path (auditable
@@ -500,7 +501,7 @@ func New(ctx context.Context) (*App, error) {
 		treasuryVendorBalanceConsumer: treasuryVendorBalanceConsumer,
 		etimsItemConsumer:             etimsItemConsumer,
 		tenantPurgeConsumer:           tenantPurgeConsumer,
-		quotationConsumer:             quotationConsumer,
+		goodsCommittedConsumer:        goodsCommittedConsumer,
 		deliveryNoteConsumer:          deliveryNoteConsumer,
 		notifHub:                      notifHub,
 		stockNotifyConsumer:           stockNotifyConsumer,
@@ -640,15 +641,13 @@ func (a *App) Run(ctx context.Context) error {
 				a.log.Info("tenant purge consumer started")
 			}
 
-			// Start procure-to-order consumer — on an accepted treasury sales quotation,
-			// auto-creates a draft PO to buy the quoted items at their buying cost.
-			if a.quotationConsumer != nil {
+			// Start the procure-for-the-job consumer (treasury goods committed / job goods purchased).
+			if a.goodsCommittedConsumer != nil {
 				go func() {
-					if err := a.quotationConsumer.Start(ctx, js); err != nil {
-						a.log.Error("quotation accepted (procure-to-order) consumer stopped", zap.Error(err))
+					if err := a.goodsCommittedConsumer.Start(ctx, js); err != nil {
+						a.log.Error("goods committed (procure for the job) consumer stopped", zap.Error(err))
 					}
 				}()
-				a.log.Info("quotation accepted (procure-to-order) consumer started")
 			}
 
 			// Start goods-issue consumer — on a dispatched treasury delivery note, deducts the

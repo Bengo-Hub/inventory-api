@@ -820,6 +820,11 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	if po.ProjectID != nil {
 		grPayload["project_id"] = po.ProjectID
 	}
+	// A procure-for-the-job PO names the sale it buys for (quotation_id = the sale's root
+	// document); treasury counts the resulting bill as goods bought for that job.
+	if po.QuotationID != nil {
+		grPayload["sales_document_id"] = po.QuotationID.String()
+	}
 	for k, v := range supplierPaymentFields(po) {
 		grPayload[k] = v
 	}
