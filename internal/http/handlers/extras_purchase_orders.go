@@ -646,6 +646,12 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 		writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "Purchase order requires approval before sending (status: "+state+")")
 		return
 	}
+	// Budget control: sending promises the spend to the supplier, so it is checked against the
+	// tenant's treasury budgets first (stop answers 409 OVER_BUDGET unless overridden).
+	budgetRes, ok := h.checkPOBudget(w, r, tenantID, po)
+	if !ok {
+		return
+	}
 	if _, err := h.orm.PurchaseOrder.UpdateOneID(poID).SetStatus("sent").Save(r.Context()); err != nil {
 		h.log.Error("send PO failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "SEND_FAILED", "Failed to send purchase order")
@@ -661,12 +667,8 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 			AggregateType: "inventory",
 			AggregateID:   po.ID,
 			EventType:     "purchase_order.sent",
-			Payload: map[string]any{
-				"po_id":       po.ID,
-				"po_number":   po.PoNumber,
-				"tenant_id":   tenantID,
-				"supplier_id": po.SupplierID,
-			},
+			// Notifications reads the ids; treasury commits the amount against the budget.
+			Payload:   poBudgetPayload(tenantID, po),
 			Timestamp: time.Now().UTC(),
 		}
 		payload, marshalErr := evt.ToJSON()
@@ -689,7 +691,11 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 		}
 	}()
 
-	writeJSON(w, http.StatusOK, map[string]string{"status": "sent"})
+	resp := map[string]any{"status": "sent"}
+	if budgetRes != nil && budgetRes.Action != "ok" {
+		resp["budget"] = budgetRes
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // ReceivePurchaseOrder handles PUT /inventory/purchase-orders/{poID}/receive.
@@ -838,5 +844,7 @@ func (h *InventoryExtrasHandler) CancelPurchaseOrder(w http.ResponseWriter, r *h
 		writeError(w, http.StatusInternalServerError, "CANCEL_FAILED", "Failed to cancel purchase order")
 		return
 	}
+	// Treasury releases whatever budget the order still had committed.
+	h.publishOutbox(r.Context(), tenantID, "purchase_order", po.ID, "inventory.purchase_order.cancelled", poBudgetPayload(tenantID, po))
 	writeJSON(w, http.StatusOK, map[string]string{"status": "cancelled"})
 }

@@ -40,6 +40,8 @@ type InventoryExtrasHandler struct {
 	itemsSvc    *items.Service
 	auditSvc    *audit.Service
 	vendorBals  *vendorbalances.Service
+	// budgets checks a purchase order against the tenant's treasury budgets before it is sent.
+	budgets purchaseBudgetChecker
 	// authForFeatureGet authenticates feature-gated GET routes. The tenant router group
 	// only authenticates non-GET requests, so a GET behind RequireFeatureCode must parse
 	// claims itself or every caller 401s (same gotcha inventory.go solves with
