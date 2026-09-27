@@ -36,16 +36,35 @@ sales order, else the invoice). The payload carries `root_id`, `root_number`, `s
 ## Buying directly
 
 When the business buys the goods itself and pays from a bank (treasury: Buy goods for this job),
-treasury publishes `treasury.job_goods_purchased` with the root. The consumer cancels that sale's
-purchase orders that are still draft. Issued or received orders are real commitments and are left
-alone.
+treasury publishes `treasury.job_goods_purchased` with the root. The consumer receives the
+quantities of the sale's still-draft purchase orders into stock (reference
+`sale-<root>:bought-<po>`, once per order) and cancels those drafts. Issued or received orders are
+real commitments and are left alone.
 
 ## Receiving
 
 `inventory.goods_receipt.posted` carries `sales_document_id` (the purchase order's root) so the
 vendor bill treasury creates for the receipt counts as goods bought for that job.
 
-## Known gap
+## Goods leave stock once per sale (`consumers/sale_goods_events.go`)
 
-Goods invoiced without a delivery note are expensed in the ledger but never leave stock here: stock
-only drops when a delivery note is dispatched (`treasury.delivery_note.dispatched`).
+treasury expenses an invoice's goods when it is issued, so stock leaves at the same moment, with or
+without a delivery note. Every stock-out of a sale carries a reference starting `sale-<root>:`:
+
+| Reference | Written by |
+| --- | --- |
+| `sale-<root>:inv-<invoice>` | `treasury.sale_goods_issued` (invoice sent / voided) |
+| `sale-<root>:dn-<note>` | `treasury.delivery_note.dispatched` (now carries `root_id`) |
+| `sale-<root>:bought-<po>` | goods bought directly for the job (stock in) |
+
+- On every invoice send (`action: issue`) the invoice's stock-outs are synced to its quantities
+  less what the sale's delivery notes already took (a note dispatched from a sales order before
+  invoicing). A resend moves nothing; a re-issue after an edit moves only the difference.
+- On void (`action: reverse`) everything the invoice took goes back to stock (reason `return`).
+- A delivery note dispatched after an invoice of the same sale has issued the goods moves no stock:
+  it is logistics only. Delivery notes without a root keep the older reference and behaviour.
+- Negative stock is allowed (oversell debt): goods invoiced before their purchase order is received
+  go negative and the goods receipt brings them back.
+
+Historical invoices were not back-filled: codevertex's two goods jobs were bought and delivered
+directly and never held in inventory, so a stock-out now would only create negative stock.
