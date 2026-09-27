@@ -47,6 +47,9 @@ type deliveryNoteDispatchedPayload struct {
 	DeliveryNoteID     string `json:"delivery_note_id"`
 	DeliveryNoteNumber string `json:"delivery_note_number"`
 	SourceInvoiceID    string `json:"source_invoice_id"`
+	// RootID is the sale this note delivers (treasury procurement root). Goods leave stock once
+	// per sale: see sale_goods_events.go.
+	RootID string `json:"root_id"`
 	// OutletID is the treasury outlet/branch the delivery note dispatched from. "" for a
 	// tenant-wide note. Used to pick the issuing warehouse (branch-aware, default fallback).
 	OutletID     string             `json:"outlet_id"`
@@ -123,6 +126,10 @@ func (c *DeliveryNoteDispatchedConsumer) Start(ctx context.Context, js nats.JetS
 		nats.MaxDeliver(deliveryNoteDispatchedMaxDeliver),
 		nats.DeliverAll(),
 	)
+	// Invoice goods issue (sale_goods_events.go): stock leaves with the invoice's COGS.
+	eventslib.SubscribeQueueWithRebind(c.log, js, "treasury", saleGoodsSubject, saleGoodsDurable, c.handleSaleGoods,
+		nats.Durable(saleGoodsDurable), nats.AckExplicit(), nats.AckWait(deliveryNoteDispatchedAckWait),
+		nats.MaxDeliver(deliveryNoteDispatchedMaxDeliver), nats.DeliverAll())
 	c.log.Info("delivery note dispatched (goods-issue) consumer started",
 		zap.String("durable", deliveryNoteDispatchedDurableConsumer),
 		zap.String("subject", deliveryNoteDispatchedSubject))
@@ -202,10 +209,15 @@ func goodsIssueReference(deliveryNoteID uuid.UUID) string {
 // Unresolved items / non-positive quantities are skipped+warned, never failing the whole batch.
 func (c *DeliveryNoteDispatchedConsumer) handleDeliveryNoteDispatched(ctx context.Context, tenantID, deliveryNoteID uuid.UUID, p deliveryNoteDispatchedPayload) error {
 	reference := goodsIssueReference(deliveryNoteID)
+	rootID, rootErr := uuid.Parse(p.RootID)
+	if rootErr == nil {
+		reference = saleDeliveryReference(rootID, deliveryNoteID)
+	}
 
-	// Idempotency: skip if any stock adjustment already references this dispatch (redelivery-safe).
+	// Idempotency: skip if any stock adjustment already references this dispatch (redelivery-safe;
+	// the pre-sale-root reference format counts too).
 	exists, err := c.orm.StockAdjustment.Query().
-		Where(entadj.TenantID(tenantID), entadj.Reference(reference)).
+		Where(entadj.TenantID(tenantID), entadj.ReferenceIn(reference, goodsIssueReference(deliveryNoteID))).
 		Exist(ctx)
 	if err != nil {
 		return fmt.Errorf("check existing goods-issue adjustment: %w", err)
@@ -215,6 +227,19 @@ func (c *DeliveryNoteDispatchedConsumer) handleDeliveryNoteDispatched(ctx contex
 			zap.String("delivery_note_id", deliveryNoteID.String()),
 			zap.String("delivery_note_number", p.DeliveryNoteNumber))
 		return nil
+	}
+	// The sale's invoice already released its goods (issued with the invoice, like its COGS): this
+	// note is logistics only and moves no stock.
+	if rootErr == nil {
+		taken, terr := c.saleTaken(ctx, tenantID, rootID, "")
+		if terr != nil {
+			return terr
+		}
+		if taken.invoiced {
+			c.log.Info("delivery note dispatched: the sale's invoice already issued the goods — no stock movement",
+				zap.String("delivery_note_number", p.DeliveryNoteNumber), zap.String("root_id", p.RootID))
+			return nil
+		}
 	}
 
 	// Branch-aware: resolve the issuing warehouse from the event's outlet_id (active warehouse

@@ -342,7 +342,7 @@ func New(ctx context.Context) (*App, error) {
 	// Procure for the job: on treasury.goods_committed (accepted quotation, confirmed sales order or
 	// issued invoice) orders only the goods not in stock as draft purchase orders; cancels them when
 	// the business buys the goods directly. Gated by entitlement (fail-open).
-	goodsCommittedConsumer := consumers.NewGoodsCommittedConsumer(log, ormClient)
+	goodsCommittedConsumer := consumers.NewGoodsCommittedConsumer(log, ormClient, stockSvc)
 	goodsCommittedConsumer.SetFeatureGate(consumerFeatureGate)
 
 	// Goods-issue consumer — on a DISPATCHED treasury delivery note, deducts the dispatched

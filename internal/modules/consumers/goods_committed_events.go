@@ -19,7 +19,9 @@ import (
 	entbal "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
+	entadj "github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	entwh "github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
 // Procure for the job. treasury announces treasury.goods_committed once per sale (an accepted
@@ -84,15 +86,16 @@ func (f *flexFloat) UnmarshalJSON(b []byte) error {
 
 // GoodsCommittedConsumer implements procure-for-the-job.
 type GoodsCommittedConsumer struct {
-	log *zap.Logger
-	orm *ent.Client
+	log      *zap.Logger
+	orm      *ent.Client
+	stockSvc *stock.Service
 	// hasFeature gates procurement by subscription entitlement. Fail-open when nil.
 	hasFeature func(ctx context.Context, tenantID, feature string) bool
 }
 
 // NewGoodsCommittedConsumer creates the consumer.
-func NewGoodsCommittedConsumer(log *zap.Logger, orm *ent.Client) *GoodsCommittedConsumer {
-	return &GoodsCommittedConsumer{log: log.Named("consumers.goods_committed"), orm: orm}
+func NewGoodsCommittedConsumer(log *zap.Logger, orm *ent.Client, stockSvc *stock.Service) *GoodsCommittedConsumer {
+	return &GoodsCommittedConsumer{log: log.Named("consumers.goods_committed"), orm: orm, stockSvc: stockSvc}
 }
 
 // SetFeatureGate wires the subscription entitlement check.
@@ -393,18 +396,60 @@ func (c *GoodsCommittedConsumer) handlePurchased(msg *nats.Msg) {
 		_ = msg.Ack()
 		return
 	}
-	n, err := c.orm.PurchaseOrder.Update().
+	drafts, err := c.orm.PurchaseOrder.Query().
 		Where(entpo.TenantID(tenantID), entpo.QuotationID(rootID), entpo.StatusEQ(entpo.StatusDraft)).
-		SetStatus("cancelled").
-		SetNotes("Cancelled: the goods for this job were bought directly and paid from a bank account in treasury.").
-		Save(ctx)
+		WithLines().
+		All(ctx)
 	if err != nil {
-		c.log.Error("job goods purchased: draft purchase orders not cancelled", zap.Error(err))
+		c.log.Error("job goods purchased: draft purchase orders not loaded", zap.Error(err))
 		_ = msg.Nak()
 		return
 	}
-	c.log.Info("job goods purchased: draft purchase orders cancelled", zap.String("root", rootID.String()), zap.Int("count", n))
+	for _, po := range drafts {
+		// The goods the draft would have bought were bought directly: receive them into stock so
+		// the invoice's stock-out (goods leave with the invoice) nets to zero instead of negative.
+		c.receiveDirectPurchase(ctx, tenantID, rootID, po)
+		if _, uerr := c.orm.PurchaseOrder.UpdateOneID(po.ID).
+			SetStatus("cancelled").
+			SetNotes("Cancelled: the goods for this job were bought directly and paid from a bank account in treasury; received into stock.").
+			Save(ctx); uerr != nil {
+			c.log.Error("job goods purchased: draft purchase order not cancelled", zap.Error(uerr), zap.String("po", po.PoNumber))
+			_ = msg.Nak()
+			return
+		}
+	}
+	c.log.Info("job goods purchased: draft purchase orders received and cancelled", zap.String("root", rootID.String()), zap.Int("count", len(drafts)))
 	_ = msg.Ack()
+}
+
+// receiveDirectPurchase puts a cancelled draft's quantities into stock. Idempotent per purchase
+// order (reference "sale-<root>:bought-<po>"), so a redelivered message never receives twice.
+func (c *GoodsCommittedConsumer) receiveDirectPurchase(ctx context.Context, tenantID, rootID uuid.UUID, po *ent.PurchaseOrder) {
+	if c.stockSvc == nil {
+		return
+	}
+	ref := fmt.Sprintf("%sbought-%s", salePrefix(rootID), po.ID)
+	if done, _ := c.orm.StockAdjustment.Query().Where(entadj.TenantID(tenantID), entadj.Reference(ref)).Exist(ctx); done {
+		return
+	}
+	warehouseID := uuid.Nil
+	if po.WarehouseID != nil {
+		warehouseID = *po.WarehouseID
+	} else if wh := c.resolveWarehouse(ctx, tenantID, ""); wh != nil {
+		warehouseID = *wh
+	}
+	for _, l := range po.Edges.Lines {
+		itm, err := c.orm.Item.Get(ctx, l.ItemID)
+		if err != nil || l.QuantityOrdered <= 0 {
+			continue
+		}
+		if _, aerr := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
+			SKU: itm.Sku, Adjustment: l.QuantityOrdered, Reason: "other", Reference: ref, WarehouseID: warehouseID,
+			Notes: fmt.Sprintf("Bought directly for job %s (paid from a bank in treasury); replaces draft purchase order %s.", po.QuotationNumber, po.PoNumber),
+		}); aerr != nil {
+			c.log.Warn("job goods purchased: stock not received for line", zap.Error(aerr), zap.String("sku", itm.Sku))
+		}
+	}
 }
 
 // writeOutbox records an inventory.<eventType> event with the shared-events envelope (the relay
