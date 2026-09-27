@@ -269,6 +269,8 @@ func New(ctx context.Context) (*App, error) {
 	transferHandler := handlers.NewTransferHandler(log, transferSvc, rbacService, approvals.NewService(ormClient))
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
 	inventoryExtrasHandler.SetVendorBalances(vendorbalances.NewService(ormClient, treasuryClient, log))
+	// Purchase orders are checked against treasury budgets before they are sent.
+	inventoryExtrasHandler.SetBudgetChecker(treasuryClient)
 	bundleSvc := bundles.NewService(ormClient, log)
 	inventoryExtrasHandler.SetBundleService(bundleSvc)
 	varianceSvc := recipes.NewVarianceService(ormClient, log, cfg.Services.OrderingURL, cfg.Services.POSURL, cfg.Auth.APIKey)

@@ -350,3 +350,81 @@ func (c *Client) ResolveVATRate(ctx context.Context, tenantID uuid.UUID, preferr
 	}
 	return 0, "", false
 }
+
+// BudgetCheckLine is one budget line a purchase falls on (treasury budgets.CheckLineResult).
+type BudgetCheckLine struct {
+	BudgetID   string    `json:"budget_id"`
+	BudgetName string    `json:"budget_name"`
+	LineName   string    `json:"line_name"`
+	Planned    flexFloat `json:"planned"`
+	Actual     flexFloat `json:"actual"`
+	Committed  flexFloat `json:"committed"`
+	Available  flexFloat `json:"available"`
+	Requested  flexFloat `json:"requested"`
+	Action     string    `json:"action"`
+}
+
+// BudgetCheck is treasury's verdict for a purchase: "ok", "warn" or "stop".
+type BudgetCheck struct {
+	Action string            `json:"action"`
+	Lines  []BudgetCheckLine `json:"lines"`
+}
+
+// PurchaseBudgetInput describes a purchase order about to be sent.
+type PurchaseBudgetInput struct {
+	POID         uuid.UUID
+	NetAmount    float64
+	Currency     string
+	ProjectID    *uuid.UUID
+	CostCenterID *uuid.UUID
+	Date         time.Time
+}
+
+// CheckPurchaseBudget asks treasury whether a purchase fits the tenant's budgets (treasury
+// resolves the purchase account its bill will debit). Returns nil when the client is not
+// configured. The PO's own existing commitment is excluded, so re-sending is never counted twice.
+func (c *Client) CheckPurchaseBudget(ctx context.Context, tenantID uuid.UUID, in PurchaseBudgetInput) (*BudgetCheck, error) {
+	if !c.Enabled() {
+		return nil, nil
+	}
+	body := map[string]any{
+		"source_service": "inventory",
+		"source_type":    "purchase_order",
+		"source_id":      in.POID.String(),
+		"kind":           "commitment",
+		"net_amount":     in.NetAmount,
+		"currency":       in.Currency,
+		"date":           in.Date.Format("2006-01-02"),
+	}
+	if in.ProjectID != nil {
+		body["project_id"] = in.ProjectID.String()
+	}
+	if in.CostCenterID != nil {
+		body["cost_center_id"] = in.CostCenterID.String()
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	u := fmt.Sprintf("%s/api/v1/s2s/%s/ap/purchase-budget-check", c.baseURL, tenantID.String())
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, strings.NewReader(string(raw)))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-API-Key", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("treasury: purchase budget check: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("treasury: purchase budget check: status %d: %s", resp.StatusCode, strings.TrimSpace(string(b)))
+	}
+	var out BudgetCheck
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return nil, fmt.Errorf("treasury: decode budget check: %w", err)
+	}
+	return &out, nil
+}
