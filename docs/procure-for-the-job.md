@@ -31,40 +31,53 @@ sales order, else the invoice). The payload carries `root_id`, `root_number`, `s
    cost (treasury's snapshot, else the item cost). `quotation_id` / `quotation_number` hold the
    sale's root document. The receiving warehouse is the selling outlet's, else the default.
 5. Emits `inventory.procure_to_order.evaluated` with `goods_cost`, `from_stock_cost`,
-   `to_buy_cost`, `po_ids`, `po_numbers` and `unresolved_lines`. treasury shows it on the invoice.
+   `to_buy_cost`, `po_ids`, `po_numbers`, `unresolved_lines` and `to_buy_lines` (per line: item,
+   quantity still to buy, unit cost). treasury shows it on the invoice and pre-fills purchases.
 
 ## Buying directly
 
 When the business buys the goods itself and pays from a bank (treasury: Buy goods for this job),
-treasury publishes `treasury.job_goods_purchased` with the root. The consumer receives the
-quantities of the sale's still-draft purchase orders into stock (reference
-`sale-<root>:bought-<po>`, once per order) and cancels those drafts. Issued or received orders are
-real commitments and are left alone.
+treasury publishes `treasury.job_goods_purchased` with the root, the purchase (expense) id and the
+lines bought. The consumer receives exactly those quantities into stock, once per purchase
+(reference `sale-<root>:bought-<purchase>`, reason `transfer_in` so the movement is never posted to
+the ledger a second time; treasury already debited Inventory through the purchase), then reduces
+the sale's draft purchase orders by what was bought: emptied lines are deleted and an order left
+with nothing is cancelled. Issued or received orders are real commitments and are left alone.
 
 ## Receiving
 
 `inventory.goods_receipt.posted` carries `sales_document_id` (the purchase order's root) so the
 vendor bill treasury creates for the receipt counts as goods bought for that job.
 
-## Goods leave stock once per sale (`consumers/sale_goods_events.go`)
+## Stock follows the sale (`consumers/sale_goods_events.go`)
 
-treasury expenses an invoice's goods when it is issued, so stock leaves at the same moment, with or
-without a delivery note. Every stock-out of a sale carries a reference starting `sale-<root>:`:
+treasury decides when a sale's goods leave stock (tenant policy: with the invoice, the default, or
+only on delivery; see treasury `docs/general-ledger.md` 5i) and publishes the whole sale as one
+snapshot, `treasury.sale_goods_issued`, whenever one of its documents changes: every invoice,
+delivery note and credit note with the quantities it should have moved (positive out, negative
+back in). The consumer moves each document's stock to that target:
 
-| Reference | Written by |
+| Reference | Document |
 | --- | --- |
-| `sale-<root>:inv-<invoice>` | `treasury.sale_goods_issued` (invoice sent / voided) |
-| `sale-<root>:dn-<note>` | `treasury.delivery_note.dispatched` (now carries `root_id`) |
-| `sale-<root>:bought-<po>` | goods bought directly for the job (stock in) |
+| `sale-<root>:inv-<invoice>` | invoice (out) |
+| `sale-<root>:dn-<note>` | dispatched delivery note (out) |
+| `sale-<root>:cn-<credit note>` | credit note (back in) |
+| `sale-<root>:bought-<purchase>` | goods bought directly for the job (in; never touched by a sync) |
 
-- On every invoice send (`action: issue`) the invoice's stock-outs are synced to its quantities
-  less what the sale's delivery notes already took (a note dispatched from a sales order before
-  invoicing). A resend moves nothing; a re-issue after an edit moves only the difference.
-- On void (`action: reverse`) everything the invoice took goes back to stock (reason `return`).
-- A delivery note dispatched after an invoice of the same sale has issued the goods moves no stock:
-  it is logistics only. Delivery notes without a root keep the older reference and behaviour.
-- Negative stock is allowed (oversell debt): goods invoiced before their purchase order is received
-  go negative and the goods receipt brings them back.
+- The change per document and item is target minus what its reference already moved, so a repeat
+  snapshot moves nothing, an edit moves the difference and a void or cancel brings goods back.
+  Snapshots are complete, so they converge whatever order documents change in; a document missing
+  from the snapshot (deleted) is brought back to zero.
+- Reasons `transfer_out` (out) and `return` (back): never posted to the ledger from inventory,
+  treasury posts the sale's cost of sales and stock relief itself.
+- The stock goes out of (and back into) the selling outlet's warehouse, else the default one;
+  reversals return to the warehouse the reference used.
+- Negative stock is allowed (oversell debt): goods sold before their purchase order is received go
+  negative and the goods receipt brings them back. The stock page's "Below zero" filter
+  (`GET /stock?negative=true`, also in the export) lists them.
+
+The earlier delivery-note consumer (`treasury.delivery_note.dispatched` deducting stock itself) is
+removed: treasury now includes dispatched notes in the sale snapshot.
 
 Historical invoices were not back-filled: codevertex's two goods jobs were bought and delivered
 directly and never held in inventory, so a stock-out now would only create negative stock.
