@@ -6,192 +6,249 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
 
+	eventslib "github.com/Bengo-Hub/shared-events"
+	"github.com/bengobox/inventory-service/internal/ent"
 	entadj "github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
-// Goods leave stock once per sale. treasury expenses an invoice's goods (COGS) when it is issued,
-// so the stock must leave at the same moment, whether or not a delivery note is ever dispatched.
+// Sale goods: stock follows the sale. treasury decides, for every document of one sale (its
+// invoices, delivery notes and credit notes), how much of each good it moves out of or back into
+// stock under the tenant's stock-out policy (goods leave on the invoice, or on delivery), and
+// publishes the whole sale as one snapshot on treasury.sale_goods_issued whenever a document of it
+// changes. This consumer makes the stock movements match: every movement of a sale carries the
+// reference "sale-<root>:<kind>-<document>", and for each document and item the difference between
+// what the snapshot asks for and what its reference already moved is adjusted. A document of the
+// sale missing from the snapshot (deleted) is brought back to zero. The sync is idempotent and
+// converges whatever order documents change in.
 //
-// Every stock-out of a sale carries a reference starting "sale-<root>:" (root = the sale's first
-// document in treasury): "sale-<root>:inv-<invoice>" for an invoice, "sale-<root>:dn-<note>" for a
-// delivery note. treasury.sale_goods_issued ("issue" on every send, "reverse" on void) syncs the
-// invoice's stock-outs to its quantities net of what delivery notes of the same sale already took
-// (a note dispatched from a sales order before invoicing). The sync is idempotent: a resend changes
-// nothing, a re-issue after an edit moves only the difference, a void puts the goods back. Once an
-// invoice has issued the goods, later delivery notes of the sale move no stock.
+// Reasons: goods out = transfer_out, goods back = return, goods bought directly for a job =
+// transfer_in. None of them posts to the ledger from here (stock.glPostableReason): treasury posts
+// the sale's cost of sales and stock relief itself.
 
 const (
 	saleGoodsSubject = "treasury.sale_goods_issued"
-	saleGoodsDurable = "inventory-sale-goods-issue"
+	saleGoodsDurable = "inventory-sale-goods-sync"
 )
 
 func salePrefix(root uuid.UUID) string { return fmt.Sprintf("sale-%s:", root) }
 
-func saleInvoiceReference(root, invoiceID uuid.UUID) string {
-	return fmt.Sprintf("%sinv-%s", salePrefix(root), invoiceID)
-}
-
-func saleDeliveryReference(root, noteID uuid.UUID) string {
-	return fmt.Sprintf("%sdn-%s", salePrefix(root), noteID)
-}
-
-// saleStock is what one sale has taken out of stock so far, per item (positive = out).
-type saleStock struct {
-	byDelivery map[uuid.UUID]float64 // delivery notes of the sale
-	byInvoice  map[uuid.UUID]float64 // the given invoice ("" = every invoice of the sale)
-	invoiced   bool                  // some invoice of the sale currently holds goods out
-}
-
-// saleTaken sums the sale's stock-outs from its adjustments. invoiceRef narrows byInvoice to one
-// invoice; "" counts every invoice of the sale.
-func (c *DeliveryNoteDispatchedConsumer) saleTaken(ctx context.Context, tenantID, root uuid.UUID, invoiceRef string) (saleStock, error) {
-	out := saleStock{byDelivery: map[uuid.UUID]float64{}, byInvoice: map[uuid.UUID]float64{}}
-	adjs, err := c.orm.StockAdjustment.Query().
-		Where(entadj.TenantID(tenantID), entadj.ReferenceHasPrefix(salePrefix(root))).
-		Select(entadj.FieldItemID, entadj.FieldReference, entadj.FieldQuantityChange).
-		All(ctx)
-	if err != nil {
-		return out, fmt.Errorf("load sale stock-outs: %w", err)
+// saleDocReference is the stock-movement reference of one document of a sale.
+func saleDocReference(root uuid.UUID, kind string, docID uuid.UUID) string {
+	short := map[string]string{"invoice": "inv", "delivery_note": "dn", "credit_note": "cn", "bought": "bought"}[kind]
+	if short == "" {
+		short = kind
 	}
-	invoicedNet := 0.0
-	for _, a := range adjs {
-		taken := -a.QuantityChange
-		switch {
-		case strings.HasPrefix(a.Reference, salePrefix(root)+"dn-"):
-			out.byDelivery[a.ItemID] += taken
-		case strings.HasPrefix(a.Reference, salePrefix(root)+"inv-"):
-			invoicedNet += taken
-			if invoiceRef == "" || a.Reference == invoiceRef {
-				out.byInvoice[a.ItemID] += taken
-			}
+	return fmt.Sprintf("%s%s-%s", salePrefix(root), short, docID)
+}
+
+// SaleGoodsConsumer applies treasury's sale snapshots to stock.
+type SaleGoodsConsumer struct {
+	log        *zap.Logger
+	orm        *ent.Client
+	stockSvc   *stock.Service
+	hasFeature func(ctx context.Context, tenantID, feature string) bool
+}
+
+// NewSaleGoodsConsumer creates the consumer.
+func NewSaleGoodsConsumer(log *zap.Logger, orm *ent.Client, stockSvc *stock.Service) *SaleGoodsConsumer {
+	return &SaleGoodsConsumer{log: log.Named("consumers.sale_goods"), orm: orm, stockSvc: stockSvc}
+}
+
+// SetFeatureGate wires the subscription entitlement check (fail-open when nil).
+func (c *SaleGoodsConsumer) SetFeatureGate(fn func(ctx context.Context, tenantID, feature string) bool) {
+	c.hasFeature = fn
+}
+
+// Start subscribes via a durable queue consumer shared by the replicas.
+func (c *SaleGoodsConsumer) Start(ctx context.Context, js nats.JetStreamContext) error {
+	if _, err := js.StreamInfo("treasury"); err != nil {
+		if _, err := js.AddStream(&nats.StreamConfig{
+			Name: "treasury", Subjects: []string{"treasury.>"}, Retention: nats.LimitsPolicy,
+			MaxAge: 72 * time.Hour, Storage: nats.FileStorage,
+		}); err != nil && err != nats.ErrStreamNameAlreadyInUse {
+			return fmt.Errorf("sale goods: ensure stream: %w", err)
 		}
 	}
-	out.invoiced = invoicedNet > 1e-9
-	return out, nil
+	eventslib.SubscribeQueueWithRebind(c.log, js, "treasury", saleGoodsSubject, saleGoodsDurable, c.handle,
+		nats.Durable(saleGoodsDurable), nats.AckExplicit(), nats.AckWait(30*time.Second),
+		nats.MaxDeliver(5), nats.DeliverAll())
+	c.log.Info("sale goods consumer started", zap.String("subject", saleGoodsSubject))
+	<-ctx.Done()
+	return nil
 }
 
-// saleGoodsDelta is the stock change per item (negative = out) that makes an invoice's
-// stock-outs equal its quantities net of what the sale's delivery notes already took. Items the
-// invoice no longer carries (edited out, or a reversal with no lines) go back to stock. Pure.
-func saleGoodsDelta(invoiced, byDelivery, byInvoice map[uuid.UUID]float64) map[uuid.UUID]float64 {
-	delta := map[uuid.UUID]float64{}
-	seen := map[uuid.UUID]bool{}
-	for id := range invoiced {
-		seen[id] = true
-	}
-	for id := range byInvoice {
-		seen[id] = true
-	}
-	for id := range seen {
-		target := invoiced[id] - byDelivery[id]
-		if target < 0 {
-			target = 0
-		}
-		if d := round4(byInvoice[id] - target); d > 1e-9 || d < -1e-9 {
-			delta[id] = d // positive: return to stock; negative: take out
-		}
-	}
-	return delta
+// saleSnapshotLine is one good a document moves (quantity > 0 out, < 0 back in).
+type saleSnapshotLine struct {
+	ItemID      string    `json:"item_id"`
+	SKU         string    `json:"sku"`
+	Description string    `json:"description"`
+	Quantity    flexFloat `json:"quantity"`
 }
 
-func round4(v float64) float64 { return math.Round(v*10000) / 10000 }
-
-// saleGoodsPayload is treasury.sale_goods_issued.
-type saleGoodsPayload struct {
-	TenantID       string               `json:"tenant_id"`
-	Action         string               `json:"action"` // issue | reverse
-	RootID         string               `json:"root_id"`
-	DocumentID     string               `json:"document_id"`
-	DocumentNumber string               `json:"document_number"`
-	CustomerName   string               `json:"customer_name"`
-	OutletID       string               `json:"outlet_id"`
-	Lines          []goodsCommittedLine `json:"lines"`
+// saleSnapshotDoc is one document of the sale.
+type saleSnapshotDoc struct {
+	Kind           string             `json:"kind"` // invoice | delivery_note | credit_note
+	DocumentID     string             `json:"document_id"`
+	DocumentNumber string             `json:"document_number"`
+	OutletID       string             `json:"outlet_id"`
+	Lines          []saleSnapshotLine `json:"lines"`
 }
 
-func (c *DeliveryNoteDispatchedConsumer) handleSaleGoods(msg *nats.Msg) {
+// saleSnapshot is treasury.sale_goods_issued.
+type saleSnapshot struct {
+	TenantID     string            `json:"tenant_id"`
+	RootID       string            `json:"root_id"`
+	RootNumber   string            `json:"root_number"`
+	Policy       string            `json:"policy"`
+	CustomerName string            `json:"customer_name"`
+	Documents    []saleSnapshotDoc `json:"documents"`
+}
+
+func (c *SaleGoodsConsumer) handle(msg *nats.Msg) {
 	ctx := context.Background()
 	var env struct {
-		TenantID string           `json:"tenant_id"`
-		Payload  saleGoodsPayload `json:"payload"`
+		TenantID string       `json:"tenant_id"`
+		Payload  saleSnapshot `json:"payload"`
 	}
 	if err := json.Unmarshal(msg.Data, &env); err != nil {
 		_ = msg.Ack() // malformed, never retry
 		return
 	}
-	p := env.Payload
-	tenantID, terr := envelopeTenant(env.TenantID, p.TenantID)
-	root, rerr := uuid.Parse(p.RootID)
-	docID, derr := uuid.Parse(p.DocumentID)
-	if terr != nil || rerr != nil || derr != nil {
+	tenantID, terr := envelopeTenant(env.TenantID, env.Payload.TenantID)
+	root, rerr := uuid.Parse(env.Payload.RootID)
+	if terr != nil || rerr != nil {
 		_ = msg.Ack()
 		return
 	}
-	if !c.entitled(ctx, tenantID) {
+	if c.hasFeature != nil && !c.hasFeature(ctx, tenantID.String(), "basic_inventory_access") {
 		_ = msg.Ack()
 		return
 	}
-	if err := c.syncSaleGoods(ctx, tenantID, root, docID, p); err != nil {
-		c.log.Error("sale goods: stock sync failed", zap.Error(err), zap.String("invoice", p.DocumentNumber))
+	if err := c.sync(ctx, tenantID, root, env.Payload); err != nil {
+		c.log.Error("sale goods: stock sync failed", zap.Error(err), zap.String("sale", env.Payload.RootNumber))
 		_ = msg.Nak()
 		return
 	}
 	_ = msg.Ack()
 }
 
-// syncSaleGoods applies saleGoodsDelta for one invoice.
-func (c *DeliveryNoteDispatchedConsumer) syncSaleGoods(ctx context.Context, tenantID, root, invoiceID uuid.UUID, p saleGoodsPayload) error {
-	ref := saleInvoiceReference(root, invoiceID)
-	invoiced := map[uuid.UUID]float64{}
-	skus := map[uuid.UUID]string{}
-	if p.Action != "reverse" {
-		for _, l := range p.Lines {
-			itm := c.resolveItem(ctx, tenantID, l.ItemID, l.SKU)
-			if itm == nil || nonStockItemType(itm.Type) || float64(l.Quantity) <= 0 {
-				continue
-			}
-			invoiced[itm.ID] += float64(l.Quantity)
-			skus[itm.ID] = itm.Sku
+// movedByReference is what each document reference of a sale has moved so far, per item
+// (positive = out). References other than the documents' (e.g. goods bought for the job) are kept
+// apart so they are never undone by a document sync.
+func (c *SaleGoodsConsumer) movedByReference(ctx context.Context, tenantID, root uuid.UUID) (map[string]map[uuid.UUID]float64, map[string]uuid.UUID, error) {
+	adjs, err := c.orm.StockAdjustment.Query().
+		Where(entadj.TenantID(tenantID), entadj.ReferenceHasPrefix(salePrefix(root))).
+		Select(entadj.FieldItemID, entadj.FieldWarehouseID, entadj.FieldReference, entadj.FieldQuantityChange).
+		All(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("load sale movements: %w", err)
+	}
+	moved := map[string]map[uuid.UUID]float64{}
+	warehouse := map[string]uuid.UUID{} // where each reference moved stock (reversals go back there)
+	for _, a := range adjs {
+		if strings.Contains(a.Reference, ":bought-") {
+			continue
+		}
+		if moved[a.Reference] == nil {
+			moved[a.Reference] = map[uuid.UUID]float64{}
+		}
+		moved[a.Reference][a.ItemID] -= a.QuantityChange
+		warehouse[a.Reference] = a.WarehouseID
+	}
+	return moved, warehouse, nil
+}
+
+// saleDeltas returns, per item, the stock change (positive = in) that brings what a reference
+// moved to its target (positive = out). Pure.
+func saleDeltas(target, moved map[uuid.UUID]float64) map[uuid.UUID]float64 {
+	out := map[uuid.UUID]float64{}
+	for id := range target {
+		if d := round4(moved[id] - target[id]); math.Abs(d) > 1e-9 {
+			out[id] = d
 		}
 	}
-	taken, err := c.saleTaken(ctx, tenantID, root, ref)
+	for id, m := range moved {
+		if _, ok := target[id]; !ok && math.Abs(m) > 1e-9 {
+			out[id] = round4(m)
+		}
+	}
+	return out
+}
+
+func round4(v float64) float64 { return math.Round(v*10000) / 10000 }
+
+func (c *SaleGoodsConsumer) sync(ctx context.Context, tenantID, root uuid.UUID, snap saleSnapshot) error {
+	moved, whByRef, err := c.movedByReference(ctx, tenantID, root)
 	if err != nil {
 		return err
 	}
-	delta := saleGoodsDelta(invoiced, taken.byDelivery, taken.byInvoice)
-	if len(delta) == 0 {
-		return nil
+	skus := map[uuid.UUID]string{}
+	seen := map[string]bool{}
+	for _, d := range snap.Documents {
+		docID, err := uuid.Parse(d.DocumentID)
+		if err != nil {
+			continue
+		}
+		ref := saleDocReference(root, d.Kind, docID)
+		seen[ref] = true
+		target := map[uuid.UUID]float64{}
+		for _, l := range d.Lines {
+			itm := resolveSaleItem(ctx, c.orm, tenantID, l.ItemID, l.SKU)
+			if itm == nil || nonStockItemType(itm.Type) {
+				continue // a free-typed good or a service has no stock to move
+			}
+			target[itm.ID] += float64(l.Quantity)
+			skus[itm.ID] = itm.Sku
+		}
+		wh := whByRef[ref]
+		if wh == uuid.Nil {
+			wh = resolveSaleWarehouse(ctx, c.orm, tenantID, d.OutletID)
+		}
+		c.apply(ctx, tenantID, ref, wh, saleDeltas(target, moved[ref]), skus,
+			fmt.Sprintf("%s %s (sale %s, customer: %s)", strings.ReplaceAll(d.Kind, "_", " "), d.DocumentNumber, snap.RootNumber, snap.CustomerName))
 	}
-	warehouseID := c.resolveWarehouse(ctx, tenantID, p.OutletID)
+	// Documents no longer in the sale (deleted): whatever they moved goes back.
+	for ref, m := range moved {
+		if !seen[ref] {
+			c.apply(ctx, tenantID, ref, whByRef[ref], saleDeltas(nil, m), skus, "document removed from sale "+snap.RootNumber)
+		}
+	}
+	return nil
+}
+
+// apply posts the stock changes for one reference. A single failing item is logged, never fatal.
+func (c *SaleGoodsConsumer) apply(ctx context.Context, tenantID uuid.UUID, ref string, warehouseID uuid.UUID, deltas map[uuid.UUID]float64, skus map[uuid.UUID]string, note string) {
+	if len(deltas) == 0 {
+		return
+	}
 	if warehouseID == uuid.Nil {
-		c.log.Warn("sale goods: no warehouse resolved, stock not moved", zap.String("invoice", p.DocumentNumber))
-		return nil
+		c.log.Warn("sale goods: no warehouse resolved, stock not moved", zap.String("reference", ref))
+		return
 	}
-	for itemID, change := range delta {
+	for itemID, change := range deltas {
 		sku := skus[itemID]
 		if sku == "" {
-			itm, ierr := c.orm.Item.Get(ctx, itemID)
-			if ierr != nil {
+			itm, err := c.orm.Item.Get(ctx, itemID)
+			if err != nil {
 				continue
 			}
 			sku = itm.Sku
 		}
-		reason, note := "transfer_out", "Goods issue: sold on invoice %s (customer: %s)."
+		reason, verb := "transfer_out", "Goods out: "
 		if change > 0 {
-			reason, note = "return", "Goods back to stock: invoice %s reversed or reduced (customer: %s)."
+			reason, verb = "return", "Goods back: "
 		}
-		if _, aerr := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
-			SKU: sku, Adjustment: change, Reason: reason, Reference: ref,
-			Notes: fmt.Sprintf(note, p.DocumentNumber, p.CustomerName), WarehouseID: warehouseID,
-		}); aerr != nil {
-			c.log.Warn("sale goods: stock not adjusted for item", zap.Error(aerr), zap.String("sku", sku))
+		if _, err := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
+			SKU: sku, Adjustment: change, Reason: reason, Reference: ref, Notes: verb + note, WarehouseID: warehouseID,
+		}); err != nil {
+			c.log.Warn("sale goods: stock not adjusted", zap.Error(err), zap.String("sku", sku), zap.String("reference", ref))
 		}
 	}
-	c.log.Info("sale goods synced to invoice", zap.String("invoice", p.DocumentNumber), zap.String("action", p.Action), zap.Int("items", len(delta)))
-	return nil
 }

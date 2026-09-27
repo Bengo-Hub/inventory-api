@@ -114,7 +114,7 @@ type App struct {
 	etimsItemConsumer             *consumers.EtimsItemRegisteredConsumer
 	tenantPurgeConsumer           *consumers.TenantPurgeConsumer
 	goodsCommittedConsumer        *consumers.GoodsCommittedConsumer
-	deliveryNoteConsumer          *consumers.DeliveryNoteDispatchedConsumer
+	saleGoodsConsumer             *consumers.SaleGoodsConsumer
 	notifHub                      *notifmod.Hub
 	stockNotifyConsumer           *consumers.StockNotifyEventsConsumer
 }
@@ -345,12 +345,11 @@ func New(ctx context.Context) (*App, error) {
 	goodsCommittedConsumer := consumers.NewGoodsCommittedConsumer(log, ormClient, stockSvc)
 	goodsCommittedConsumer.SetFeatureGate(consumerFeatureGate)
 
-	// Goods-issue consumer — on a DISPATCHED treasury delivery note, deducts the dispatched
-	// quantities from the issuing warehouse via the canonical stock-adjustment path (auditable
-	// StockAdjustment + balance decrement + lot drawdown). Idempotent on delivery_note_id; gated
-	// by entitlement (fail-open).
-	deliveryNoteConsumer := consumers.NewDeliveryNoteDispatchedConsumer(log, stockSvc, ormClient)
-	deliveryNoteConsumer.SetFeatureGate(consumerFeatureGate)
+	// Sale goods consumer: stock follows each treasury sale (invoices, delivery notes, credit
+	// notes) under the tenant's stock-out policy, from one snapshot per change. Gated by
+	// entitlement (fail-open).
+	saleGoodsConsumer := consumers.NewSaleGoodsConsumer(log, ormClient, stockSvc)
+	saleGoodsConsumer.SetFeatureGate(consumerFeatureGate)
 
 	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
 	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
@@ -502,7 +501,7 @@ func New(ctx context.Context) (*App, error) {
 		etimsItemConsumer:             etimsItemConsumer,
 		tenantPurgeConsumer:           tenantPurgeConsumer,
 		goodsCommittedConsumer:        goodsCommittedConsumer,
-		deliveryNoteConsumer:          deliveryNoteConsumer,
+		saleGoodsConsumer:             saleGoodsConsumer,
 		notifHub:                      notifHub,
 		stockNotifyConsumer:           stockNotifyConsumer,
 	}, nil
@@ -650,15 +649,13 @@ func (a *App) Run(ctx context.Context) error {
 				}()
 			}
 
-			// Start goods-issue consumer — on a dispatched treasury delivery note, deducts the
-			// dispatched quantities from the issuing warehouse's stock (auditable adjustments).
-			if a.deliveryNoteConsumer != nil {
+			// Start the sale goods consumer (stock follows treasury sales).
+			if a.saleGoodsConsumer != nil {
 				go func() {
-					if err := a.deliveryNoteConsumer.Start(ctx, js); err != nil {
-						a.log.Error("delivery note dispatched (goods-issue) consumer stopped", zap.Error(err))
+					if err := a.saleGoodsConsumer.Start(ctx, js); err != nil {
+						a.log.Error("sale goods consumer stopped", zap.Error(err))
 					}
 				}()
-				a.log.Info("delivery note dispatched (goods-issue) consumer started")
 			}
 		}
 	}

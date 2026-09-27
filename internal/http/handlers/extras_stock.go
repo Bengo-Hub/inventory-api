@@ -52,9 +52,12 @@ var stockableTypes = []entitem.Type{entitem.TypeGOODS, entitem.TypeINGREDIENT, e
 // the JSON ListStock endpoint and the branded PDF/CSV export (StockExportPDF), so the two
 // surfaces can never drift on what counts as "in scope".
 type stockLevelFilters struct {
-	Search      string
-	LowStock    bool
-	OutOfStock  bool
+	Search     string
+	LowStock   bool
+	OutOfStock bool
+	// Negative keeps balances below zero: goods sold (or issued) before they were received. They
+	// settle when the purchase is received; the list lets a buyer see and clear them.
+	Negative    bool
 	CategoryID  *uuid.UUID
 	TypeFilter  string
 	WarehouseID *uuid.UUID
@@ -82,6 +85,7 @@ func parseStockLevelFilters(r *http.Request, explicitOutletParam string) stockLe
 		Search:        q.Get("search"),
 		LowStock:      q.Get("low_stock") == "true",
 		OutOfStock:    q.Get("out_of_stock") == "true",
+		Negative:      q.Get("negative") == "true",
 		TypeFilter:    strings.ToUpper(strings.TrimSpace(q.Get("type"))),
 		IncludeHidden: q.Get("include_hidden") == "true",
 	}
@@ -139,6 +143,9 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 	}
 	if f.LocationID != nil {
 		balQuery = balQuery.Where(entinventorybalance.LocationID(*f.LocationID))
+	}
+	if f.Negative {
+		balQuery = balQuery.Where(entinventorybalance.OnHandLT(0))
 	}
 	if f.ItemID != nil {
 		balQuery = balQuery.Where(entinventorybalance.ItemID(*f.ItemID))

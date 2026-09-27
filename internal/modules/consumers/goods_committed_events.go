@@ -20,7 +20,6 @@ import (
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entadj "github.com/bengobox/inventory-service/internal/ent/stockadjustment"
-	entwh "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 )
 
@@ -172,7 +171,8 @@ func (c *GoodsCommittedConsumer) handleCommitted(msg *nats.Msg) {
 
 // planLine is a committed line after stock allocation.
 type planLine struct {
-	item      *ent.Item // nil when the line resolves to no inventory item
+	item      *ent.Item          // nil when the line resolves to no inventory item
+	line      goodsCommittedLine // the committed line as treasury sent it
 	quantity  float64
 	fromStock float64
 	shortfall float64
@@ -246,7 +246,7 @@ func (c *GoodsCommittedConsumer) procure(ctx context.Context, tenantID, rootID u
 		if qty <= 0 {
 			continue
 		}
-		itm := c.resolveItem(ctx, tenantID, gl.ItemID, gl.SKU)
+		itm := resolveSaleItem(ctx, c.orm, tenantID, gl.ItemID, gl.SKU)
 		if itm != nil && nonStockItemType(itm.Type) {
 			continue
 		}
@@ -259,7 +259,7 @@ func (c *GoodsCommittedConsumer) procure(ctx context.Context, tenantID, rootID u
 		} else {
 			itemIDs = append(itemIDs, itm.ID)
 		}
-		lines = append(lines, planLine{item: itm, quantity: qty, unitCost: cost})
+		lines = append(lines, planLine{item: itm, line: gl, quantity: qty, unitCost: cost})
 	}
 
 	available := map[uuid.UUID]float64{}
@@ -276,10 +276,19 @@ func (c *GoodsCommittedConsumer) procure(ctx context.Context, tenantID, rootID u
 	plan, fromStockCost, toBuyCost := planProcurement(lines, available)
 
 	toOrder := make([]resolvedLine, 0, len(plan))
+	toBuyLines := make([]map[string]any, 0, len(plan))
 	for _, l := range plan {
-		if l.item != nil && l.shortfall > 0 {
+		if l.shortfall <= 0 {
+			continue
+		}
+		if l.item != nil {
 			toOrder = append(toOrder, resolvedLine{item: l.item, quantity: l.shortfall, unitCost: l.unitCost})
 		}
+		// Per-line quantities still to buy: treasury pre-fills "Buy goods for this job" with them.
+		toBuyLines = append(toBuyLines, map[string]any{
+			"item_id": l.line.ItemID, "sku": l.line.SKU, "description": l.line.Description,
+			"quantity": roundDecimal(l.shortfall), "unit_cost": l.unitCost,
+		})
 	}
 	poIDs, poNumbers, err := c.createPurchaseOrders(ctx, tenantID, rootID, p, toOrder)
 	if err != nil {
@@ -297,6 +306,7 @@ func (c *GoodsCommittedConsumer) procure(ctx context.Context, tenantID, rootID u
 		"po_ids":           poIDs,
 		"po_numbers":       poNumbers,
 		"unresolved_lines": unresolved,
+		"to_buy_lines":     toBuyLines,
 	})
 	c.log.Info("procure for the job evaluated",
 		zap.String("root", p.RootNumber), zap.String("source", p.SourceType),
@@ -311,7 +321,7 @@ func (c *GoodsCommittedConsumer) createPurchaseOrders(ctx context.Context, tenan
 	if len(groups) == 0 {
 		return []string{}, []string{}, nil
 	}
-	warehouseID := c.resolveWarehouse(ctx, tenantID, p.OutletID)
+	warehouseID := resolveSaleWarehouse(ctx, c.orm, tenantID, p.OutletID)
 	currency := p.Currency
 	if currency == "" {
 		currency = "KES"
@@ -345,8 +355,8 @@ func (c *GoodsCommittedConsumer) createPurchaseOrders(ctx context.Context, tenan
 		if supplierID != nil {
 			create = create.SetSupplierID(*supplierID)
 		}
-		if warehouseID != nil {
-			create = create.SetWarehouseID(*warehouseID)
+		if warehouseID != uuid.Nil {
+			create = create.SetWarehouseID(warehouseID)
 		}
 		po, err := create.Save(ctx)
 		if err != nil {
@@ -375,81 +385,134 @@ func (c *GoodsCommittedConsumer) createPurchaseOrders(ctx context.Context, tenan
 	return ids, numbers, nil
 }
 
-// handlePurchased cancels a sale's still-draft procurement purchase orders once the business
-// bought the goods itself. Issued or received orders are left alone (real commitments).
+// jobGoodsPurchasedPayload is treasury.job_goods_purchased: goods bought directly for a sale and
+// paid from a bank, with the quantities bought.
+type jobGoodsPurchasedPayload struct {
+	TenantID   string               `json:"tenant_id"`
+	RootID     string               `json:"root_id"`
+	RootNumber string               `json:"root_number"`
+	PurchaseID string               `json:"purchase_id"` // the treasury expense recording the purchase
+	OutletID   string               `json:"outlet_id"`
+	Lines      []goodsCommittedLine `json:"lines"`
+}
+
+// handlePurchased receives goods bought directly for a sale into stock (so the sale's stock-out
+// nets to zero instead of going negative) and withdraws what they replace from the sale's draft
+// purchase orders. Issued or received orders are real commitments and are left alone.
 func (c *GoodsCommittedConsumer) handlePurchased(msg *nats.Msg) {
 	ctx := context.Background()
 	var env struct {
-		TenantID string `json:"tenant_id"`
-		Payload  struct {
-			TenantID string `json:"tenant_id"`
-			RootID   string `json:"root_id"`
-		} `json:"payload"`
+		TenantID string                   `json:"tenant_id"`
+		Payload  jobGoodsPurchasedPayload `json:"payload"`
 	}
 	if err := json.Unmarshal(msg.Data, &env); err != nil {
 		_ = msg.Ack()
 		return
 	}
-	tenantID, err := envelopeTenant(env.TenantID, env.Payload.TenantID)
-	rootID, rerr := uuid.Parse(env.Payload.RootID)
-	if err != nil || rerr != nil {
+	p := env.Payload
+	tenantID, err := envelopeTenant(env.TenantID, p.TenantID)
+	rootID, rerr := uuid.Parse(p.RootID)
+	purchaseID, perr := uuid.Parse(p.PurchaseID)
+	if err != nil || rerr != nil || perr != nil {
 		_ = msg.Ack()
 		return
 	}
-	drafts, err := c.orm.PurchaseOrder.Query().
-		Where(entpo.TenantID(tenantID), entpo.QuotationID(rootID), entpo.StatusEQ(entpo.StatusDraft)).
-		WithLines().
-		All(ctx)
+	bought, err := c.receiveDirectPurchase(ctx, tenantID, rootID, purchaseID, p)
 	if err != nil {
-		c.log.Error("job goods purchased: draft purchase orders not loaded", zap.Error(err))
+		c.log.Error("job goods purchased: not received", zap.Error(err), zap.String("sale", p.RootNumber))
 		_ = msg.Nak()
 		return
 	}
-	for _, po := range drafts {
-		// The goods the draft would have bought were bought directly: receive them into stock so
-		// the invoice's stock-out (goods leave with the invoice) nets to zero instead of negative.
-		c.receiveDirectPurchase(ctx, tenantID, rootID, po)
-		if _, uerr := c.orm.PurchaseOrder.UpdateOneID(po.ID).
-			SetStatus("cancelled").
-			SetNotes("Cancelled: the goods for this job were bought directly and paid from a bank account in treasury; received into stock.").
-			Save(ctx); uerr != nil {
-			c.log.Error("job goods purchased: draft purchase order not cancelled", zap.Error(uerr), zap.String("po", po.PoNumber))
-			_ = msg.Nak()
-			return
-		}
+	if err := c.withdrawFromDrafts(ctx, tenantID, rootID, bought); err != nil {
+		c.log.Error("job goods purchased: draft purchase orders not reduced", zap.Error(err), zap.String("sale", p.RootNumber))
+		_ = msg.Nak()
+		return
 	}
-	c.log.Info("job goods purchased: draft purchase orders received and cancelled", zap.String("root", rootID.String()), zap.Int("count", len(drafts)))
 	_ = msg.Ack()
 }
 
-// receiveDirectPurchase puts a cancelled draft's quantities into stock. Idempotent per purchase
-// order (reference "sale-<root>:bought-<po>"), so a redelivered message never receives twice.
-func (c *GoodsCommittedConsumer) receiveDirectPurchase(ctx context.Context, tenantID, rootID uuid.UUID, po *ent.PurchaseOrder) {
-	if c.stockSvc == nil {
-		return
-	}
-	ref := fmt.Sprintf("%sbought-%s", salePrefix(rootID), po.ID)
-	if done, _ := c.orm.StockAdjustment.Query().Where(entadj.TenantID(tenantID), entadj.Reference(ref)).Exist(ctx); done {
-		return
-	}
-	warehouseID := uuid.Nil
-	if po.WarehouseID != nil {
-		warehouseID = *po.WarehouseID
-	} else if wh := c.resolveWarehouse(ctx, tenantID, ""); wh != nil {
-		warehouseID = *wh
-	}
-	for _, l := range po.Edges.Lines {
-		itm, err := c.orm.Item.Get(ctx, l.ItemID)
-		if err != nil || l.QuantityOrdered <= 0 {
+// receiveDirectPurchase puts the bought quantities into stock, once per purchase (reference
+// "sale-<root>:bought-<purchase>"). Reason transfer_in: treasury already debited Inventory through
+// the purchase, so this movement must not post to the ledger again. Returns item -> quantity.
+func (c *GoodsCommittedConsumer) receiveDirectPurchase(ctx context.Context, tenantID, rootID, purchaseID uuid.UUID, p jobGoodsPurchasedPayload) (map[uuid.UUID]float64, error) {
+	bought := map[uuid.UUID]float64{}
+	skus := map[uuid.UUID]string{}
+	for _, l := range p.Lines {
+		itm := resolveSaleItem(ctx, c.orm, tenantID, l.ItemID, l.SKU)
+		if itm == nil || nonStockItemType(itm.Type) || float64(l.Quantity) <= 0 {
 			continue
 		}
-		if _, aerr := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
-			SKU: itm.Sku, Adjustment: l.QuantityOrdered, Reason: "other", Reference: ref, WarehouseID: warehouseID,
-			Notes: fmt.Sprintf("Bought directly for job %s (paid from a bank in treasury); replaces draft purchase order %s.", po.QuotationNumber, po.PoNumber),
-		}); aerr != nil {
-			c.log.Warn("job goods purchased: stock not received for line", zap.Error(aerr), zap.String("sku", itm.Sku))
+		bought[itm.ID] += float64(l.Quantity)
+		skus[itm.ID] = itm.Sku
+	}
+	ref := saleDocReference(rootID, "bought", purchaseID)
+	if done, err := c.orm.StockAdjustment.Query().Where(entadj.TenantID(tenantID), entadj.Reference(ref)).Exist(ctx); err != nil {
+		return nil, err
+	} else if done || c.stockSvc == nil || len(bought) == 0 {
+		return bought, nil
+	}
+	warehouseID := resolveSaleWarehouse(ctx, c.orm, tenantID, p.OutletID)
+	for itemID, qty := range bought {
+		if _, err := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
+			SKU: skus[itemID], Adjustment: qty, Reason: "transfer_in", Reference: ref, WarehouseID: warehouseID,
+			Notes: fmt.Sprintf("Bought directly for job %s (paid from a bank in treasury).", p.RootNumber),
+		}); err != nil {
+			c.log.Warn("job goods purchased: stock not received for item", zap.Error(err), zap.String("sku", skus[itemID]))
 		}
 	}
+	return bought, nil
+}
+
+// withdrawFromDrafts reduces the sale's draft purchase orders by what was bought directly, deleting
+// emptied lines and cancelling orders left with nothing to buy.
+func (c *GoodsCommittedConsumer) withdrawFromDrafts(ctx context.Context, tenantID, rootID uuid.UUID, bought map[uuid.UUID]float64) error {
+	if len(bought) == 0 {
+		return nil
+	}
+	drafts, err := c.orm.PurchaseOrder.Query().
+		Where(entpo.TenantID(tenantID), entpo.QuotationID(rootID), entpo.StatusEQ(entpo.StatusDraft)).
+		WithLines().All(ctx)
+	if err != nil {
+		return err
+	}
+	left := map[uuid.UUID]float64{}
+	for id, q := range bought {
+		left[id] = q
+	}
+	for _, po := range drafts {
+		total, kept := 0.0, 0
+		for _, l := range po.Edges.Lines {
+			take := math.Min(l.QuantityOrdered, left[l.ItemID])
+			if take <= 0 {
+				total += l.TotalPrice
+				kept++
+				continue
+			}
+			left[l.ItemID] -= take
+			rest := round4(l.QuantityOrdered - take)
+			if rest <= 0 {
+				if err := c.orm.PurchaseOrderLine.DeleteOneID(l.ID).Exec(ctx); err != nil {
+					return err
+				}
+				continue
+			}
+			if err := c.orm.PurchaseOrderLine.UpdateOneID(l.ID).
+				SetQuantityOrdered(rest).SetTotalPrice(roundDecimal(rest * l.UnitPrice)).Exec(ctx); err != nil {
+				return err
+			}
+			total += rest * l.UnitPrice
+			kept++
+		}
+		upd := c.orm.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(roundDecimal(total))
+		if kept == 0 {
+			upd = upd.SetStatus("cancelled").
+				SetNotes("Cancelled: the goods for this job were bought directly and paid from a bank account in treasury.")
+		}
+		if err := upd.Exec(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // writeOutbox records an inventory.<eventType> event with the shared-events envelope (the relay
@@ -502,37 +565,6 @@ func groupBySupplier(resolved []resolvedLine) (map[uuid.UUID][]poLine, []uuid.UU
 		groups[supKey] = append(groups[supKey], poLine{itemID: r.item.ID, quantity: r.quantity, unitCost: r.unitCost})
 	}
 	return groups, order
-}
-
-// resolveWarehouse picks the receiving warehouse: the selling outlet's active warehouse, else the
-// tenant's default active warehouse, else nil (the buyer assigns one before issuing).
-func (c *GoodsCommittedConsumer) resolveWarehouse(ctx context.Context, tenantID uuid.UUID, outletIDRaw string) *uuid.UUID {
-	if outletID, err := uuid.Parse(outletIDRaw); err == nil {
-		if wh, werr := c.orm.Warehouse.Query().
-			Where(entwh.TenantID(tenantID), entwh.OutletID(outletID), entwh.IsActive(true)).First(ctx); werr == nil {
-			return &wh.ID
-		}
-	}
-	if wh, werr := c.orm.Warehouse.Query().
-		Where(entwh.TenantID(tenantID), entwh.IsDefault(true), entwh.IsActive(true)).First(ctx); werr == nil {
-		return &wh.ID
-	}
-	return nil
-}
-
-// resolveItem resolves an inventory item by id first, then by sku within the tenant.
-func (c *GoodsCommittedConsumer) resolveItem(ctx context.Context, tenantID uuid.UUID, itemIDRaw, sku string) *ent.Item {
-	if id, err := uuid.Parse(itemIDRaw); err == nil {
-		if itm, err := c.orm.Item.Query().Where(entitem.ID(id), entitem.TenantID(tenantID)).Only(ctx); err == nil {
-			return itm
-		}
-	}
-	if sku != "" {
-		if itm, err := c.orm.Item.Query().Where(entitem.TenantID(tenantID), entitem.Sku(sku)).Only(ctx); err == nil {
-			return itm
-		}
-	}
-	return nil
 }
 
 // buyingCost returns the item's per-unit buying (cost) price for the PO line.
