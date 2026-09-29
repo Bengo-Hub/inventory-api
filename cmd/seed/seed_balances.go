@@ -15,6 +15,7 @@ import (
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/http/handlers"
+	"github.com/bengobox/inventory-service/internal/modules/items"
 )
 
 // seedBalances creates or skips InventoryBalance rows for all seeded items.
@@ -117,6 +118,17 @@ func seedBalances(ctx context.Context, client *ent.Client, tenantID uuid.UUID, s
 				continue
 			}
 			return fmt.Errorf("find item %s: %w", def.SKU, err)
+		}
+
+		// Services and vouchers never hold stock: no opening balance, and any balance an earlier
+		// seed run or a sale created for them is removed.
+		if items.IsNonStockSellable(itm.Type) {
+			if n, derr := client.InventoryBalance.Delete().
+				Where(entinvbal.TenantID(tenantID), entinvbal.ItemID(itm.ID)).
+				Exec(ctx); derr == nil && n > 0 {
+				log.Printf("balance removed: %s is a %s and holds no stock (%d row(s))", def.SKU, itm.Type, n)
+			}
+			continue
 		}
 
 		targetWh := targetWarehouse(def.SKU, def.ItemType)

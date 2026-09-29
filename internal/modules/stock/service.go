@@ -1240,7 +1240,7 @@ func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, w
 			zap.String("sku", ing.SKU), zap.Error(qerr))
 		return 0, 0, false, false, nil
 	}
-	if isNonDepleting(itm, cfg) {
+	if isNonDepleting(itm, cfg) || holdsNoStock(itm) {
 		return 0, 0, true, true, nil
 	}
 
@@ -1986,6 +1986,12 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 				zap.String("sku", cl.SKU), zap.String("tenant_id", tenantID.String()))
 			entry.ShortfallQty = cl.Quantity
 			consumptionItems = append(consumptionItems, entry)
+			continue
+		}
+
+		// Services and vouchers hold no stock: selling a print job or a haircut must never
+		// create or move a balance.
+		if holdsNoStock(itm) {
 			continue
 		}
 

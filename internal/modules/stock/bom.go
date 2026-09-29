@@ -14,6 +14,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	enttenantcfg "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
@@ -110,6 +111,12 @@ func (s *Service) tenantConfig(ctx context.Context, tenantID uuid.UUID) *ent.Ten
 		return nil
 	}
 	return cfg
+}
+
+// holdsNoStock reports whether an item is a non-stock sellable (SERVICE, VOUCHER) that a sale,
+// a reservation or a consumption must never touch.
+func holdsNoStock(itm *ent.Item) bool {
+	return itm != nil && items.IsNonStockSellable(itm.Type)
 }
 
 // isNonDepleting reports whether sales must NOT decrement this item's stock.
