@@ -114,7 +114,11 @@ func (Item) Fields() []ent.Field {
 		// Use-case classification (Phase: hospitality) — refines how a sellable item is presented/priced.
 		// Orthogonal to `type`; hotel room-types/facilities/amenities are SERVICE items with a hospitality use_case.
 		field.Enum("use_case").
-			Values("RETAIL", "PHARMACY", "FOOD_BEVERAGE", "HOSPITALITY_ROOM", "HOSPITALITY_FACILITY", "CONFERENCE", "SALON_SERVICE", "AMENITY").
+			Values("RETAIL", "PHARMACY", "FOOD_BEVERAGE", "HOSPITALITY_ROOM", "HOSPITALITY_FACILITY", "CONFERENCE", "SALON_SERVICE", "AMENITY",
+				// Services trades: a services outlet's service profile (pos-api outletpolicy) shows only
+				// the SERVICE items of its own trade plus PROFESSIONAL_SERVICE.
+				"PROFESSIONAL_SERVICE", "PRINTING_SERVICE", "AUTO_SERVICE", "LAUNDRY_SERVICE", "TAILORING_SERVICE",
+				"REPAIR_SERVICE", "SPA_SERVICE", "NAIL_SERVICE").
 			Default("RETAIL").
 			Comment("Sellable use-case: drives hospitality pricing/booking semantics. pos-api references these masters via inventory_item_id"),
 		// Room rate-plan attributes (HOSPITALITY_ROOM use_case)

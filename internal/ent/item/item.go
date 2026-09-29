@@ -556,6 +556,14 @@ const (
 	UseCaseCONFERENCE           UseCase = "CONFERENCE"
 	UseCaseSALON_SERVICE        UseCase = "SALON_SERVICE"
 	UseCaseAMENITY              UseCase = "AMENITY"
+	UseCasePROFESSIONAL_SERVICE UseCase = "PROFESSIONAL_SERVICE"
+	UseCasePRINTING_SERVICE     UseCase = "PRINTING_SERVICE"
+	UseCaseAUTO_SERVICE         UseCase = "AUTO_SERVICE"
+	UseCaseLAUNDRY_SERVICE      UseCase = "LAUNDRY_SERVICE"
+	UseCaseTAILORING_SERVICE    UseCase = "TAILORING_SERVICE"
+	UseCaseREPAIR_SERVICE       UseCase = "REPAIR_SERVICE"
+	UseCaseSPA_SERVICE          UseCase = "SPA_SERVICE"
+	UseCaseNAIL_SERVICE         UseCase = "NAIL_SERVICE"
 )
 
 func (uc UseCase) String() string {
@@ -565,7 +573,7 @@ func (uc UseCase) String() string {
 // UseCaseValidator is a validator for the "use_case" field enum values. It is called by the builders before save.
 func UseCaseValidator(uc UseCase) error {
 	switch uc {
-	case UseCaseRETAIL, UseCasePHARMACY, UseCaseFOOD_BEVERAGE, UseCaseHOSPITALITY_ROOM, UseCaseHOSPITALITY_FACILITY, UseCaseCONFERENCE, UseCaseSALON_SERVICE, UseCaseAMENITY:
+	case UseCaseRETAIL, UseCasePHARMACY, UseCaseFOOD_BEVERAGE, UseCaseHOSPITALITY_ROOM, UseCaseHOSPITALITY_FACILITY, UseCaseCONFERENCE, UseCaseSALON_SERVICE, UseCaseAMENITY, UseCasePROFESSIONAL_SERVICE, UseCasePRINTING_SERVICE, UseCaseAUTO_SERVICE, UseCaseLAUNDRY_SERVICE, UseCaseTAILORING_SERVICE, UseCaseREPAIR_SERVICE, UseCaseSPA_SERVICE, UseCaseNAIL_SERVICE:
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for use_case field: %q", uc)

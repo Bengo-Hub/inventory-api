@@ -391,7 +391,7 @@ type ItemDTO struct {
 	EventEndAt     *time.Time `json:"event_end_at,omitempty"`
 	EventVenue     *string    `json:"event_venue,omitempty"`
 	// Hospitality fields — room-type / facility / amenity SERVICE items
-	UseCase          string   `json:"use_case,omitempty"`  // RETAIL | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY
+	UseCase          string   `json:"use_case,omitempty"`  // item.UseCase enum (see ent/schema/item.go), incl. the services trades (PRINTING_SERVICE, ...)
 	MealPlan         *string  `json:"meal_plan,omitempty"` // RO | BB | HB | FB | AI
 	OccupancyBasis   *string  `json:"occupancy_basis,omitempty"`
 	MaxAdults        *int     `json:"max_adults,omitempty"`
