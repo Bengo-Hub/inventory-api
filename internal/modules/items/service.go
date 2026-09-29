@@ -2515,6 +2515,13 @@ func IsStockTracked(t item.Type) bool {
 	}
 }
 
+// IsNonStockSellable reports whether an item is sold without ever holding stock (SERVICE,
+// VOUCHER): no balance, no reservation, no consumption. RECIPE is untracked as a balance too but
+// consumes its ingredients through its BOM, so it is not included.
+func IsNonStockSellable(t item.Type) bool {
+	return !IsStockTracked(t) && t != item.TypeRECIPE
+}
+
 // CreateItem creates a new item and records an outbox event within a transaction.
 // DuplicateSKUError is returned by CreateItem when the (tenant_id, sku) unique constraint is
 // violated — either an explicitly-provided SKU that already belongs to another item, or (after
