@@ -156,7 +156,7 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"is_active", "NO", "TRUE/FALSE", "Default TRUE."},
 		{"initial_quantity", "NO", "integer", "Set opening stock when creating new items. Single-warehouse only — for multiple branches, use the InitialStock sheet instead (one row per item per warehouse)."},
 		{"warehouse_name", "NO", "string", "Leave blank to use primary warehouse."},
-		{"use_case", "NO", "string", "RETAIL | PHARMACY | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY. Drives POS classification."},
+		{"use_case", "NO", "string", "RETAIL | PHARMACY | FOOD_BEVERAGE | HOSPITALITY_ROOM | HOSPITALITY_FACILITY | CONFERENCE | SALON_SERVICE | AMENITY | PROFESSIONAL_SERVICE | PRINTING_SERVICE | AUTO_SERVICE | LAUNDRY_SERVICE | TAILORING_SERVICE | REPAIR_SERVICE | SPA_SERVICE | NAIL_SERVICE. Drives POS classification."},
 		{"tax_code_id", "NO", "string", "KRA eTIMS tax category code (e.g. VAT16). Resolved against treasury tax codes."},
 		{"tax_inclusive", "NO", "TRUE/FALSE", "TRUE if selling_price already includes tax. Default FALSE."},
 		{"purchase_price", "NO", "number", "Supplier price per purchase unit (KES). Used with pack size + yield to auto-calc EP cost."},

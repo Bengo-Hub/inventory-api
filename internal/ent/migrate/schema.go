@@ -1492,7 +1492,7 @@ var (
 		{Name: "non_billable", Type: field.TypeBool, Default: false},
 		{Name: "not_for_sale", Type: field.TypeBool, Default: false},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"GOODS", "SERVICE", "RECIPE", "INGREDIENT", "VOUCHER", "EQUIPMENT"}, Default: "GOODS"},
-		{Name: "use_case", Type: field.TypeEnum, Enums: []string{"RETAIL", "PHARMACY", "FOOD_BEVERAGE", "HOSPITALITY_ROOM", "HOSPITALITY_FACILITY", "CONFERENCE", "SALON_SERVICE", "AMENITY"}, Default: "RETAIL"},
+		{Name: "use_case", Type: field.TypeEnum, Enums: []string{"RETAIL", "PHARMACY", "FOOD_BEVERAGE", "HOSPITALITY_ROOM", "HOSPITALITY_FACILITY", "CONFERENCE", "SALON_SERVICE", "AMENITY", "PROFESSIONAL_SERVICE", "PRINTING_SERVICE", "AUTO_SERVICE", "LAUNDRY_SERVICE", "TAILORING_SERVICE", "REPAIR_SERVICE", "SPA_SERVICE", "NAIL_SERVICE"}, Default: "RETAIL"},
 		{Name: "meal_plan", Type: field.TypeEnum, Nullable: true, Enums: []string{"RO", "BB", "HB", "FB", "AI"}},
 		{Name: "occupancy_basis", Type: field.TypeEnum, Nullable: true, Enums: []string{"per_person_sharing", "per_room"}},
 		{Name: "max_adults", Type: field.TypeInt, Nullable: true},
