@@ -48,6 +48,7 @@ var categoryDefs = []categoryDef{
 	{"juice", "Juice", "JCE", "Fresh juices and smoothies", "/media/icons/juice-colored.svg"},
 	{"events", "Events & Experiences", "EVT", "Live events, workshops, and curated dining experiences", "/media/icons/events-colored.svg"},
 	{"beauty-services", "Beauty & Spa", "BEA", "Hair, nail, skin, and wellness services", "/media/icons/beauty-colored.svg"},
+	{"printing-branding", "Printing & Branding", "PRT", "Printing, large format, merchandise branding and design", "/media/icons/retail-colored.svg"},
 	{"chemicals", "Raw Chemicals", "CHM", "Raw chemical inputs for detergent manufacturing", "/media/icons/grocery-colored.svg"},
 	{"detergents", "Detergents & Cleaning", "DET", "Manufactured detergents and cleaning products", "/media/icons/grocery-colored.svg"},
 }

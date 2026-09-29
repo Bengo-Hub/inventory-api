@@ -72,6 +72,7 @@ var tenantItemGroups = map[string][]itemGroup{
 		{pharmacyItems, entitem.UseCasePHARMACY},
 		{retailItems, entitem.UseCaseRETAIL},
 		{beautyServiceItems, entitem.UseCaseSALON_SERVICE},
+		{printingServiceItems, entitem.UseCasePRINTING_SERVICE},
 		{detergentItems, entitem.UseCaseRETAIL},
 	},
 }
