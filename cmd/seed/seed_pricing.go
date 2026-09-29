@@ -153,6 +153,29 @@ func seedItemPricing(ctx context.Context, client *ent.Client, tenantID uuid.UUID
 		}
 	}
 
+	// 2b. Services carry no cost, so they get their listed price (printing services).
+	if len(printingServicePrices) > 0 {
+		skus := make([]string, 0, len(printingServicePrices))
+		for sku := range printingServicePrices {
+			skus = append(skus, sku)
+		}
+		services, err := client.Item.Query().
+			Where(entitem.TenantID(tenantID), entitem.SkuIn(skus...)).
+			All(ctx)
+		if err != nil {
+			return err
+		}
+		for _, it := range services {
+			ok, err := ensureItemPrice(ctx, client, tenantID, it.ID, retailTier.ID, printingServicePrices[it.Sku])
+			if err != nil {
+				return err
+			}
+			if ok {
+				created++
+			}
+		}
+	}
+
 	// 3. Mirror every RETAIL price onto the WHOLESALE tier at a discount (when missing).
 	wholesaleCreated := 0
 	if wholesaleTier != nil {
