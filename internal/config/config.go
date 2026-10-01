@@ -29,7 +29,7 @@ type Config struct {
 
 // EOLConfig controls the End-of-Life purge scheduler: items marked End-of-Life are hard-deleted
 // (audit-safe) once their end_of_life_at is older than RetentionDays. Runs daily, tenant-generic,
-// guarded by a Postgres advisory lock so only one replica performs the purge.
+// guarded by a once-per-hour Redis claim so only one replica performs the purge.
 type EOLConfig struct {
 	PurgeEnabled  bool `envconfig:"EOL_PURGE_ENABLED" default:"true"`
 	RetentionDays int  `envconfig:"EOL_RETENTION_DAYS" default:"7"`

@@ -3,14 +3,11 @@ package expiry
 import (
 	"context"
 	"database/sql"
+	sharedcache "github.com/Bengo-Hub/cache"
 	"time"
 
 	"go.uber.org/zap"
 )
-
-// schedulerAdvisoryLockKey is a fixed, service-unique Postgres advisory lock key so only one
-// replica runs the expiry scan per tick. ('I','N','E','X')
-const schedulerAdvisoryLockKey int64 = 0x494E_4558
 
 // SchedulerConfig configures the expiry-alert scan.
 type SchedulerConfig struct {
@@ -18,7 +15,7 @@ type SchedulerConfig struct {
 }
 
 // Scheduler runs the expiry-alert scan hourly (cheap cutoff query, same rationale as the EOL
-// purge scheduler — no per-day alignment needed) via a timer loop, advisory-lock guarded so
+// purge scheduler — no per-day alignment needed) via a timer loop, claim guarded (one replica per hour) so
 // only one replica performs the work.
 type Scheduler struct {
 	svc *Service
@@ -57,30 +54,17 @@ func (sc *Scheduler) Start(ctx context.Context) {
 	}()
 }
 
-// runGuarded acquires the advisory lock and, if won, runs the expiry scan across every
+// runGuarded claims the hour (sharedcache.ClaimPeriod) and, if won, runs the expiry scan across every
 // tenant with notifications enabled.
 func (sc *Scheduler) runGuarded(ctx context.Context) {
 	if sc.db == nil {
 		return
 	}
-	conn, err := sc.db.Conn(ctx)
-	if err != nil {
-		sc.log.Warn("expiry scheduler: acquire conn failed", zap.Error(err))
+	// One replica per hour does the work. This used a session pg_try_advisory_lock, which
+	// PgBouncer transaction pooling breaks (lock and unlock land on different backends).
+	if !sharedcache.ClaimPeriod(ctx, "inventory:expiry-alerts", time.Hour) {
 		return
 	}
-	defer func() { _ = conn.Close() }()
-
-	var got bool
-	if err := conn.QueryRowContext(ctx, `SELECT pg_try_advisory_lock($1)`, schedulerAdvisoryLockKey).Scan(&got); err != nil {
-		sc.log.Warn("expiry scheduler: advisory lock failed", zap.Error(err))
-		return
-	}
-	if !got {
-		return
-	}
-	defer func() {
-		_, _ = conn.ExecContext(context.Background(), `SELECT pg_advisory_unlock($1)`, schedulerAdvisoryLockKey)
-	}()
 
 	alerted, err := sc.svc.RunExpiryCheck(ctx)
 	if err != nil {

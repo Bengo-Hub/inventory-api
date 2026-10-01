@@ -3,14 +3,11 @@ package items
 import (
 	"context"
 	"database/sql"
+	sharedcache "github.com/Bengo-Hub/cache"
 	"time"
 
 	"go.uber.org/zap"
 )
-
-// eolPurgeAdvisoryLockKey is a fixed, service-unique key for the Postgres session advisory lock
-// that guards the daily EOL purge so only ONE replica executes it. ('I','N','E','O')
-const eolPurgeAdvisoryLockKey int64 = 0x494E_454F
 
 // EOLPurgeConfig configures the daily End-of-Life hard-delete purge.
 type EOLPurgeConfig struct {
@@ -19,7 +16,7 @@ type EOLPurgeConfig struct {
 }
 
 // EOLPurgeScheduler hard-deletes items whose End-of-Life retention window has elapsed. It runs on
-// a time-until-next-hour timer loop (no external cron dep) and uses a Postgres advisory lock so
+// a time-until-next-hour timer loop (no external cron dep) and uses a once-per-hour Redis claim so
 // only one replica performs the work — mirroring the backup scheduler pattern.
 type EOLPurgeScheduler struct {
 	svc *Service
@@ -62,30 +59,17 @@ func (sc *EOLPurgeScheduler) Start(ctx context.Context) {
 	}()
 }
 
-// runGuarded acquires the advisory lock and, if won, purges expired EOL items. Only one replica
+// runGuarded claims the hour (sharedcache.ClaimPeriod) and, if won, purges expired EOL items. Only one replica
 // wins the lock per tick.
 func (sc *EOLPurgeScheduler) runGuarded(ctx context.Context) {
 	if sc.db == nil {
 		return
 	}
-	conn, err := sc.db.Conn(ctx)
-	if err != nil {
-		sc.log.Warn("eol purge: acquire conn failed", zap.Error(err))
+	// One replica per hour does the work. This used a session pg_try_advisory_lock, which
+	// PgBouncer transaction pooling breaks (lock and unlock land on different backends).
+	if !sharedcache.ClaimPeriod(ctx, "inventory:eol-purge", time.Hour) {
 		return
 	}
-	defer func() { _ = conn.Close() }()
-
-	var got bool
-	if err := conn.QueryRowContext(ctx, `SELECT pg_try_advisory_lock($1)`, eolPurgeAdvisoryLockKey).Scan(&got); err != nil {
-		sc.log.Warn("eol purge: advisory lock failed", zap.Error(err))
-		return
-	}
-	if !got {
-		return
-	}
-	defer func() {
-		_, _ = conn.ExecContext(context.Background(), `SELECT pg_advisory_unlock($1)`, eolPurgeAdvisoryLockKey)
-	}()
 
 	if _, _, err := sc.svc.PurgeExpiredEOL(ctx, sc.cfg.RetentionDays); err != nil {
 		sc.log.Warn("eol purge run failed", zap.Error(err))

@@ -3,8 +3,8 @@ package router
 import (
 	"context"
 	"crypto/subtle"
+	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -22,32 +22,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/tenant"
 	"github.com/google/uuid"
 )
-
-// bypassForWebsocket wraps a middleware so it never runs on a WebSocket upgrade request — used
-// for TWO independent hijack-breaking middlewares found live during E2E verification of this
-// session's new WS route:
-//  1. chi's middleware.Compress: compressResponseWriter.Hijack() type-asserts its wrapped writer
-//     directly instead of walking an http.ResponseController Unwrap() chain.
-//  2. httpware.Logging (github.com/Bengo-Hub/httpware, shared fleet-wide): its status-capturing
-//     responseWriter embeds the http.ResponseWriter INTERFACE (not a concrete type), so Go only
-//     promotes that interface's own three methods (Header/Write/WriteHeader) — Hijack is never
-//     promoted regardless of what the underlying writer supports. This is a PRE-EXISTING bug in
-//     the shared httpware module, unrelated to this session's changes. Proper fix belongs in
-//     httpware itself (a shared module, out of scope here); this local bypass is the safe, scoped
-//     workaround. RFC 6455 upgrade requests always carry Connection: Upgrade and
-//     Upgrade: websocket, so detecting them here is exact, not a heuristic.
-func bypassForWebsocket(mw func(http.Handler) http.Handler) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		wrapped := mw(next)
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
-				next.ServeHTTP(w, r)
-				return
-			}
-			wrapped.ServeHTTP(w, r)
-		})
-	}
-}
 
 func New(
 	log *zap.Logger,
@@ -105,22 +79,22 @@ func New(
 	}
 
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	// Never chi RealIP: it trusts client-sent True-Client-IP/X-Forwarded-For.
+	r.Use(ratelimit.TrustedRealIP)
 	r.Use(httpware.RequestID)
 	// bypassForWebsocket: see its doc comment — httpware.Logging's wrapper structurally cannot
 	// support Hijack (a pre-existing fleet-wide bug), which breaks every WS upgrade in this API.
-	r.Use(bypassForWebsocket(httpware.Logging(log)))
+	r.Use(httpware.BypassForStreaming(httpware.Logging(log)))
 	r.Use(httpware.Recover(log))
 	// gzip JSON responses (item/stock lists) — no compression existed at any layer for this API.
-	r.Use(bypassForWebsocket(middleware.Compress(5)))
+	r.Use(httpware.BypassForStreaming(middleware.Compress(5)))
 	// bypassForWebsocket here too: chi's Timeout fires its own abort/WriteHeader on ITS timer
 	// regardless of whether the connection was since hijacked for a long-lived WS stream, forcibly
 	// disconnecting every open WS connection roughly every 30s ("http: response.WriteHeader on
 	// hijacked connection" — confirmed live via kubectl logs during E2E verification). A 30s
 	// request timeout is meaningless for a stream that's SUPPOSED to stay open indefinitely.
-	r.Use(bypassForWebsocket(middleware.Timeout(30 * time.Second)))
+	r.Use(httpware.BypassForStreaming(middleware.Timeout(30 * time.Second)))
 	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
-	r.Use(ratelimitmw.IPRateLimit(redisClient, log, ratelimitmw.DefaultRateLimitConfig()))
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -129,6 +103,8 @@ func New(
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	// After CORS so 429 responses still carry Access-Control-Allow-* headers.
+	r.Use(ratelimitmw.IPRateLimit(redisClient, log, ratelimitmw.DefaultRateLimitConfig()))
 
 	r.Get("/healthz", health.Liveness)
 	r.Get("/readyz", health.Readiness)
@@ -142,7 +118,8 @@ func New(
 
 	// Serve uploaded media files from the media root directory
 	if mediaRoot != "" {
-		r.Handle("/media/*", http.StripPrefix("/media", http.FileServer(http.Dir(mediaRoot))))
+		// No directory listings; UUID-named uploads cached as immutable, other names 1 day.
+		r.Handle("/media/*", http.StripPrefix("/media", httpware.StaticMedia(mediaRoot, httpware.MediaOptions{})))
 	}
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {

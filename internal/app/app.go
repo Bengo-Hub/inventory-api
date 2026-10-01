@@ -49,7 +49,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/transfers"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 	"github.com/bengobox/inventory-service/internal/modules/vendorbalances"
-	"github.com/bengobox/inventory-service/internal/platform/cache"
 	"github.com/bengobox/inventory-service/internal/platform/database"
 	"github.com/bengobox/inventory-service/internal/platform/events"
 	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
@@ -135,11 +134,27 @@ func New(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("postgres init: %w", err)
 	}
 
-	redisClient := cache.NewClient(cfg.Redis)
+	redisClient, redisErr := sharedcache.NewRedis(ctx, sharedcache.RedisConfig{
+		Addr: cfg.Redis.Addr, Username: cfg.Redis.Username, Password: cfg.Redis.Password,
+		DB: cfg.Redis.DB, TLS: cfg.Redis.TLSRequired, DialTimeout: cfg.Redis.DialTimeout,
+	})
+	if redisErr != nil {
+		log.Warn("redis not reachable at startup", zap.Error(redisErr))
+	}
+	// Scheduled jobs run once per period fleet-wide (sharedcache.ClaimPeriod).
+	sharedcache.SetLeaseClient(redisClient)
 
 	natsConn, err := events.Connect(cfg.Events)
 	if err != nil {
 		log.Warn("event bus connection failed", zap.Error(err))
+	}
+	var relay *eventslib.Broadcaster
+	if natsConn != nil {
+		relay = eventslib.NewBroadcaster(log, natsConn, "inventory")
+		// Drop revoked/rotated API keys from every validator on this pod at once.
+		_ = eventslib.NewBroadcaster(log, natsConn, "auth").Subscribe("apikey.changed", func(m eventslib.BroadcastMessage) {
+			authclient.InvalidateAPIKeyHash(string(m.Data))
+		})
 	}
 
 	// Ensure inventory JetStream stream exists (for stock events consumed by notifications-api etc.)
@@ -333,7 +348,7 @@ func New(ctx context.Context) (*App, error) {
 	// about stock changes live (POS sale consumption, manual adjustment, stock-take) instead of on
 	// a manual refresh. Redis relay makes broadcasts reach clients on any replica.
 	notifHub := notifmod.NewHub(log)
-	notifHub.SetRedis(redisClient)
+	notifHub.SetRelay(relay)
 	stockNotifyConsumer := consumers.NewStockNotifyEventsConsumer(log, notifHub)
 
 	// Background bulk-job runner (item relocation/membership, bulk stock adjustment) — reuses
@@ -450,7 +465,7 @@ func New(ctx context.Context) (*App, error) {
 		Enabled:       cfg.Backup.ScheduleEnabled,
 		Hour:          cfg.Backup.ScheduleHour,
 		RetentionDays: cfg.Backup.RetentionDays,
-	}, log).Start(ctx)
+	}, log).WithRedis(redisClient).Start(ctx)
 
 	// End-of-Life purge: hard-delete items whose EOL retention window has elapsed (audit-safe:
 	// items with transactional history are skipped and kept hidden). Advisory-lock guarded so
@@ -662,11 +677,7 @@ func (a *App) Run(ctx context.Context) error {
 		}
 	}
 
-	// Start the real-time notification hub's Redis cross-pod relay — no-op (single-pod only) if
-	// Redis is unavailable.
-	if a.notifHub != nil {
-		go a.notifHub.Start(ctx)
-	}
+	// The notification hub relays through the shared Broadcaster wired in New (nothing to start).
 
 	errCh := make(chan error, 1)
 	if a.cfg.HTTP.TLSCertFile != "" && a.cfg.HTTP.TLSKeyFile != "" {
