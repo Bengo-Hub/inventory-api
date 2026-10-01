@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"encoding/json"
+	sharedcache "github.com/Bengo-Hub/cache"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"net/http"
 	"strings"
 	"time"
@@ -552,7 +553,12 @@ func (h *InventoryExtrasHandler) applyAssetDepreciation(ctx context.Context, ten
 		amount = remaining
 	}
 
-	upd := h.orm.Asset.UpdateOneID(a.ID).SetLastDepreciationPeriod(period)
+	// Conditional on the period not already being stamped: a is a snapshot, and the manual
+	// "Run Depreciation" action and the scheduler can both reach the same asset. Only the
+	// call that stamps the period applies the amount and emits the GL event.
+	upd := h.orm.Asset.Update().
+		Where(entasset.IDEQ(a.ID), entasset.LastDepreciationPeriodNEQ(period)).
+		SetLastDepreciationPeriod(period)
 	if amount > 0 {
 		closingAccum := openingAccum + amount
 		closingBook := a.PurchaseCost - closingAccum
@@ -561,8 +567,12 @@ func (h *InventoryExtrasHandler) applyAssetDepreciation(ctx context.Context, ten
 		}
 		upd = upd.SetAccumulatedDepreciation(closingAccum).SetBookValue(closingBook).SetCurrentValue(closingBook)
 	}
-	if _, err := upd.Save(ctx); err != nil {
+	n, err := upd.Save(ctx)
+	if err != nil {
 		return 0, false, err
+	}
+	if n == 0 {
+		return 0, false, nil // another run already applied this period
 	}
 
 	h.publishOutbox(ctx, tenantID, "asset", a.ID, "inventory.asset.depreciation_due", map[string]any{
@@ -583,6 +593,12 @@ func (h *InventoryExtrasHandler) applyAssetDepreciation(ctx context.Context, ten
 // month-end (the "Run Depreciation" action) instead.
 func (h *InventoryExtrasHandler) StartDepreciationScheduler(ctx context.Context) {
 	run := func() {
+		// Every replica runs this loop (first pass 2 minutes after start, so a rollout fired it
+		// on all pods together); one replica per day does the sweep. applyAssetDepreciation
+		// also skips an asset already depreciated for the period.
+		if !sharedcache.ClaimPeriod(ctx, "inventory:asset-depreciation", 24*time.Hour) {
+			return
+		}
 		period := time.Now().UTC().Format("2006-01")
 		assets, err := h.orm.Asset.Query().
 			Where(entasset.IsActive(true), entasset.StatusEQ(entasset.StatusActive), entasset.DepreciationRateGT(0)).
