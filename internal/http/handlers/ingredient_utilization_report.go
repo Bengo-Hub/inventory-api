@@ -43,9 +43,20 @@ func parseUtilizationRange(r *http.Request) (itemID, warehouseID uuid.UUID, from
 			to = t
 		}
 	}
+	// Bounded window: the rollup is per day, but the stock-level events are per event, so an
+	// open-ended range would scan an item's whole history. Reversed dates are swapped.
+	if to.Before(from) {
+		from, to = to, from
+	}
+	if to.Sub(from) > maxUtilizationRange {
+		from = to.Add(-maxUtilizationRange)
+	}
 	err = nil
 	return
 }
+
+// maxUtilizationRange caps one ingredient-utilization query at two years.
+const maxUtilizationRange = 2 * 366 * 24 * time.Hour
 
 // IngredientUtilizationSummary handles GET /inventory/reports/ingredient-utilization/summary
 //
