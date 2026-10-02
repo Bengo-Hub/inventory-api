@@ -31,6 +31,9 @@ type returnEventPayload struct {
 	ReturnID     string `json:"return_id"`
 	ReturnNumber string `json:"return_number"`
 	ReturnType   string `json:"return_type"`
+	// Restock=false means the goods were written off (damaged/defective/expired by default, or a
+	// manager's choice): nothing goes back into stock. Absent (older events) means restock.
+	Restock *bool `json:"restock"`
 	OrderID      string `json:"order_id"`
 	OrderNumber  string `json:"order_number"`
 	CustomerName string `json:"customer_name"`
@@ -147,6 +150,12 @@ func (c *ReturnEventsConsumer) handle(msg *nats.Msg) {
 	}
 	log := c.log.With(zap.String("tenant_id", tenantID.String()), zap.String("return_id", p.ReturnID),
 		zap.String("return_number", p.ReturnNumber), zap.String("source", source))
+
+	if p.Restock != nil && !*p.Restock {
+		log.Info("return restock: goods written off, stock left unchanged")
+		_ = msg.Ack()
+		return
+	}
 
 	if !c.entitled(ctx, tenantID) {
 		log.Info("return restock: tenant not entitled to inventory sync, skipping")
