@@ -2,7 +2,6 @@ package consumers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -15,24 +14,43 @@ import (
 )
 
 const (
-	posReturnDurableConsumer      = "inventory-pos-returns"
-	posExchangeDurableConsumer    = "inventory-pos-exchanges"
-	orderingReturnDurableConsumer = "inventory-ordering-returns"
-	returnEventsAckWait           = 30 * time.Second
-	returnEventsMaxDeliver        = 5
+	posReturnDurableConsumer   = "inventory-pos-returns"
+	posExchangeDurableConsumer = "inventory-pos-exchanges"
+	posRestockResyncDurable    = "inventory-pos-return-restock"
+	returnEventsAckWait        = 60 * time.Second
+	returnEventsMaxDeliver     = 8
+	returnEventsRetryDelay     = 30 * time.Second
 )
 
-// returnLineItem is a line from the return event payload.
-type returnLineItem struct {
-	SKU      string  `json:"sku"`
-	Quantity float64 `json:"quantity"`
+// returnEventPayload is the payload of pos.return.completed and pos.exchange.completed. The
+// tenant lives on the shared-events envelope; payload tenant_id is only a fallback for older
+// publishers. Before 2026-10-02 pos-api never put tenant_id in the payload and this consumer
+// only read it from there, so every POS return was acknowledged and dropped without a restock.
+type returnEventPayload struct {
+	TenantID     string `json:"tenant_id"`
+	ReturnID     string `json:"return_id"`
+	ReturnNumber string `json:"return_number"`
+	ReturnType   string `json:"return_type"`
+	OrderID      string `json:"order_id"`
+	OrderNumber  string `json:"order_number"`
+	CustomerName string `json:"customer_name"`
+	OutletID     string `json:"outlet_id"`
+	WarehouseID  string `json:"warehouse_id"`
+	Lines        []struct {
+		SKU        string  `json:"sku"`
+		Quantity   float64 `json:"quantity"`
+		OfQuantity float64 `json:"of_quantity"`
+	} `json:"lines"`
 }
 
-// ReturnEventsConsumer handles pos.return.completed and ordering.return.approved events
-// to restock inventory for returned items.
+// ReturnEventsConsumer restocks the goods of completed POS returns and exchanges, and reports
+// the outcome (where the stock went) back to pos-api via inventory.return.restocked.
 type ReturnEventsConsumer struct {
 	log      *zap.Logger
 	stockSvc *stock.Service
+	// hasFeature gates restocking by the same entitlement the sale consumer uses: a tenant
+	// whose sales never took stock out must not get stock added back by a return.
+	hasFeature func(ctx context.Context, tenantID, feature string) bool
 }
 
 // NewReturnEventsConsumer creates a new return events consumer.
@@ -43,289 +61,151 @@ func NewReturnEventsConsumer(log *zap.Logger, stockSvc *stock.Service) *ReturnEv
 	}
 }
 
-// StartPOSReturns subscribes to pos.return.completed events.
-func (c *ReturnEventsConsumer) StartPOSReturns(ctx context.Context, js nats.JetStreamContext) error {
-	_, err := js.StreamInfo("pos")
-	if err != nil {
-		_, err = js.AddStream(&nats.StreamConfig{
+// SetFeatureGate wires the subscription entitlement check (fails open when unset).
+func (c *ReturnEventsConsumer) SetFeatureGate(fn func(ctx context.Context, tenantID, feature string) bool) {
+	c.hasFeature = fn
+}
+
+func (c *ReturnEventsConsumer) entitled(ctx context.Context, tenantID uuid.UUID) bool {
+	if c.hasFeature == nil {
+		return true
+	}
+	return c.hasFeature(ctx, tenantID.String(), "basic_inventory_access")
+}
+
+// Start subscribes on the "pos" stream, each subject with its own durable queue group:
+//   - pos.return.completed / pos.exchange.completed: the normal completion events;
+//   - pos.return.restock_requested: pos-api's restock resync, same payload, consumed only here so
+//     a retry never re-triggers treasury settlement or customer notifications.
+//
+// The idempotency key depends only on the return (type + id), so all three paths dedupe.
+func (c *ReturnEventsConsumer) Start(ctx context.Context, js nats.JetStreamContext) error {
+	if _, err := js.StreamInfo("pos"); err != nil {
+		if _, err = js.AddStream(&nats.StreamConfig{
 			Name:      "pos",
 			Subjects:  []string{"pos.>"},
 			Retention: nats.LimitsPolicy,
 			MaxAge:    72 * time.Hour,
 			Storage:   nats.FileStorage,
-		})
-		if err != nil && err != nats.ErrStreamNameAlreadyInUse {
+		}); err != nil && err != nats.ErrStreamNameAlreadyInUse {
 			return fmt.Errorf("pos returns: ensure stream: %w", err)
 		}
 	}
 
-	eventslib.SubscribeQueueWithRebind(
-		c.log,
-		js,
-		"pos",
-		"pos.return.completed",
-		posReturnDurableConsumer,
-		c.handlePOSReturn,
-		nats.Durable(posReturnDurableConsumer),
-		nats.AckExplicit(),
-		nats.AckWait(returnEventsAckWait),
-		nats.MaxDeliver(returnEventsMaxDeliver),
-		nats.DeliverAll(),
-	)
-	c.log.Info("POS return events consumer started", zap.String("durable", posReturnDurableConsumer))
+	subs := []struct{ subject, durable string }{
+		{"pos.return.completed", posReturnDurableConsumer},
+		{"pos.exchange.completed", posExchangeDurableConsumer},
+		{"pos.return.restock_requested", posRestockResyncDurable},
+	}
+	for _, sub := range subs {
+		eventslib.SubscribeQueueWithRebind(
+			c.log, js, "pos", sub.subject, sub.durable,
+			c.handle,
+			nats.Durable(sub.durable),
+			nats.AckExplicit(),
+			nats.AckWait(returnEventsAckWait),
+			nats.MaxDeliver(returnEventsMaxDeliver),
+			nats.DeliverAll(),
+		)
+	}
+	c.log.Info("POS return/exchange restock consumers started")
 
 	<-ctx.Done()
 	return nil
 }
 
-// StartExchangeReturns subscribes to pos.exchange.completed events — the exchanged-away
-// (returned) goods on an exchange need restocking exactly like an ordinary return, but
-// the handler had never been wired: PublishExchangeCompleted has published this event
-// since exchanges shipped, with zero subscribers anywhere in the monorepo, so exchanged
-// items were never restocked. Reuses the SAME stream ("pos") as StartPOSReturns — a
-// distinct durable/queue group so it doesn't steal pos.return.completed's own messages.
-func (c *ReturnEventsConsumer) StartExchangeReturns(ctx context.Context, js nats.JetStreamContext) error {
-	_, err := js.StreamInfo("pos")
+// returnSource maps the return type to the outcome source and idempotency prefix. The prefixes
+// match what this consumer always used ("pos-return-", "pos-exchange-").
+func returnSource(returnType, subject string) (source, keyPrefix string) {
+	if returnType == "exchange" || (returnType == "" && subject == "pos.exchange.completed") {
+		return "pos_exchange", "pos-exchange-"
+	}
+	return "pos", "pos-return-"
+}
+
+func (c *ReturnEventsConsumer) handle(msg *nats.Msg) {
+	ctx, cancel := context.WithTimeout(context.Background(), returnEventsAckWait-5*time.Second)
+	defer cancel()
+
+	env, p, err := eventslib.DecodeEvent[returnEventPayload](msg.Data)
 	if err != nil {
-		_, err = js.AddStream(&nats.StreamConfig{
-			Name:      "pos",
-			Subjects:  []string{"pos.>"},
-			Retention: nats.LimitsPolicy,
-			MaxAge:    72 * time.Hour,
-			Storage:   nats.FileStorage,
-		})
-		if err != nil && err != nats.ErrStreamNameAlreadyInUse {
-			return fmt.Errorf("pos exchanges: ensure stream: %w", err)
+		c.log.Warn("return restock: malformed event, dropping", zap.String("subject", msg.Subject), zap.Error(err))
+		_ = msg.Term()
+		return
+	}
+	source, keyPrefix := returnSource(p.ReturnType, msg.Subject)
+	tenantID := env.TenantID
+	if tenantID == uuid.Nil {
+		tenantID, _ = uuid.Parse(p.TenantID)
+	}
+	returnID, rerr := uuid.Parse(p.ReturnID)
+	if tenantID == uuid.Nil || rerr != nil {
+		c.log.Error("return restock: event has no tenant or return id, dropping",
+			zap.String("source", source), zap.String("return_id", p.ReturnID))
+		_ = msg.Term()
+		return
+	}
+	log := c.log.With(zap.String("tenant_id", tenantID.String()), zap.String("return_id", p.ReturnID),
+		zap.String("return_number", p.ReturnNumber), zap.String("source", source))
+
+	if !c.entitled(ctx, tenantID) {
+		log.Info("return restock: tenant not entitled to inventory sync, skipping")
+		c.reportOutcome(ctx, log, tenantID, returnID, source, nil, "skipped_not_entitled", "")
+		_ = msg.Ack()
+		return
+	}
+
+	req := stock.ReturnRestockRequest{
+		ReturnID:           returnID,
+		ReturnNumber:       p.ReturnNumber,
+		OrderID:            parseUUIDOrNil(p.OrderID),
+		OrderNumber:        p.OrderNumber,
+		CustomerName:       p.CustomerName,
+		OutletID:           parseUUIDOrNil(p.OutletID),
+		WarehouseID:        parseUUIDOrNil(p.WarehouseID),
+		IdempotencyKey:     keyPrefix + returnID.String(),
+		AllowDirectRestock: true,
+	}
+	for _, l := range p.Lines {
+		req.Lines = append(req.Lines, stock.ReturnRestockLine{SKU: l.SKU, Quantity: l.Quantity, OfQuantity: l.OfQuantity})
+	}
+
+	result, err := c.stockSvc.RestockReturn(ctx, tenantID, req)
+	if err != nil {
+		lastTry := false
+		if md, merr := msg.Metadata(); merr == nil && md.NumDelivered >= returnEventsMaxDeliver {
+			lastTry = true
 		}
-	}
-
-	eventslib.SubscribeQueueWithRebind(
-		c.log,
-		js,
-		"pos",
-		"pos.exchange.completed",
-		posExchangeDurableConsumer,
-		c.handleExchangeReturn,
-		nats.Durable(posExchangeDurableConsumer),
-		nats.AckExplicit(),
-		nats.AckWait(returnEventsAckWait),
-		nats.MaxDeliver(returnEventsMaxDeliver),
-		nats.DeliverAll(),
-	)
-	c.log.Info("POS exchange events consumer started", zap.String("durable", posExchangeDurableConsumer))
-
-	<-ctx.Done()
-	return nil
-}
-
-// StartOrderingReturns subscribes to ordering.return.approved events.
-func (c *ReturnEventsConsumer) StartOrderingReturns(ctx context.Context, js nats.JetStreamContext) error {
-	_, err := js.StreamInfo("ordering")
-	if err != nil {
-		_, err = js.AddStream(&nats.StreamConfig{
-			Name:      "ordering",
-			Subjects:  []string{"ordering.>"},
-			Retention: nats.LimitsPolicy,
-			MaxAge:    72 * time.Hour,
-			Storage:   nats.FileStorage,
-		})
-		if err != nil && err != nats.ErrStreamNameAlreadyInUse {
-			return fmt.Errorf("ordering returns: ensure stream: %w", err)
+		log.Error("return restock failed", zap.Bool("last_attempt", lastTry), zap.Error(err))
+		if lastTry {
+			// Tell pos-api so the return shows "restock failed" with a retry action instead of
+			// silently looking done. A retry re-publishes the event; restock is idempotent.
+			c.reportOutcome(ctx, log, tenantID, returnID, source, nil, "failed", err.Error())
+			_ = msg.Term()
+			return
 		}
-	}
-
-	eventslib.SubscribeQueueWithRebind(
-		c.log,
-		js,
-		"ordering",
-		"ordering.return.approved",
-		orderingReturnDurableConsumer,
-		c.handleOrderingReturn,
-		nats.Durable(orderingReturnDurableConsumer),
-		nats.AckExplicit(),
-		nats.AckWait(returnEventsAckWait),
-		nats.MaxDeliver(returnEventsMaxDeliver),
-		nats.DeliverAll(),
-	)
-	c.log.Info("ordering return events consumer started", zap.String("durable", orderingReturnDurableConsumer))
-
-	<-ctx.Done()
-	return nil
-}
-
-func (c *ReturnEventsConsumer) handlePOSReturn(msg *nats.Msg) {
-	ctx := context.Background()
-	var envelope struct {
-		Payload struct {
-			TenantID    string           `json:"tenant_id"`
-			ReturnID    string           `json:"return_id"`
-			OutletID    string           `json:"outlet_id"`
-			WarehouseID string           `json:"warehouse_id"`
-			Lines       []returnLineItem `json:"lines"`
-		} `json:"payload"`
-		EventType string `json:"event_type"`
-	}
-	if err := json.Unmarshal(msg.Data, &envelope); err != nil {
-		c.log.Warn("pos return: unmarshal failed", zap.Error(err))
-		_ = msg.Nak()
+		_ = msg.NakWithDelay(returnEventsRetryDelay)
 		return
 	}
 
-	tenantID, err := uuid.Parse(envelope.Payload.TenantID)
-	if err != nil {
-		c.log.Warn("pos return: invalid tenant_id", zap.String("raw", envelope.Payload.TenantID))
-		_ = msg.Ack()
-		return
-	}
-
-	var warehouseID uuid.UUID
-	if envelope.Payload.WarehouseID != "" {
-		warehouseID, _ = uuid.Parse(envelope.Payload.WarehouseID)
-	}
-	// Restock the SELLING outlet's own warehouse when no explicit warehouse_id is carried, so a
-	// return goes back where the item was sold — not the tenant-default warehouse.
-	var outletID uuid.UUID
-	if envelope.Payload.OutletID != "" {
-		outletID, _ = uuid.Parse(envelope.Payload.OutletID)
-	}
-
-	items := make([]stock.RestockItem, 0, len(envelope.Payload.Lines))
-	for _, l := range envelope.Payload.Lines {
-		items = append(items, stock.RestockItem{SKU: l.SKU, Quantity: l.Quantity})
-	}
-
-	if len(items) == 0 {
-		_ = msg.Ack()
-		return
-	}
-
-	idempKey := fmt.Sprintf("pos-return-%s", envelope.Payload.ReturnID)
-	if err := c.stockSvc.RestockItems(ctx, tenantID, warehouseID, outletID, items, idempKey); err != nil {
-		c.log.Error("pos return: restock failed",
-			zap.Error(err),
-			zap.String("return_id", envelope.Payload.ReturnID),
-		)
-		_ = msg.Nak()
-		return
-	}
+	log.Info("return restock processed", zap.String("status", result.Status),
+		zap.Int("lines", len(result.Lines)), zap.Strings("skipped", result.Skipped))
+	c.reportOutcome(ctx, log, tenantID, returnID, source, result, result.Status, "")
 	_ = msg.Ack()
 }
 
-// handleExchangeReturn mirrors handlePOSReturn exactly — pos.exchange.completed's payload
-// carries the same shape (built from the identical eventData map in returns.go's
-// CompleteReturn), the exchanged-away item(s) just need restocking the same way a plain
-// return's items do. Distinct idempotency-key prefix ("pos-exchange-" vs "pos-return-")
-// purely for log/audit clarity — POSReturn IDs are unique regardless, so the two prefixes
-// can never actually collide.
-func (c *ReturnEventsConsumer) handleExchangeReturn(msg *nats.Msg) {
-	ctx := context.Background()
-	var envelope struct {
-		Payload struct {
-			TenantID    string           `json:"tenant_id"`
-			ReturnID    string           `json:"return_id"`
-			OutletID    string           `json:"outlet_id"`
-			WarehouseID string           `json:"warehouse_id"`
-			Lines       []returnLineItem `json:"lines"`
-		} `json:"payload"`
-		EventType string `json:"event_type"`
+// reportOutcome is best-effort: the restock itself already committed, and a replay of the
+// source event re-reports the same outcome idempotently.
+func (c *ReturnEventsConsumer) reportOutcome(ctx context.Context, log *zap.Logger, tenantID, returnID uuid.UUID, source string, result *stock.ReturnRestockResult, status, errMsg string) {
+	if err := c.stockSvc.PublishReturnRestockOutcome(ctx, tenantID, returnID, source, result, status, errMsg); err != nil {
+		log.Warn("return restock: outcome event not written", zap.Error(err))
 	}
-	if err := json.Unmarshal(msg.Data, &envelope); err != nil {
-		c.log.Warn("pos exchange: unmarshal failed", zap.Error(err))
-		_ = msg.Nak()
-		return
-	}
-
-	tenantID, err := uuid.Parse(envelope.Payload.TenantID)
-	if err != nil {
-		c.log.Warn("pos exchange: invalid tenant_id", zap.String("raw", envelope.Payload.TenantID))
-		_ = msg.Ack()
-		return
-	}
-
-	var warehouseID uuid.UUID
-	if envelope.Payload.WarehouseID != "" {
-		warehouseID, _ = uuid.Parse(envelope.Payload.WarehouseID)
-	}
-	var outletID uuid.UUID
-	if envelope.Payload.OutletID != "" {
-		outletID, _ = uuid.Parse(envelope.Payload.OutletID)
-	}
-
-	items := make([]stock.RestockItem, 0, len(envelope.Payload.Lines))
-	for _, l := range envelope.Payload.Lines {
-		items = append(items, stock.RestockItem{SKU: l.SKU, Quantity: l.Quantity})
-	}
-
-	if len(items) == 0 {
-		_ = msg.Ack()
-		return
-	}
-
-	idempKey := fmt.Sprintf("pos-exchange-%s", envelope.Payload.ReturnID)
-	if err := c.stockSvc.RestockItems(ctx, tenantID, warehouseID, outletID, items, idempKey); err != nil {
-		c.log.Error("pos exchange: restock failed",
-			zap.Error(err),
-			zap.String("return_id", envelope.Payload.ReturnID),
-		)
-		_ = msg.Nak()
-		return
-	}
-	_ = msg.Ack()
 }
 
-func (c *ReturnEventsConsumer) handleOrderingReturn(msg *nats.Msg) {
-	ctx := context.Background()
-	var envelope struct {
-		Payload struct {
-			TenantID    string           `json:"tenant_id"`
-			ReturnID    string           `json:"return_id"`
-			OutletID    string           `json:"outlet_id"`
-			WarehouseID string           `json:"warehouse_id"`
-			Lines       []returnLineItem `json:"lines"`
-		} `json:"payload"`
-		EventType string `json:"event_type"`
-	}
-	if err := json.Unmarshal(msg.Data, &envelope); err != nil {
-		c.log.Warn("ordering return: unmarshal failed", zap.Error(err))
-		_ = msg.Nak()
-		return
-	}
-
-	tenantID, err := uuid.Parse(envelope.Payload.TenantID)
+func parseUUIDOrNil(s string) uuid.UUID {
+	id, err := uuid.Parse(s)
 	if err != nil {
-		c.log.Warn("ordering return: invalid tenant_id", zap.String("raw", envelope.Payload.TenantID))
-		_ = msg.Ack()
-		return
+		return uuid.Nil
 	}
-
-	var warehouseID uuid.UUID
-	if envelope.Payload.WarehouseID != "" {
-		warehouseID, _ = uuid.Parse(envelope.Payload.WarehouseID)
-	}
-	// Restock the selling outlet's own warehouse when no explicit warehouse_id is carried.
-	var outletID uuid.UUID
-	if envelope.Payload.OutletID != "" {
-		outletID, _ = uuid.Parse(envelope.Payload.OutletID)
-	}
-
-	items := make([]stock.RestockItem, 0, len(envelope.Payload.Lines))
-	for _, l := range envelope.Payload.Lines {
-		items = append(items, stock.RestockItem{SKU: l.SKU, Quantity: l.Quantity})
-	}
-
-	if len(items) == 0 {
-		_ = msg.Ack()
-		return
-	}
-
-	idempKey := fmt.Sprintf("ordering-return-%s", envelope.Payload.ReturnID)
-	if err := c.stockSvc.RestockItems(ctx, tenantID, warehouseID, outletID, items, idempKey); err != nil {
-		c.log.Error("ordering return: restock failed",
-			zap.Error(err),
-			zap.String("return_id", envelope.Payload.ReturnID),
-		)
-		_ = msg.Nak()
-		return
-	}
-	_ = msg.Ack()
+	return id
 }

@@ -338,8 +338,10 @@ func New(ctx context.Context) (*App, error) {
 	// Auth events consumer — proactive user sync + UserOutlet assignment projection from auth-service
 	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService, ormClient, cacheAside)
 
-	// Return events consumer — restock inventory on pos.return.completed + ordering.return.approved
+	// Return restock consumer: pos.return.completed + pos.exchange.completed reverse the sale's
+	// consumption back into the warehouse it came from. Gated like the sale consumer.
 	returnConsumer := consumers.NewReturnEventsConsumer(log, stockSvc)
+	returnConsumer.SetFeatureGate(consumerFeatureGate)
 
 	// Stock low events consumer — auto-creates draft POs when auto_reorder_enabled
 	stockConsumer := consumers.NewStockEventsConsumer(log, ormClient)
@@ -574,24 +576,13 @@ func (a *App) Run(ctx context.Context) error {
 				a.log.Info("ticket issuance consumer started")
 			}
 
-			// Start return events consumers (pos.return.completed + ordering.return.approved)
+			// Start return restock consumers (pos.return.completed + pos.exchange.completed)
 			if a.returnConsumer != nil {
 				go func() {
-					if err := a.returnConsumer.StartPOSReturns(ctx, js); err != nil {
-						a.log.Error("pos return events consumer stopped", zap.Error(err))
+					if err := a.returnConsumer.Start(ctx, js); err != nil {
+						a.log.Error("return restock consumer stopped", zap.Error(err))
 					}
 				}()
-				go func() {
-					if err := a.returnConsumer.StartOrderingReturns(ctx, js); err != nil {
-						a.log.Error("ordering return events consumer stopped", zap.Error(err))
-					}
-				}()
-				go func() {
-					if err := a.returnConsumer.StartExchangeReturns(ctx, js); err != nil {
-						a.log.Error("pos exchange events consumer stopped", zap.Error(err))
-					}
-				}()
-				a.log.Info("return events consumers started")
 			}
 
 			// Start stock low events consumer — auto-creates draft POs when auto_reorder_enabled

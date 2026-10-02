@@ -2,6 +2,7 @@ package stock
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -20,6 +21,15 @@ import (
 // reversalReason marks compensating consumption records so they are excluded from
 // reversible-quantity math and from being reversed themselves.
 const reversalReason = "reversal"
+
+// ErrNoConsumptionRecorded means the order never consumed stock here (a service or voucher
+// sale, a sale from before the tenant had inventory access, or a lost sale event).
+// ErrNothingToReverse means every matching line was already reversed. Both texts are part of
+// the S2S contract: pos-api's inventory client matches them in the 422 body.
+var (
+	ErrNoConsumptionRecorded = errors.New("no consumption recorded")
+	ErrNothingToReverse      = errors.New("nothing left to reverse")
+)
 
 // ReverseConsumptionItem selects one sale-line SKU to reverse. Quantity is the sale-line
 // quantity being reversed and OfQuantity the total quantity of that SKU originally sold on
@@ -53,6 +63,8 @@ type ReversedIngredient struct {
 	// (shortfall/theoretical/unit-mismatch portions never left stock, so they never return).
 	StockReturned float64 `json:"stock_returned"`
 	CostReversed  float64 `json:"cost_reversed"`
+	// WarehouseID is where the stock went back: the warehouse the sale originally drew it from.
+	WarehouseID uuid.UUID `json:"warehouse_id"`
 }
 
 // ReverseConsumptionResponse summarizes a consumption reversal.
@@ -103,7 +115,7 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 		return nil, fmt.Errorf("stock: reverse consumption: load consumptions: %w", err)
 	}
 	if len(originals) == 0 {
-		return nil, fmt.Errorf("stock: reverse consumption: no consumption recorded for order %s", req.OrderID)
+		return nil, fmt.Errorf("stock: reverse consumption: %w for order %s", ErrNoConsumptionRecorded, req.OrderID)
 	}
 
 	allLines, err := s.client.ConsumptionLine.Query().
@@ -297,12 +309,13 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 			QuantityReversed: reverseQty,
 			StockReturned:    stockReturn,
 			CostReversed:     costReversed,
+			WarehouseID:      lineWarehouseID,
 		})
 	}
 
 	if len(results) == 0 {
 		_ = tx.Rollback()
-		return nil, fmt.Errorf("stock: reverse consumption: nothing left to reverse for order %s (already reversed or no matching lines)", req.OrderID)
+		return nil, fmt.Errorf("stock: reverse consumption: %w for order %s (already reversed or no matching lines)", ErrNothingToReverse, req.OrderID)
 	}
 
 	builder := tx.Consumption.Create().

@@ -59,7 +59,9 @@ This document provides detailed integration information for all external service
 **Events Consumed** (✅ wired via NATS JetStream):
 - `ordering.order.completed` → auto-consume reservation
 - `ordering.order.cancelled` → auto-release reservation
-- `ordering.return.approved` → restock returned items
+
+(The `ordering.return.approved` consumer was removed on 2026-10-02: ordering-backend never
+publishes that subject. Add a consumer again only when ordering ships returns.)
 
 **Events Published** (✅ via outbox pattern):
 - `inventory.stock.updated` - Stock level changed
@@ -98,7 +100,16 @@ This document provides detailed integration information for all external service
 
 **Events Consumed** (✅ wired):
 - `pos.sale.finalized` — BOM backflush; inventory-api performs recipe explosion and decrements `InventoryBalance.on_hand`
-- `pos.return.completed` — Restock returned items
+- `pos.return.completed`, `pos.exchange.completed`, `pos.return.restock_requested`: restock a
+  completed customer return through `stock.RestockReturn`. SKUs the sale consumed are reversed with
+  `ReverseConsumption`, so the goods go back to the warehouse the sale drew them from, recipe items
+  return ingredient by ingredient, and the reversal cap stops a return and an Edit-Sale reversal on
+  the same order from putting the same stock back twice. SKUs with no recorded consumption are
+  restocked directly into the outlet's warehouse with ledger rows. Idempotency key
+  `pos-return-<id>` (or `pos-exchange-<id>`) whichever subject delivered it. Tenant comes from the
+  shared-events envelope (`DecodeEvent`); gated by `basic_inventory_access` like the sale consumer.
+  The outcome (status plus per-SKU warehouse) is published as `inventory.return.restocked`.
+  Stock history labels these rows "Customer Return" (other reversals read "Sale Reversal").
 - `POST /v1/{tenant}/inventory/consumption/reverse` (S2S, 2026-07-17) — BOM-accurate consumption
   reversal for pos-api's txn-reversal tool: returns the actually-deducted quantities (net of
   recorded shortfall/theoretical/unit-mismatch) to the balance, writes negative compensating
