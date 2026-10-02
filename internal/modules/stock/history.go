@@ -265,6 +265,14 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 	if f.WarehouseID != nil {
 		adjQ = adjQ.Where(stockadjustment.WarehouseID(*f.WarehouseID))
 	}
+	// The date window is applied in SQL, before the cap: filtering after Limit dropped every
+	// row of an older range once an item had more than perSourceCap movements.
+	if f.DateFrom != nil {
+		adjQ = adjQ.Where(stockadjustment.AdjustedAtGTE(*f.DateFrom))
+	}
+	if f.DateTo != nil {
+		adjQ = adjQ.Where(stockadjustment.AdjustedAtLTE(*f.DateTo))
+	}
 	adjs, err := adjQ.Order(ent.Desc(stockadjustment.FieldAdjustedAt)).Limit(perSourceCap).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock: history adjustments: %w", err)
@@ -436,10 +444,17 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 	if f.WarehouseID != nil {
 		clQ = clQ.Where(entconsumptionline.WarehouseID(*f.WarehouseID))
 	}
+	if f.DateFrom != nil {
+		clQ = clQ.Where(entconsumptionline.ConsumedAtGTE(*f.DateFrom))
+	}
+	if f.DateTo != nil {
+		clQ = clQ.Where(entconsumptionline.ConsumedAtLTE(*f.DateTo))
+	}
 	cls, err := clQ.Order(ent.Desc(entconsumptionline.FieldConsumedAt)).Limit(perSourceCap).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock: history consumption: %w", err)
 	}
+	customerReturns := s.customerReturnConsumptions(ctx, cls)
 	for _, c := range cls {
 		if !f.inRange(c.ConsumedAt) || c.Quantity == 0 {
 			continue
@@ -480,8 +495,12 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			if qty < 0 {
 				qty = -qty
 			}
+			label := "Sale Reversal"
+			if customerReturns[c.ConsumptionID] {
+				label = "Customer Return"
+			}
 			rows = append(rows, MovementRow{
-				Type: "sell_return", Label: "Sell Return / Reversal",
+				Type: "sell_return", Label: label,
 				QuantityChange: qty, OccurredAt: c.ConsumedAt,
 				Reference: reference, WarehouseID: wid, Counterparty: counterparty,
 				ActorID: actorID, ActorName: c.ServedByName,

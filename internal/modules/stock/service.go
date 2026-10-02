@@ -2268,8 +2268,10 @@ type RestockItem struct {
 	Quantity float64 `json:"quantity"`
 }
 
-// RestockItems restores stock for returned items, incrementing on_hand and available.
-// Used by return/refund consumers to restock the warehouse after a customer return.
+// RestockItems restores stock for items coming back without a sale behind them, incrementing
+// on_hand and available. Used by manufacturing (cancelled production batches). Customer returns
+// do NOT use this: they go through RestockReturn, which reverses the sale's own consumption into
+// the warehouse it came from and writes the stock-history ledger.
 //
 // outletID scopes the restock to the SELLING outlet's own warehouse when no explicit warehouseID
 // is supplied (explicit warehouse > outlet's own warehouse > tenant default) — a returned item must
@@ -2285,11 +2287,10 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID, outle
 	if err != nil {
 		return fmt.Errorf("stock: begin restock tx: %w", err)
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	// Always roll back on exit: the loop's error returns build fresh errors without touching
+	// err, so an err-gated rollback leaked the transaction (and its pooled connection). After a
+	// successful Commit this is a harmless no-op.
+	defer func() { _ = tx.Rollback() }()
 
 	for _, ri := range items {
 		itm, err := tx.Item.Query().
@@ -2337,7 +2338,7 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID, outle
 			"sku":          ri.SKU,
 			"quantity":     qty,
 			"warehouse_id": whID.String(),
-			"reason":       "customer_return",
+			"reason":       "restock",
 		})
 	}
 

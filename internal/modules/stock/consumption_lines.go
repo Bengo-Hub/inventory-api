@@ -43,6 +43,9 @@ type consumptionLineInput struct {
 	lotID      *uuid.UUID
 	lotNumber  string
 	expiryDate *time.Time
+	// skipRollup keeps the line out of ItemConsumptionDaily. Set for a direct return restock of
+	// a sale that never consumed stock here: nothing was used, so usage must not go negative.
+	skipRollup bool
 }
 
 // recordConsumptionLine persists a normalized ConsumptionLine row and folds it into the
@@ -111,6 +114,9 @@ func (s *Service) recordConsumptionLine(ctx context.Context, tx *ent.Tx, tenantI
 		return
 	}
 
+	if in.skipRollup {
+		return
+	}
 	s.upsertDailyRollup(ctx, tx, tenantID, in, totalCost)
 }
 
