@@ -271,6 +271,10 @@ type ItemDTO struct {
 	CategoryID  *uuid.UUID `json:"category_id,omitempty"`
 	BrandID     *uuid.UUID `json:"brand_id,omitempty"`
 	UnitID      *uuid.UUID `json:"unit_id,omitempty"`
+	// RescaleOldPerNew (update only) is how many OLD stock units make one NEW unit when a stock-
+	// unit change crosses dimensions with no built-in conversion (g to pc: 1 pc = 450 g → 450).
+	// Required then if the item holds stock; same-dimension changes (g to kg) convert themselves.
+	RescaleOldPerNew *float64 `json:"rescale_old_per_new,omitempty"`
 	// Preferred Supplier for procurement (drives per-vendor PO split in procure-to-order).
 	// Accepted on create/update; PreferredSupplierName is read-only (populated when the edge is loaded).
 	PreferredSupplierID   *uuid.UUID     `json:"preferred_supplier_id,omitempty"`
@@ -520,6 +524,8 @@ type Service struct {
 	mediaRoot    string      // filesystem root for persisting uploaded item images (MEDIA_ROOT)
 	taxResolver  TaxResolver // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
 	auditSvc     *audit.Service
+	// onStockUnitChanged runs after a stock-unit change rescaled the item (recipe recosting).
+	onStockUnitChanged func(ctx context.Context, tenantID, itemID uuid.UUID)
 	// readClient, when set, is used ONLY for ListItems' multi-row catalog fetch (see rc()) — a
 	// heavy, staleness-tolerant read routed to a replica when one is configured. Every other
 	// query in this service (single-item lookups, writes, OutletScope) always uses client
@@ -583,6 +589,12 @@ func (s *Service) SetTaxResolver(r TaxResolver) {
 
 // SetAuditService injects the centralized audit trail (optional) for standard-cost and
 // selling-price changes made through this service.
+// SetStockUnitChangedHook wires the callback run after an item's stock unit changed and its
+// quantities/prices were rescaled (recipe costing lives in a package items can't import).
+func (s *Service) SetStockUnitChangedHook(fn func(ctx context.Context, tenantID, itemID uuid.UUID)) {
+	s.onStockUnitChanged = fn
+}
+
 func (s *Service) SetAuditService(a *audit.Service) {
 	s.auditSvc = a
 }
@@ -3023,21 +3035,34 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		updateTags = []string{}
 	}
 
+	// Load the stored item first: its cost is audited below, and a stock-unit change needs its
+	// old unit, quantities and prices to carry them across. Best-effort for the audit only.
+	var prevCostPrice *float64
+	prevItm, pErr := tx.Item.Query().
+		Where(item.TenantID(tenantID), item.ID(id)).
+		WithUnits().
+		Only(ctx)
+	if pErr == nil {
+		prevCostPrice = prevItm.CostPrice
+	}
+	// A stock-unit change rescales every held quantity and per-unit price in this same
+	// transaction (see unit_rescale.go). Planned before validation/EP-cost so the request's
+	// unchanged money fields are first converted into the new unit.
+	var rescale *unitRescale
+	if pErr == nil {
+		if rescale, err = s.planStockUnitChange(ctx, tx, tenantID, prevItm, &dto); err != nil {
+			return nil, err
+		}
+		if rescale != nil {
+			rescaleDTOForUnitChange(prevItm, &dto, rescale)
+		}
+	}
+
 	if err = validatePriceBand(&dto); err != nil {
 		return nil, fmt.Errorf("items: %w", err)
 	}
 	// Auto-compute EP cost from purchase fields if not explicitly provided.
 	resolveEPCost(&dto, s.stockUnitAbbr(ctx, dto.UnitID))
-
-	// Capture the pre-update standard cost so a real change can be audited below. Best-effort:
-	// a lookup failure just means no before/after audit row, never a blocked update.
-	var prevCostPrice *float64
-	if prevItm, pErr := tx.Item.Query().
-		Where(item.TenantID(tenantID), item.ID(id)).
-		Select(item.FieldCostPrice).
-		Only(ctx); pErr == nil {
-		prevCostPrice = prevItm.CostPrice
-	}
 
 	updateBuilder := tx.Item.UpdateOneID(id).
 		Where(item.TenantID(tenantID)).
@@ -3227,6 +3252,25 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		return nil, fmt.Errorf("items: update item: %w", err)
 	}
 
+	var rescaleSummary map[string]any
+	if rescale != nil {
+		// The edit form echoes the old reorder values back; once balances are rescaled those
+		// would overwrite the converted policy, so an unchanged echo is dropped.
+		if b, bErr := tx.InventoryBalance.Query().
+			Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(i.ID)).
+			First(ctx); bErr == nil {
+			if dto.ReorderLevel == b.ReorderLevel {
+				dto.ReorderLevel = 0
+			}
+			if dto.ReorderQuantity == b.ReorderQuantity {
+				dto.ReorderQuantity = 0
+			}
+		}
+		if rescaleSummary, err = s.applyStockUnitRescale(ctx, tx, tenantID, prevItm, rescale); err != nil {
+			return nil, err
+		}
+	}
+
 	// Sync the pricing-tier rows to the item's own guardrail fields — the SAME choke point
 	// setSellingPrice uses. Without this, editing price via the general item-edit form updated
 	// Item.MaxSellingPrice/MinSellingPrice directly but left item_pricings (what POS/ordering
@@ -3309,6 +3353,23 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 			Before:      map[string]any{"sku": i.Sku, "cost_price": prevCostPrice},
 			After:       map[string]any{"sku": i.Sku, "cost_price": i.CostPrice},
 		})
+	}
+
+	if s.auditSvc != nil && rescaleSummary != nil {
+		s.auditSvc.Record(ctx, audit.Entry{
+			TenantID:    tenantID,
+			ActorUserID: actorFromContext(ctx),
+			Action:      "item.stock_unit_changed",
+			EntityType:  "item",
+			EntityID:    i.ID.String(),
+			Before:      map[string]any{"sku": i.Sku, "unit": rescale.From.Abbreviation, "cost_price": prevCostPrice},
+			After:       map[string]any{"sku": i.Sku, "unit": rescale.To.Abbreviation, "cost_price": i.CostPrice, "rescale": rescaleSummary},
+		})
+	}
+	if rescaleSummary != nil && s.onStockUnitChanged != nil {
+		// Recipe costs are per recipe-line unit, but each ingredient's cost per stock unit just
+		// changed: recompute the costing of every recipe using this item.
+		s.onStockUnitChanged(ctx, tenantID, i.ID)
 	}
 
 	// Keep the Retail/Wholesale tier prices in step with edited guardrails (Retail=max,

@@ -35,14 +35,17 @@ func PurchaseCostPerBaseUnit(purchasePrice, packSize, yieldPct *float64) (float6
 }
 
 // CostPerBaseUnit returns the cost to use per stock unit. For a measure-stocked item whose cost is
-// more than PurchaseMismatchFactor times the purchase-derived cost, the purchase-derived cost is
-// returned (the stored cost is per purchase unit); otherwise the cost as given. Count-stocked items
-// are never rescaled: there a gap means wrong purchase data, not a unit mix-up.
+// more than PurchaseMismatchFactor times the purchase-derived cost (a per-purchase-unit entry), or
+// less than 1/PurchaseMismatchFactor of it (a cost left in a smaller unit after the stock unit was
+// changed, e.g. 0.08 per g on an item now stocked in kg), the purchase-derived cost is returned;
+// otherwise the cost as given. Count-stocked items are never rescaled: there a gap means wrong
+// purchase data, not a unit mix-up.
 func CostPerBaseUnit(cost float64, purchasePrice, packSize, yieldPct *float64, stockUnit string) float64 {
 	if !IsMeasure(stockUnit) {
 		return cost
 	}
-	if ep, ok := PurchaseCostPerBaseUnit(purchasePrice, packSize, yieldPct); ok && cost > ep*PurchaseMismatchFactor {
+	if ep, ok := PurchaseCostPerBaseUnit(purchasePrice, packSize, yieldPct); ok &&
+		(cost > ep*PurchaseMismatchFactor || (cost > 0 && cost < ep/PurchaseMismatchFactor)) {
 		return ep
 	}
 	return cost
