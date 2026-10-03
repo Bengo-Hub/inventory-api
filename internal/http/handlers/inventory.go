@@ -1540,6 +1540,11 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.stockSvc.AdjustStock(r.Context(), tenantID, req)
 	if err != nil {
+		var entryErr *stock.EntryUnitError
+		if errors.As(err, &entryErr) {
+			writeError(w, http.StatusUnprocessableEntity, "UNIT_NOT_CONVERTIBLE", entryErr.Error())
+			return
+		}
 		h.log.Error("adjust stock failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "ADJUST_FAILED", err.Error())
 		return

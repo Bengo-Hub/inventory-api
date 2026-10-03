@@ -277,9 +277,16 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 
 	itm, err := tx.Item.Query().
 		Where(item.TenantID(tenantID), item.Sku(req.SKU)).
+		WithUnits().
 		Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock: item not found: sku=%s: %w", req.SKU, err)
+	}
+	// The quantity was entered in a unit other than the item's stock unit (receiving "5 kg" of
+	// an item stocked in grams): convert it, never add the raw number. This used to only relabel
+	// the balance, so 5 kg landed as 5 g.
+	if err = convertAdjustmentToStockUnit(ctx, tx, itm, &req); err != nil {
+		return nil, err
 	}
 	// SERVICE items (bookable rooms/facilities/conference slots, fees) represent capacity or a
 	// charge, not physical stock — they must never be adjustable here. Seeing one get a real
@@ -367,12 +374,10 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		if newOnHand > 0 && bal.RemovedFromLocation {
 			balUpdate = balUpdate.SetRemovedFromLocation(false)
 		}
-		// Record the unit of measure when the caller specifies one (defaults to the
-		// existing balance UoM / item base unit when omitted).
-		if req.UnitID != nil {
-			if u, uErr := tx.Unit.Get(ctx, *req.UnitID); uErr == nil && u.Name != "" {
-				balUpdate = balUpdate.SetUnitOfMeasure(u.Name)
-			}
+		// The balance is always held in the item's stock unit (the adjustment was converted into
+		// it above), so its label follows the item, never the unit the quantity was typed in.
+		if itm.Edges.Units != nil && itm.Edges.Units.Name != "" {
+			balUpdate = balUpdate.SetUnitOfMeasure(strings.ToUpper(itm.Edges.Units.Name))
 		}
 
 		// Reuse the function-scoped err (not a fresh local) — the deferred rollback above checks

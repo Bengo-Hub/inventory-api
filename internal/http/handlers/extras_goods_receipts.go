@@ -228,6 +228,42 @@ func dedupeNonEmpty(in []string) []string {
 	return out
 }
 
+// convertGRNLineToStockUnit rewrites a goods-receipt line's accepted/received quantities and unit
+// cost (in memory, for this posting) from its purchase-order line's unit into the item's stock
+// unit. Same unit, no PO line or no unit: unchanged. A unit that can't be converted (a "box"
+// with no content bridge) is left as entered and logged, so receiving is never blocked.
+func (h *InventoryExtrasHandler) convertGRNLineToStockUnit(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, l *ent.GoodsReceiptLine) {
+	if l.PurchaseOrderLineID == nil || l.QuantityAccepted == 0 {
+		return
+	}
+	pol, err := tx.PurchaseOrderLine.Get(ctx, *l.PurchaseOrderLineID)
+	if err != nil || pol.UnitID == nil {
+		return
+	}
+	itm, err := tx.Item.Query().Where(entitem.TenantID(tenantID), entitem.ID(l.ItemID)).WithUnits().Only(ctx)
+	if err != nil || itm.UnitID == nil || *itm.UnitID == *pol.UnitID || itm.Edges.Units == nil {
+		return
+	}
+	entry, err := tx.Unit.Get(ctx, *pol.UnitID)
+	if err != nil {
+		return
+	}
+	converted, ok := stock.ConvertToStockUnit(itm, l.QuantityAccepted, entry.Abbreviation)
+	if !ok || converted <= 0 {
+		h.log.Warn("goods receipt: line unit not convertible to stock unit; received as entered",
+			zap.String("sku", itm.Sku), zap.String("line_unit", entry.Abbreviation),
+			zap.String("stock_unit", itm.Edges.Units.Abbreviation))
+		return
+	}
+	factor := converted / l.QuantityAccepted // stock units per entered unit
+	l.QuantityAccepted = converted
+	l.QuantityReceived *= factor
+	l.QuantityRejected *= factor
+	if l.UnitCost > 0 {
+		l.UnitCost /= factor
+	}
+}
+
 // applyStockIn upserts a warehouse-scoped InventoryBalance, incrementing on_hand
 // + available by qty (shared receipt logic).
 func (h *InventoryExtrasHandler) applyStockIn(ctx context.Context, tx *ent.Tx, tenantID, warehouseID, itemID uuid.UUID, qty float64) error {
@@ -589,6 +625,10 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	immediatePriceChanges := make(map[uuid.UUID]float64)
 	actor := actorFromContext(ctx)
 	for _, l := range grnLines {
+		// The line was ordered in its PO line's unit (e.g. kg) which may differ from the item's
+		// stock unit (g): convert quantity and unit cost before anything touches the balance or
+		// the cost layer, otherwise receiving 5 kg added 5 g.
+		h.convertGRNLineToStockUnit(ctx, tx, tenantID, l)
 		if err = h.applyStockIn(ctx, tx, tenantID, warehouseID, l.ItemID, l.QuantityAccepted); err != nil {
 			_ = tx.Rollback()
 			return false, err
