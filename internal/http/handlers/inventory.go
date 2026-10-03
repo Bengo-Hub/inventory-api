@@ -104,6 +104,10 @@ type RecipesServicer interface {
 	RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID uuid.UUID) error
 	// AuditRecipeUnits lists existing recipe lines whose units cannot deduct stock.
 	AuditRecipeUnits(ctx context.Context, tenantID uuid.UUID) ([]recipes.UnitIssue, error)
+	// Recipe Health: flagged-row counts, a page of rows per issue, and recost-everything.
+	RecipeHealthSummary(ctx context.Context, tenantID uuid.UUID) (map[string]int, error)
+	RecipeHealth(ctx context.Context, tenantID uuid.UUID, issue string, limit, offset int) ([]recipes.HealthRow, int, error)
+	RecomputeAllCosts(ctx context.Context, tenantID uuid.UUID) (int, error)
 	// SetSellingPriceByItem updates the linked recipe's selling price (RECIPE items are
 	// priced by their recipe at the POS). Returns false when the item has no active recipe.
 	SetSellingPriceByItem(ctx context.Context, tenantID, itemID uuid.UUID, price float64) (bool, error)
@@ -336,6 +340,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 			rec.Get("/recipes", h.ListRecipes)
 			rec.With(perm(rbac.PermRecipesAdd)).Post("/recipes", h.CreateRecipe)
 			rec.Get("/recipes/unit-audit", h.AuditRecipeUnits)
+			rec.Get("/recipes/health/summary", h.RecipeHealthSummary)
+			rec.Get("/recipes/health", h.RecipeHealth)
+			rec.With(perm(rbac.PermRecipesChange)).Post("/recipes/recompute-costs", h.RecomputeAllRecipeCosts)
 			rec.Get("/recipes/{recipeID}", h.GetRecipe)
 			rec.With(perm(rbac.PermRecipesChange)).Put("/recipes/{recipeID}", h.UpdateRecipe)
 			rec.With(perm(rbac.PermRecipesChange)).Post("/recipes/{recipeID}/recompute-cost", h.RecomputeRecipeCost)
@@ -890,6 +897,67 @@ func (h *InventoryHandler) AuditRecipeUnits(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"issues": issues, "count": len(issues)})
+}
+
+// RecipeHealthSummary handles GET /v1/{tenant}/inventory/recipes/health/summary: flagged-row
+// counts per issue type (missing BOM, unconvertible lines, cost basis, frequent stock-outs).
+// Powers the inventory-ui warning banner.
+func (h *InventoryHandler) RecipeHealthSummary(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	counts, err := h.recipeSvc.RecipeHealthSummary(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("recipe health summary failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "HEALTH_FAILED", err.Error())
+		return
+	}
+	total := 0
+	for _, n := range counts {
+		total += n
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"counts": counts, "total": total, "issue_types": recipes.HealthIssueTypes})
+}
+
+// RecipeHealth handles GET /v1/{tenant}/inventory/recipes/health?issue=&limit=&offset=: one page
+// of flagged items for an issue type, each with the ids the UI needs for its fix actions.
+func (h *InventoryHandler) RecipeHealth(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	issue := r.URL.Query().Get("issue")
+	if issue == "" {
+		issue = recipes.IssueMissingBOM
+	}
+	p := pagination.Parse(r)
+	rows, total, err := h.recipeSvc.RecipeHealth(r.Context(), tenantID, issue, p.Limit, p.Offset)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "HEALTH_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": rows, "total": total, "limit": p.Limit, "offset": p.Offset, "issue": issue})
+}
+
+// RecomputeAllRecipeCosts handles POST /v1/{tenant}/inventory/recipes/recompute-costs: recosts
+// every active recipe from current ingredient costs and publishes each new cost, so POS cost
+// snapshots and treasury COGS follow. Used after fixing ingredient units or costs.
+func (h *InventoryHandler) RecomputeAllRecipeCosts(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	n, err := h.recipeSvc.RecomputeAllCosts(r.Context(), tenantID)
+	if err != nil {
+		h.log.Error("recompute all recipe costs failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "RECOMPUTE_FAILED", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"recomputed": n})
 }
 
 // DeleteRecipe handles DELETE /v1/{tenant}/inventory/recipes/{recipeID}
