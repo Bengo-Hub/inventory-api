@@ -130,6 +130,11 @@ func RecordTheoreticalUsage(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldRecordTheoreticalUsage, v))
 }
 
+// AutoHideOnStockOut applies equality check predicate on the "auto_hide_on_stock_out" field. It's identical to AutoHideOnStockOutEQ.
+func AutoHideOnStockOut(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldAutoHideOnStockOut, v))
+}
+
 // LotsModuleEnabled applies equality check predicate on the "lots_module_enabled" field. It's identical to LotsModuleEnabledEQ.
 func LotsModuleEnabled(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldLotsModuleEnabled, v))
@@ -663,6 +668,16 @@ func RecordTheoreticalUsageEQ(v bool) predicate.TenantInventoryConfig {
 // RecordTheoreticalUsageNEQ applies the NEQ predicate on the "record_theoretical_usage" field.
 func RecordTheoreticalUsageNEQ(v bool) predicate.TenantInventoryConfig {
 	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldRecordTheoreticalUsage, v))
+}
+
+// AutoHideOnStockOutEQ applies the EQ predicate on the "auto_hide_on_stock_out" field.
+func AutoHideOnStockOutEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldEQ(FieldAutoHideOnStockOut, v))
+}
+
+// AutoHideOnStockOutNEQ applies the NEQ predicate on the "auto_hide_on_stock_out" field.
+func AutoHideOnStockOutNEQ(v bool) predicate.TenantInventoryConfig {
+	return predicate.TenantInventoryConfig(sql.FieldNEQ(FieldAutoHideOnStockOut, v))
 }
 
 // LotsModuleEnabledEQ applies the EQ predicate on the "lots_module_enabled" field.

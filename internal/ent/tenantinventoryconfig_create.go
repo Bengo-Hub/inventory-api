@@ -247,6 +247,20 @@ func (_c *TenantInventoryConfigCreate) SetNillableRecordTheoreticalUsage(v *bool
 	return _c
 }
 
+// SetAutoHideOnStockOut sets the "auto_hide_on_stock_out" field.
+func (_c *TenantInventoryConfigCreate) SetAutoHideOnStockOut(v bool) *TenantInventoryConfigCreate {
+	_c.mutation.SetAutoHideOnStockOut(v)
+	return _c
+}
+
+// SetNillableAutoHideOnStockOut sets the "auto_hide_on_stock_out" field if the given value is not nil.
+func (_c *TenantInventoryConfigCreate) SetNillableAutoHideOnStockOut(v *bool) *TenantInventoryConfigCreate {
+	if v != nil {
+		_c.SetAutoHideOnStockOut(*v)
+	}
+	return _c
+}
+
 // SetLotsModuleEnabled sets the "lots_module_enabled" field.
 func (_c *TenantInventoryConfigCreate) SetLotsModuleEnabled(v bool) *TenantInventoryConfigCreate {
 	_c.mutation.SetLotsModuleEnabled(v)
@@ -572,6 +586,10 @@ func (_c *TenantInventoryConfigCreate) defaults() {
 		v := tenantinventoryconfig.DefaultRecordTheoreticalUsage
 		_c.mutation.SetRecordTheoreticalUsage(v)
 	}
+	if _, ok := _c.mutation.AutoHideOnStockOut(); !ok {
+		v := tenantinventoryconfig.DefaultAutoHideOnStockOut
+		_c.mutation.SetAutoHideOnStockOut(v)
+	}
 	if _, ok := _c.mutation.LotsModuleEnabled(); !ok {
 		v := tenantinventoryconfig.DefaultLotsModuleEnabled
 		_c.mutation.SetLotsModuleEnabled(v)
@@ -682,6 +700,9 @@ func (_c *TenantInventoryConfigCreate) check() error {
 	}
 	if _, ok := _c.mutation.RecordTheoreticalUsage(); !ok {
 		return &ValidationError{Name: "record_theoretical_usage", err: errors.New(`ent: missing required field "TenantInventoryConfig.record_theoretical_usage"`)}
+	}
+	if _, ok := _c.mutation.AutoHideOnStockOut(); !ok {
+		return &ValidationError{Name: "auto_hide_on_stock_out", err: errors.New(`ent: missing required field "TenantInventoryConfig.auto_hide_on_stock_out"`)}
 	}
 	if _, ok := _c.mutation.LotsModuleEnabled(); !ok {
 		return &ValidationError{Name: "lots_module_enabled", err: errors.New(`ent: missing required field "TenantInventoryConfig.lots_module_enabled"`)}
@@ -825,6 +846,10 @@ func (_c *TenantInventoryConfigCreate) createSpec() (*TenantInventoryConfig, *sq
 	if value, ok := _c.mutation.RecordTheoreticalUsage(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldRecordTheoreticalUsage, field.TypeBool, value)
 		_node.RecordTheoreticalUsage = value
+	}
+	if value, ok := _c.mutation.AutoHideOnStockOut(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldAutoHideOnStockOut, field.TypeBool, value)
+		_node.AutoHideOnStockOut = value
 	}
 	if value, ok := _c.mutation.LotsModuleEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldLotsModuleEnabled, field.TypeBool, value)
@@ -1185,6 +1210,18 @@ func (u *TenantInventoryConfigUpsert) SetRecordTheoreticalUsage(v bool) *TenantI
 // UpdateRecordTheoreticalUsage sets the "record_theoretical_usage" field to the value that was provided on create.
 func (u *TenantInventoryConfigUpsert) UpdateRecordTheoreticalUsage() *TenantInventoryConfigUpsert {
 	u.SetExcluded(tenantinventoryconfig.FieldRecordTheoreticalUsage)
+	return u
+}
+
+// SetAutoHideOnStockOut sets the "auto_hide_on_stock_out" field.
+func (u *TenantInventoryConfigUpsert) SetAutoHideOnStockOut(v bool) *TenantInventoryConfigUpsert {
+	u.Set(tenantinventoryconfig.FieldAutoHideOnStockOut, v)
+	return u
+}
+
+// UpdateAutoHideOnStockOut sets the "auto_hide_on_stock_out" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsert) UpdateAutoHideOnStockOut() *TenantInventoryConfigUpsert {
+	u.SetExcluded(tenantinventoryconfig.FieldAutoHideOnStockOut)
 	return u
 }
 
@@ -1733,6 +1770,20 @@ func (u *TenantInventoryConfigUpsertOne) SetRecordTheoreticalUsage(v bool) *Tena
 func (u *TenantInventoryConfigUpsertOne) UpdateRecordTheoreticalUsage() *TenantInventoryConfigUpsertOne {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateRecordTheoreticalUsage()
+	})
+}
+
+// SetAutoHideOnStockOut sets the "auto_hide_on_stock_out" field.
+func (u *TenantInventoryConfigUpsertOne) SetAutoHideOnStockOut(v bool) *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetAutoHideOnStockOut(v)
+	})
+}
+
+// UpdateAutoHideOnStockOut sets the "auto_hide_on_stock_out" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertOne) UpdateAutoHideOnStockOut() *TenantInventoryConfigUpsertOne {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateAutoHideOnStockOut()
 	})
 }
 
@@ -2483,6 +2534,20 @@ func (u *TenantInventoryConfigUpsertBulk) SetRecordTheoreticalUsage(v bool) *Ten
 func (u *TenantInventoryConfigUpsertBulk) UpdateRecordTheoreticalUsage() *TenantInventoryConfigUpsertBulk {
 	return u.Update(func(s *TenantInventoryConfigUpsert) {
 		s.UpdateRecordTheoreticalUsage()
+	})
+}
+
+// SetAutoHideOnStockOut sets the "auto_hide_on_stock_out" field.
+func (u *TenantInventoryConfigUpsertBulk) SetAutoHideOnStockOut(v bool) *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.SetAutoHideOnStockOut(v)
+	})
+}
+
+// UpdateAutoHideOnStockOut sets the "auto_hide_on_stock_out" field to the value that was provided on create.
+func (u *TenantInventoryConfigUpsertBulk) UpdateAutoHideOnStockOut() *TenantInventoryConfigUpsertBulk {
+	return u.Update(func(s *TenantInventoryConfigUpsert) {
+		s.UpdateAutoHideOnStockOut()
 	})
 }
 

@@ -123,8 +123,9 @@ than `on_hand`, the balance is allowed to go negative — it is not floored to z
 value is the item's real backorder debt: the next transfer, GRN, or manual adjustment settles it
 by simply adding on top (an unclamped delta), the same way any of those paths already worked.
 The restock/"back in stock" cascade only fires on the `on_hand` transition from `<=0` to `>0`, so
-an item stays correctly hidden/out-of-stock until the debt is fully paid off, not just until any
-stock arrives. This supersedes the original 2026-07-06 stock-depletion design's "keep flooring,
+for tenants with `auto_hide_on_stock_out` on, an item stays hidden until the debt is fully
+paid off, not just until any stock arrives. Since 2026-10-03 the default is off: stock-outs only
+alert, nothing is auto-hidden, and availability is manual-only (see docs/recipes.md). This supersedes the original 2026-07-06 stock-depletion design's "keep flooring,
 negative-stock policy = explicit non-goal" decision (`.claude/plans/inventory-stock-tracking-audit-and-fixes.md`).
 See `internal/modules/stock/service.go` (`RecordConsumption`, `AdjustStock`,
 `ConsumeReservation`) and the shared `eventShortfall`/`apportionDeducted` helpers in `bom.go`/

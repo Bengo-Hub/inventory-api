@@ -35,6 +35,8 @@ import (
 	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
+	"github.com/bengobox/inventory-service/internal/modules/stockcalc"
+	"github.com/bengobox/inventory-service/internal/modules/tenantconfig"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
@@ -663,13 +665,16 @@ func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID,
 }
 
 // getRecipeAvailability performs BOM explosion: for a RECIPE item, looks up the recipe,
-// checks each ingredient's available balance, and returns the minimum number of portions
-// that can be produced (floor(ingredient_available / ingredient_qty_per_portion)).
+// sums each ingredient's available balance across the tenant's warehouses, and returns the
+// minimum number of portions that can be produced. It uses the same maths as the deduction
+// path (stockcalc: unit conversion including the content-per-unit bridge, waste factor,
+// non-depleting ingredients never constrain), so this figure agrees with what a sale removes.
 func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID, itm *ent.Item) (*StockAvailability, error) {
 	rec, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.Sku(itm.Sku), recipe.IsActive(true)).
 		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder))
+			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
+				WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
 		}).
 		Only(ctx)
 	if err != nil {
@@ -701,39 +706,18 @@ func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID,
 		return nil, fmt.Errorf("items: query ingredient balances: %w", err)
 	}
 
+	// Sum across warehouses: an item stocked in several locations has one balance row each
+	// (the previous last-row-wins map under-reported multi-warehouse tenants).
 	balMap := make(map[uuid.UUID]float64, len(balances))
 	for _, b := range balances {
-		balMap[b.ItemID] = b.Available
+		balMap[b.ItemID] += b.Available
 	}
 
-	// BOM explosion: compute minimum available portions
-	outputQty := rec.OutputQty
-	if outputQty <= 0 {
-		outputQty = 1
-	}
-
-	minPortions := math.MaxFloat64
-	for _, ing := range rec.Edges.Ingredients {
-		available := float64(balMap[ing.ItemID])
-		qtyPerPortion := ing.Quantity / outputQty
-		if qtyPerPortion <= 0 {
-			continue
-		}
-		portions := available / qtyPerPortion
-		if portions < minPortions {
-			minPortions = portions
-		}
-	}
-
-	if minPortions == math.MaxFloat64 || minPortions < 0 {
-		// A negative minPortions means at least one ingredient is itself in oversold/negative
-		// balance territory (now a legitimate state — see [[oversell-negative-stock-settlement]]).
-		// "Portions currently producible" can't itself be negative, so floor at 0 here — mirrors
-		// stock/cascade.go's produciblePortions, which already does the same.
-		minPortions = 0
-	}
-
-	availablePortions := int(math.Floor(minPortions))
+	cfg := tenantconfig.Get(ctx, s.client, tenantID)
+	constrains := func(ingItem *ent.Item) bool { return !stockcalc.NonDepleting(ingItem, cfg) }
+	// Floors at 0 when any constraining ingredient is negative (a legitimate oversold state,
+	// see [[oversell-negative-stock-settlement]]): producible portions can't be negative.
+	availablePortions := int(stockcalc.ProduciblePortions(rec, balMap, constrains))
 
 	return &StockAvailability{
 		ItemID:        itm.ID,

@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	enttenant "github.com/bengobox/inventory-service/internal/ent/tenant"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
+	"github.com/bengobox/inventory-service/internal/modules/tenantconfig"
 )
 
 // driftProbeClient carries a short timeout so the per-call drift check against auth-api can
@@ -355,6 +356,7 @@ func (s *Syncer) adoptAuthTenantID(ctx context.Context, localID, remoteID uuid.U
 // factory defaults (wavg/no-lot-tracking), so it never clobbers an admin's later, deliberate
 // override back to something else.
 func (s *Syncer) ensurePharmacyInventoryDefaults(ctx context.Context, tenantID uuid.UUID) {
+	defer tenantconfig.Invalidate(tenantID)
 	cfg, err := s.client.TenantInventoryConfig.Query().
 		Where(entconfig.TenantID(tenantID)).
 		Only(ctx)

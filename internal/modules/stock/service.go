@@ -22,7 +22,6 @@ import (
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
-	enttenantcfg "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
@@ -72,6 +71,10 @@ type ReservationResponse struct {
 	ExpiresAt   *time.Time     `json:"expires_at,omitempty"`
 	ConfirmedAt *time.Time     `json:"confirmed_at,omitempty"`
 	CreatedAt   time.Time      `json:"created_at"`
+	// OversellAllowed is true when the tenant's availability is manual-only (auto_hide_on_stock_out
+	// off): every line was held in full even beyond available stock, so callers must never
+	// reject the order for a shortfall.
+	OversellAllowed bool `json:"oversell_allowed"`
 }
 
 // ReservedItem matches the ordering-backend client DTO.
@@ -728,9 +731,8 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 // costingMethod returns the tenant's configured inventory costing/consumption method
 // (wavg|fifo|lifo|fefo). Defaults to "wavg" when no config row exists.
 func (s *Service) costingMethod(ctx context.Context, tenantID uuid.UUID) string {
-	cfg, err := s.client.TenantInventoryConfig.Query().
-		Where(enttenantcfg.TenantID(tenantID)).Only(ctx)
-	if err != nil || cfg == nil {
+	cfg := s.tenantConfig(ctx, tenantID)
+	if cfg == nil {
 		return "wavg"
 	}
 	return cfg.CostingMethod.String()
@@ -965,6 +967,7 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 
 	notification := s.stockAlertNotification(ctx, tenantID)
 	if state == stockBandOut {
+		autoHide := s.autoHideOnStockOut(ctx, tenantID)
 		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "out", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.out", map[string]any{
 			"tenant_id":    tenantID.String(),
@@ -975,13 +978,19 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 			"warehouse_id": warehouseID.String(),
 			"outlet_id":    outletID,
 			"notification": notification,
+			// Consumers (POS, ordering) only mark the item unavailable when this is true; when
+			// false the event is an alert only and the item keeps selling into negative stock.
+			"affects_availability": autoHide,
 		})
 		s.log.Warn("stock-out alert published",
 			zap.String("sku", itm.Sku),
 			zap.Float64("available", bal.Available),
+			zap.Bool("affects_availability", autoHide),
 		)
-		// Cascade: mark recipe items as unavailable when an ingredient runs out.
-		s.cascadeIngredientStockOut(ctx, tx, tenantID, itm.ID, warehouseID, notification)
+		// Cascade: mark recipe items as unavailable when an ingredient runs out (opt-in only).
+		if autoHide {
+			s.cascadeIngredientStockOut(ctx, tx, tenantID, itm.ID, warehouseID, notification)
+		}
 	} else {
 		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "low", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.low", map[string]any{
@@ -1037,9 +1046,8 @@ func (s *Service) lastStockLevelState(ctx context.Context, tx *ent.Tx, tenantID,
 // notification_email overrides the tenant contact address downstream.
 func (s *Service) stockAlertNotification(ctx context.Context, tenantID uuid.UUID) map[string]any {
 	n := map[string]any{"target": "staff", "enabled": false}
-	cfg, err := s.client.TenantInventoryConfig.Query().
-		Where(enttenantcfg.TenantID(tenantID)).Only(ctx)
-	if err != nil || cfg == nil {
+	cfg := s.tenantConfig(ctx, tenantID)
+	if cfg == nil {
 		return n
 	}
 	n["enabled"] = cfg.EnableLowStockNotifications
@@ -1228,7 +1236,11 @@ func (s *Service) modifierConsumption(ctx context.Context, tenantID, warehouseID
 // order — callers must not record skipped lines on the reservation, or release/consume
 // would move stock that was never held). Shared by the parent line and modifier reservation
 // so both go through identical balance handling.
-func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, whID uuid.UUID, ing explodedIngredient, cfg *ent.TenantInventoryConfig) (reservedQty, availableQty float64, fullyReserved, skipped bool, err error) {
+//
+// When oversell is true (manual-only availability) the full quantity is always held, even
+// beyond what is available, driving available negative exactly like an oversold sale; a
+// missing balance row is created at zero first so the hold is never silently dropped.
+func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, whID uuid.UUID, ing explodedIngredient, cfg *ent.TenantInventoryConfig, oversell bool) (reservedQty, availableQty float64, fullyReserved, skipped bool, err error) {
 	if ing.UnitMismatch {
 		return 0, 0, true, true, nil
 	}
@@ -1252,28 +1264,44 @@ func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, w
 		).
 		First(ctx)
 	if berr != nil {
-		if ent.IsNotFound(berr) {
+		if !ent.IsNotFound(berr) {
+			return 0, 0, false, false, fmt.Errorf("stock: query balance: sku=%s: %w", ing.SKU, berr)
+		}
+		if !oversell {
 			return 0, 0, false, false, nil
 		}
-		return 0, 0, false, false, fmt.Errorf("stock: query balance: sku=%s: %w", ing.SKU, berr)
+		bal, berr = tx.InventoryBalance.Create().
+			SetTenantID(tenantID).
+			SetItemID(itm.ID).
+			SetWarehouseID(whID).
+			Save(ctx)
+		if berr != nil {
+			return 0, 0, false, false, fmt.Errorf("stock: create balance for sku=%s: %w", ing.SKU, berr)
+		}
 	}
 
 	availableQty = bal.Available
-	reserveQty := ing.Quantity
-	fullyReserved = true
-	if reserveQty > availableQty {
-		reserveQty = availableQty
-		fullyReserved = false
-	}
+	reserveQty, fullyReserved := reservationHold(ing.Quantity, availableQty, oversell)
 	if reserveQty > 0 {
 		if _, uerr := tx.InventoryBalance.UpdateOne(bal).
-			SetAvailable(bal.Available - reserveQty).
-			SetReserved(bal.Reserved + reserveQty).
+			SetAvailable(round4(bal.Available - reserveQty)).
+			SetReserved(round4(bal.Reserved + reserveQty)).
 			Save(ctx); uerr != nil {
 			return 0, 0, false, false, fmt.Errorf("stock: update balance for sku=%s: %w", ing.SKU, uerr)
 		}
 	}
 	return reserveQty, availableQty, fullyReserved, false, nil
+}
+
+// reservationHold decides how much of a requested quantity a reservation holds against the
+// currently available stock. With oversell (manual-only availability) the full request is
+// always held and reported as fully reserved; otherwise the hold is capped at what is
+// available (never below zero) and a cap means the line is not fully reserved.
+func reservationHold(requested, available float64, oversell bool) (qty float64, full bool) {
+	if oversell || requested <= available {
+		return requested, true
+	}
+	return max(0, available), false
 }
 
 // CreateReservation reserves stock for an order within a transaction.
@@ -1292,7 +1320,9 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 			Where(reservation.IdempotencyKey(req.IdempotencyKey)).
 			First(ctx)
 		if err == nil {
-			return s.mapReservation(existing), nil
+			out := s.mapReservation(existing)
+			out.OversellAllowed = !s.autoHideOnStockOut(ctx, tenantID)
+			return out, nil
 		}
 	}
 
@@ -1310,6 +1340,9 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 	// Tenant policy resolved once per reservation: non-depleting items are skipped
 	// (no stock held, never constrain the order).
 	cfg := s.tenantConfig(ctx, tenantID)
+	// Manual-only availability: hold every line in full, never report a shortfall that would
+	// make a caller reject the order for a system/physical stock mismatch.
+	oversell := cfg == nil || !cfg.AutoHideOnStockOut
 
 	for _, ri := range req.Items {
 		// Resolve a variant SKU to its stock-bearing parent SKU (real items pass through),
@@ -1325,7 +1358,7 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 		fullyReserved := true
 
 		for _, ing := range ingredientsToReserve {
-			reserveQty, availableQty, ingFully, skipped, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ing, cfg)
+			reserveQty, availableQty, ingFully, skipped, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ing, cfg, oversell)
 			if rerr != nil {
 				return nil, rerr
 			}
@@ -1362,7 +1395,7 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 		// lines, so ordering S2S reservations deduct modifier stock the same way POS sales
 		// do. Recorded as their own reserved-item entries for audit/release.
 		for _, ming := range s.modifierConsumption(ctx, tenantID, whID, ri.Modifiers, ri.Quantity) {
-			reserveQty, availableQty, ingFully, skipped, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ming, cfg)
+			reserveQty, availableQty, ingFully, skipped, rerr := s.reserveIngredient(ctx, tx, tenantID, whID, ming, cfg, oversell)
 			if rerr != nil {
 				return nil, rerr
 			}
@@ -1391,13 +1424,15 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 				IsFullyReserved: fullyReserved,
 			})
 		} else if fullyReserved {
-			// Add a summary entry for the composite (menu-item) SKU.
+			// Add a summary entry for the composite (menu-item) SKU. Composite=true: its stock
+			// is held by the ingredient lines above, so release/consume skip it.
 			reservedItems = append(reservedItems, entschema.ReservedItemJSON{
 				SKU:             ri.SKU,
 				RequestedQty:    ri.Quantity,
 				ReservedQty:     ri.Quantity,
 				AvailableQty:    ri.Quantity,
 				IsFullyReserved: true,
+				Composite:       true,
 			})
 		}
 	}
@@ -1435,9 +1470,12 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 		zap.String("reservation_id", resv.ID.String()),
 		zap.String("order_id", req.OrderID.String()),
 		zap.Int("items", len(reservedItems)),
+		zap.Bool("oversell_allowed", oversell),
 	)
 
-	return s.mapReservation(resv), nil
+	out := s.mapReservation(resv)
+	out.OversellAllowed = oversell
+	return out, nil
 }
 
 // GetReservation returns a reservation by ID.
@@ -1625,6 +1663,9 @@ func (s *Service) ReleaseReservation(ctx context.Context, tenantID, reservationI
 		if err != nil {
 			continue
 		}
+		if s.isCompositeReservationLine(ctx, tx, tenantID, ri, itm) {
+			continue // held by its ingredient lines, never by the recipe item's own balance
+		}
 
 		bal, err := tx.InventoryBalance.Query().
 			Where(
@@ -1638,7 +1679,7 @@ func (s *Service) ReleaseReservation(ctx context.Context, tenantID, reservationI
 		}
 
 		_, err = tx.InventoryBalance.UpdateOne(bal).
-			SetAvailable(bal.Available + ri.ReservedQty).
+			SetAvailable(round4(bal.Available + ri.ReservedQty)).
 			SetReserved(max(0, bal.Reserved-ri.ReservedQty)).
 			Save(ctx)
 		if err != nil {
@@ -1713,6 +1754,9 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 			Only(ctx)
 		if err != nil {
 			continue
+		}
+		if s.isCompositeReservationLine(ctx, tx, tenantID, ri, itm) {
+			continue // its ingredient lines carry the deduction
 		}
 
 		bal, err := tx.InventoryBalance.Query().

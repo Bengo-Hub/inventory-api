@@ -1,8 +1,9 @@
 # Recipes / Bill of Materials (BOM)
 
 The recipe module links RECIPE-type catalog items to their raw ingredient items.
-It drives food cost visibility, suggested pricing, and (via Phase 3) ingredient
-stock-out → menu availability cascades.
+It drives food cost visibility, suggested pricing, and ingredient depletion. Ingredient
+stock-outs only hide menu items for tenants that opted in (see "Availability policy" below);
+by default availability is manual-only.
 
 ---
 
@@ -109,6 +110,27 @@ Costs are recalculated by calling `RecalculateRecipeCosts(ctx, tenantID, recipeI
 ## TenantInventoryConfig defaults
 
 `default_target_margin_percent` (default `30.0`) is the fallback margin used when a recipe has no `target_margin_percent` set. It is stored in the `tenant_inventory_configs` table and can be updated via the settings API.
+
+---
+
+## Availability policy: manual-only by default (2026-10-03)
+
+`tenant_inventory_configs.auto_hide_on_stock_out` (default `false`, editable in Settings > Stock and via `PUT /{tenant}/inventory/settings`) decides whether stock levels can change what customers and cashiers can sell.
+
+- **Off (default, every tenant).** A sellable item (recipe or goods) is only ever made unavailable by a staff toggle on POS or the ordering app. When an item's own stock, or a recipe ingredient, reaches zero:
+  - inventory still records the low/out band and publishes the `stock.out` alert, with `affects_availability: false`; consumers must not touch availability for it;
+  - the ingredient-depletion cascade (`stock/cascade.go`) does not run, so no recipe is hidden;
+  - sales keep depleting stock into negative, and the next goods receipt, adjustment or stock take settles the debt;
+  - reservations hold the full requested quantity even beyond what's available, and report `oversell_allowed: true`, so an online order is never rejected for stock.
+
+  Why: a mismatch between system and physical stock (a missed goods receipt, a wrong unit) used to block the sale of food that was on the shelf.
+- **On.** This is the legacy behaviour. `stock.out` and the recipe cascade's `stock.out`/`stock.in` carry `affects_availability: true`, and POS/ordering mark the item unavailable and restore it. A restock re-enables only recipes whose ingredients are all positive again.
+
+Consumers treat a missing `affects_availability` field as `true`, so events published before this change, still in flight during a rolling deploy, keep their old meaning.
+
+The tenant config is served from a per-pod 30s cache (`internal/modules/tenantconfig`). The writing pod invalidates it immediately on save; other pods pick up the change within 30 seconds.
+
+Recipe portion maths shared by the stock engine and the items read model lives in `internal/modules/stockcalc` (`ConvertToStockUnit`, `PerPortionStockQty`, `ProduciblePortions`, `AllIngredientsAvailable`), so the deduction path and every availability figure use the same unit conversion and waste factor.
 
 ---
 

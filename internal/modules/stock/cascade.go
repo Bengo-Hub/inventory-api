@@ -2,53 +2,58 @@ package stock
 
 import (
 	"context"
-	"math"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
+	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
+	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
+	"github.com/bengobox/inventory-service/internal/modules/stockcalc"
 )
 
 // cascadeIngredientStockOut publishes stock.out for any RECIPE-type items whose
 // recipe can no longer be produced because itemID (an ingredient) hit zero.
 // notification carries the tenant's alert-email opt-in block (computed once by the caller).
+//
+// Only runs for tenants that opted into auto_hide_on_stock_out; otherwise availability is
+// manual-only and a depleted ingredient just keeps going negative.
 // Best-effort: errors are logged, the parent transaction is never aborted.
 func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, notification map[string]any) {
+	if !s.autoHideOnStockOut(ctx, tenantID) {
+		return
+	}
+	recipes := s.recipesForIngredient(ctx, tx, tenantID, itemID)
+	if len(recipes) == 0 {
+		return
+	}
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
-	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
-		r, err := tx.Recipe.Query().
-			Where(recipe.ID(recipeID), recipe.TenantID(tenantID), recipe.IsActive(true)).
-			WithIngredients(func(q *ent.RecipeIngredientQuery) {
-				q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
-			}).
-			WithItem().
-			Only(ctx)
-		if err != nil || r.ItemID == nil || r.Edges.Item == nil {
-			continue
-		}
+	available := s.ingredientAvailability(ctx, tx, tenantID, warehouseID, recipes)
+	constrains := s.ingredientConstrainsFn(ctx, tenantID)
+	for _, r := range recipes {
 		// Non-depleting recipe items are never auto-86'd (they sell regardless of
 		// tracked ingredient levels — the tenant counts stock manually).
 		if s.itemNonDepletingLazy(ctx, r.Edges.Item) {
 			continue
 		}
-		if s.allIngredientsAvailable(ctx, tx, tenantID, r.Edges.Ingredients, warehouseID) {
+		if stockcalc.AllIngredientsAvailable(r, available, constrains) {
 			continue
 		}
 		recipeItem := r.Edges.Item
 		s.writeOutboxEvent(ctx, tx, tenantID, recipeItem.ID, "inventory", "stock.out", map[string]any{
-			"tenant_id":    tenantID.String(),
-			"item_id":      recipeItem.ID.String(),
-			"sku":          recipeItem.Sku,
-			"name":         recipeItem.Name,
-			"available":    0,
-			"warehouse_id": warehouseID.String(),
-			"outlet_id":    outletID,
-			"reason":       "ingredient_depleted",
-			"notification": notification,
+			"tenant_id":            tenantID.String(),
+			"item_id":              recipeItem.ID.String(),
+			"sku":                  recipeItem.Sku,
+			"name":                 recipeItem.Name,
+			"available":            0,
+			"warehouse_id":         warehouseID.String(),
+			"outlet_id":            outletID,
+			"reason":               "ingredient_depleted",
+			"notification":         notification,
+			"affects_availability": true,
 		})
 		s.log.Info("cascade stock.out: recipe item blocked",
 			zap.String("recipe_sku", recipeItem.Sku),
@@ -75,10 +80,8 @@ func (s *Service) EmitStockInCascade(ctx context.Context, tx *ent.Tx, tenantID, 
 // see StockNotifyEventsConsumer), rechecks the low-stock alert band, and — when the item crossed
 // the zero boundary in EITHER direction — fires the matching ingredient-depletion/restock recipe
 // cascade (stock.out/stock.in) so POS/ordering 86 or restore any recipe this item gates at that
-// specific outlet. Without this, a transfer's destination never showed newly-arrived stock as
-// available to POS/ordering in real time, and a transfer's source kept showing depleted stock as
-// available after shipping. Best-effort: errors are logged inside the helpers; the caller's
-// transaction is never aborted.
+// specific outlet (opt-in tenants only). Best-effort: errors are logged inside the helpers; the
+// caller's transaction is never aborted.
 func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64, reason string) {
 	itm, err := tx.Item.Get(ctx, itemID)
 	if err != nil {
@@ -118,8 +121,9 @@ func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenant
 	}
 }
 
-// cascadeIngredientRestocked publishes stock.in for any RECIPE-type items whose
-// recipe is now fully producible because itemID (an ingredient) was restocked.
+// cascadeIngredientRestocked records the restock edge for the alert state machine and, for
+// tenants that opted into auto_hide_on_stock_out, publishes stock.in for any RECIPE-type items
+// whose recipe is now fully producible because itemID (an ingredient) was restocked.
 // Best-effort: errors are logged, the parent transaction is never aborted.
 func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID) {
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
@@ -136,22 +140,23 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 			s.persistStockLevelEvent(ctx, tx, tenantID, itemID, warehouseID, outletUUID, "restocked", bal.Available, bal.ReorderLevel)
 		}
 	}
-	for _, recipeID := range s.recipesUsingIngredient(ctx, tx, itemID) {
-		r, err := tx.Recipe.Query().
-			Where(recipe.ID(recipeID), recipe.TenantID(tenantID), recipe.IsActive(true)).
-			WithIngredients(func(q *ent.RecipeIngredientQuery) {
-				q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
-			}).
-			WithItem().
-			Only(ctx)
-		if err != nil || r.ItemID == nil || r.Edges.Item == nil {
-			continue
-		}
+	// Manual-only availability: nothing was auto-86'd, so there is nothing to restore (and a
+	// restock must never undo a staff member's own unavailable toggle).
+	if !s.autoHideOnStockOut(ctx, tenantID) {
+		return
+	}
+	recipes := s.recipesForIngredient(ctx, tx, tenantID, itemID)
+	if len(recipes) == 0 {
+		return
+	}
+	available := s.ingredientAvailability(ctx, tx, tenantID, warehouseID, recipes)
+	constrains := s.ingredientConstrainsFn(ctx, tenantID)
+	for _, r := range recipes {
 		// Non-depleting recipe items were never 86'd, so there is nothing to unblock.
 		if s.itemNonDepletingLazy(ctx, r.Edges.Item) {
 			continue
 		}
-		if !s.allIngredientsAvailable(ctx, tx, tenantID, r.Edges.Ingredients, warehouseID) {
+		if !stockcalc.AllIngredientsAvailable(r, available, constrains) {
 			continue
 		}
 		recipeItem := r.Edges.Item
@@ -166,7 +171,8 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 			// Quantity-aware projection (STK-5): how many portions of this recipe its
 			// ingredients can currently produce, so the catalog reflects a real stock
 			// level, not just a sold-out boolean.
-			"available": s.produciblePortions(ctx, tx, tenantID, r, warehouseID),
+			"available":            stockcalc.ProduciblePortions(r, available, constrains),
+			"affects_availability": true,
 		})
 		s.log.Info("cascade stock.in: recipe item unblocked",
 			zap.String("recipe_sku", recipeItem.Sku),
@@ -187,106 +193,97 @@ func (s *Service) outletIDForWarehouse(ctx context.Context, tx *ent.Tx, warehous
 	return wh.OutletID.String()
 }
 
-// recipesUsingIngredient returns distinct recipe IDs that list itemID as a direct ingredient.
-func (s *Service) recipesUsingIngredient(ctx context.Context, tx *ent.Tx, itemID uuid.UUID) []uuid.UUID {
-	ings, err := tx.RecipeIngredient.Query().
-		Where(recipeingredient.ItemID(itemID)).
+// recipesForIngredient loads, in one query, every active recipe of the tenant that lists
+// itemID as a direct ingredient and produces a sellable item, with each ingredient's item
+// (and unit) and the produced item eager-loaded. Replaces the old per-recipe lookups.
+func (s *Service) recipesForIngredient(ctx context.Context, tx *ent.Tx, tenantID, itemID uuid.UUID) []*ent.Recipe {
+	rs, err := tx.Recipe.Query().
+		Where(
+			recipe.TenantID(tenantID),
+			recipe.IsActive(true),
+			recipe.ItemIDNotNil(),
+			recipe.HasIngredientsWith(recipeingredient.ItemID(itemID)),
+		).
+		WithIngredients(func(q *ent.RecipeIngredientQuery) {
+			q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
+		}).
+		WithItem().
 		All(ctx)
 	if err != nil {
-		s.log.Warn("cascade: query recipe ingredients", zap.Error(err))
+		s.log.Warn("cascade: query recipes using ingredient", zap.Error(err))
 		return nil
 	}
-	seen := make(map[uuid.UUID]struct{}, len(ings))
-	ids := make([]uuid.UUID, 0, len(ings))
-	for _, ing := range ings {
-		if _, ok := seen[ing.RecipeID]; !ok {
-			seen[ing.RecipeID] = struct{}{}
-			ids = append(ids, ing.RecipeID)
+	out := rs[:0]
+	for _, r := range rs {
+		if r.Edges.Item != nil {
+			out = append(out, r)
 		}
 	}
-	return ids
+	return out
 }
 
-// produciblePortions returns how many whole portions of a recipe can be produced from current
-// ingredient availability in a warehouse: the minimum over ingredients of
-// floor(ingredient.available / per-portion need). Used to make the catalog availability
-// projection quantity-aware (STK-5) rather than a sold-out boolean. Recipe edges must be
-// pre-loaded (WithIngredients). Returns 0 when any ingredient is missing/depleted.
-func (s *Service) produciblePortions(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, r *ent.Recipe, warehouseID uuid.UUID) float64 {
-	if r == nil || len(r.Edges.Ingredients) == 0 {
-		return 0
-	}
-	outputQty := r.OutputQty
-	if outputQty <= 0 {
-		outputQty = 1
-	}
-	min := -1.0
-	for _, ing := range r.Edges.Ingredients {
-		if !ingredientConstrains(ctx, s, ing) {
-			continue
-		}
-		perPortion := ing.Quantity * (1 + ing.WastePercent/100) / outputQty
-		if perPortion <= 0 {
-			continue // free/zero-need ingredient never constrains the count
-		}
-		// Balances are in the ingredient's STOCK unit; the recipe line may be in a
-		// kitchen unit (ml of a bottle stocked in pieces). Convert the same way the
-		// deduction path does — including the content-per-unit bridge — so a bottle
-		// with 0.5 pieces left still shows floor(0.5×750/30)=12 tots producible.
-		perPortionStock, ok := ConvertToStockUnit(ing.Edges.Item, perPortion, ing.UnitOfMeasure)
-		if !ok || perPortionStock <= 0 {
-			continue // unconvertible line never deducts, so it never constrains
-		}
-		bal, err := tx.InventoryBalance.Query().
-			Where(
-				inventorybalance.TenantID(tenantID),
-				inventorybalance.ItemID(ing.ItemID),
-				inventorybalance.WarehouseID(warehouseID),
-			).
-			First(ctx)
-		if err != nil || bal.Available <= 0 {
-			return 0
-		}
-		portions := math.Floor(bal.Available / perPortionStock)
-		if min < 0 || portions < min {
-			min = portions
+// ingredientAvailability returns available stock at the warehouse for every ingredient of
+// the given recipes, fetched in a single query. Missing rows are simply absent.
+func (s *Service) ingredientAvailability(ctx context.Context, tx *ent.Tx, tenantID, warehouseID uuid.UUID, recipes []*ent.Recipe) map[uuid.UUID]float64 {
+	seen := make(map[uuid.UUID]struct{})
+	ids := make([]uuid.UUID, 0)
+	for _, r := range recipes {
+		for _, ing := range r.Edges.Ingredients {
+			if _, ok := seen[ing.ItemID]; !ok {
+				seen[ing.ItemID] = struct{}{}
+				ids = append(ids, ing.ItemID)
+			}
 		}
 	}
-	if min < 0 {
-		return 0
+	available := make(map[uuid.UUID]float64, len(ids))
+	if len(ids) == 0 {
+		return available
 	}
-	return min
+	bals, err := tx.InventoryBalance.Query().
+		Where(
+			inventorybalance.TenantID(tenantID),
+			inventorybalance.WarehouseID(warehouseID),
+			inventorybalance.ItemIDIn(ids...),
+		).
+		All(ctx)
+	if err != nil {
+		s.log.Warn("cascade: query ingredient balances", zap.Error(err))
+		return available
+	}
+	for _, b := range bals {
+		available[b.ItemID] = b.Available
+	}
+	return available
 }
 
-// ingredientConstrains reports whether a recipe line participates in availability
-// gating: non-depleting ingredient items never constrain (their balances are not
-// maintained by sales). Ingredient item edge must be pre-loaded (WithItem).
-func ingredientConstrains(ctx context.Context, s *Service, ing *ent.RecipeIngredient) bool {
-	return !s.itemNonDepletingLazy(ctx, ing.Edges.Item)
+// isCompositeReservationLine reports whether a reservation line is a recipe (menu-item)
+// summary whose stock is held by its exploded ingredient lines. Release and consume must
+// skip it: moving the recipe item's own balance for it double-counts the sale and drives the
+// recipe item negative. Reservations written before the Composite tag existed are recognised
+// by the item being a RECIPE with an active, non-empty BOM (exactly when CreateReservation
+// exploded it). itm must be the line's item.
+func (s *Service) isCompositeReservationLine(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, ri entschema.ReservedItemJSON, itm *ent.Item) bool {
+	if ri.Composite {
+		return true
+	}
+	if itm == nil || itm.Type != item.TypeRECIPE {
+		return false
+	}
+	exists, err := tx.Recipe.Query().
+		Where(
+			recipe.TenantID(tenantID),
+			recipe.Sku(itm.Sku),
+			recipe.IsActive(true),
+			recipe.HasIngredients(),
+		).
+		Exist(ctx)
+	return err == nil && exists
 }
 
-// allIngredientsAvailable returns true only if every constraining ingredient in the
-// recipe has a balance row with available > 0 in the given warehouse. Lines that never
-// deduct (non-depleting items, unconvertible cross-dimension units) are skipped so they
-// cannot 86 a recipe. Ingredient item edges must be pre-loaded (WithItem(WithUnits)).
-func (s *Service) allIngredientsAvailable(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, ingredients []*ent.RecipeIngredient, warehouseID uuid.UUID) bool {
-	for _, ing := range ingredients {
-		if !ingredientConstrains(ctx, s, ing) {
-			continue
-		}
-		if _, ok := ConvertToStockUnit(ing.Edges.Item, ing.Quantity, ing.UnitOfMeasure); !ok {
-			continue // unconvertible line never deducts, so it never constrains
-		}
-		bal, err := tx.InventoryBalance.Query().
-			Where(
-				inventorybalance.TenantID(tenantID),
-				inventorybalance.ItemID(ing.ItemID),
-				inventorybalance.WarehouseID(warehouseID),
-			).
-			First(ctx)
-		if err != nil || bal.Available <= 0 {
-			return false
-		}
-	}
-	return true
+// ingredientConstrainsFn returns the predicate deciding whether an ingredient participates
+// in availability gating: non-depleting ingredient items never constrain (their balances are
+// not maintained by sales). The tenant config is resolved once for the whole cascade.
+func (s *Service) ingredientConstrainsFn(ctx context.Context, tenantID uuid.UUID) func(*ent.Item) bool {
+	cfg := s.tenantConfig(ctx, tenantID)
+	return func(itm *ent.Item) bool { return !isNonDepleting(itm, cfg) }
 }
