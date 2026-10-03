@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/schema"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nats-io/nats.go"
@@ -254,6 +255,12 @@ func New(ctx context.Context) (*App, error) {
 	itemsSvc.SetTaxResolver(treasuryClient)
 	stockSvc := stock.NewService(ormClient, log)
 	recipeSvc := recipes.NewService(ormClient, log).WithItemsService(itemsSvc)
+	// A stock-unit change rescales the ingredient's cost per stock unit: recost its recipes.
+	itemsSvc.SetStockUnitChangedHook(func(ctx context.Context, tenantID, itemID uuid.UUID) {
+		if err := recipeSvc.RecalculateCostsForIngredient(ctx, tenantID, itemID); err != nil {
+			log.Warn("recipe recost after stock-unit change failed", zap.String("item_id", itemID.String()), zap.Error(err))
+		}
+	})
 	unitSvc := units.NewService(ormClient, log)
 	modifiersSvc := modifiers.NewService(ormClient, log)
 	// WithStockCascade: transfer ship/receive/cancel moves stock directly via their own

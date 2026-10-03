@@ -1398,6 +1398,11 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, req)
 	if err != nil {
+		var unitErr *items.StockUnitChangeError
+		if errors.As(err, &unitErr) {
+			writeError(w, http.StatusUnprocessableEntity, "STOCK_UNIT_CHANGE_NEEDS_FACTOR", unitErr.Error())
+			return
+		}
 		h.log.Error("update item failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
 		return
