@@ -98526,6 +98526,7 @@ type TenantInventoryConfigMutation struct {
 	auto_adjust_on_transfer            *bool
 	recipe_items_non_depleting_default *bool
 	record_theoretical_usage           *bool
+	auto_hide_on_stock_out             *bool
 	lots_module_enabled                *bool
 	recipes_module_enabled             *bool
 	purchase_orders_enabled            *bool
@@ -99385,6 +99386,42 @@ func (m *TenantInventoryConfigMutation) ResetRecordTheoreticalUsage() {
 	m.record_theoretical_usage = nil
 }
 
+// SetAutoHideOnStockOut sets the "auto_hide_on_stock_out" field.
+func (m *TenantInventoryConfigMutation) SetAutoHideOnStockOut(b bool) {
+	m.auto_hide_on_stock_out = &b
+}
+
+// AutoHideOnStockOut returns the value of the "auto_hide_on_stock_out" field in the mutation.
+func (m *TenantInventoryConfigMutation) AutoHideOnStockOut() (r bool, exists bool) {
+	v := m.auto_hide_on_stock_out
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoHideOnStockOut returns the old "auto_hide_on_stock_out" field's value of the TenantInventoryConfig entity.
+// If the TenantInventoryConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantInventoryConfigMutation) OldAutoHideOnStockOut(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoHideOnStockOut is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoHideOnStockOut requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoHideOnStockOut: %w", err)
+	}
+	return oldValue.AutoHideOnStockOut, nil
+}
+
+// ResetAutoHideOnStockOut resets all changes to the "auto_hide_on_stock_out" field.
+func (m *TenantInventoryConfigMutation) ResetAutoHideOnStockOut() {
+	m.auto_hide_on_stock_out = nil
+}
+
 // SetLotsModuleEnabled sets the "lots_module_enabled" field.
 func (m *TenantInventoryConfigMutation) SetLotsModuleEnabled(b bool) {
 	m.lots_module_enabled = &b
@@ -100075,7 +100112,7 @@ func (m *TenantInventoryConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantInventoryConfigMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.tenant_id != nil {
 		fields = append(fields, tenantinventoryconfig.FieldTenantID)
 	}
@@ -100126,6 +100163,9 @@ func (m *TenantInventoryConfigMutation) Fields() []string {
 	}
 	if m.record_theoretical_usage != nil {
 		fields = append(fields, tenantinventoryconfig.FieldRecordTheoreticalUsage)
+	}
+	if m.auto_hide_on_stock_out != nil {
+		fields = append(fields, tenantinventoryconfig.FieldAutoHideOnStockOut)
 	}
 	if m.lots_module_enabled != nil {
 		fields = append(fields, tenantinventoryconfig.FieldLotsModuleEnabled)
@@ -100217,6 +100257,8 @@ func (m *TenantInventoryConfigMutation) Field(name string) (ent.Value, bool) {
 		return m.RecipeItemsNonDepletingDefault()
 	case tenantinventoryconfig.FieldRecordTheoreticalUsage:
 		return m.RecordTheoreticalUsage()
+	case tenantinventoryconfig.FieldAutoHideOnStockOut:
+		return m.AutoHideOnStockOut()
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		return m.LotsModuleEnabled()
 	case tenantinventoryconfig.FieldRecipesModuleEnabled:
@@ -100292,6 +100334,8 @@ func (m *TenantInventoryConfigMutation) OldField(ctx context.Context, name strin
 		return m.OldRecipeItemsNonDepletingDefault(ctx)
 	case tenantinventoryconfig.FieldRecordTheoreticalUsage:
 		return m.OldRecordTheoreticalUsage(ctx)
+	case tenantinventoryconfig.FieldAutoHideOnStockOut:
+		return m.OldAutoHideOnStockOut(ctx)
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		return m.OldLotsModuleEnabled(ctx)
 	case tenantinventoryconfig.FieldRecipesModuleEnabled:
@@ -100451,6 +100495,13 @@ func (m *TenantInventoryConfigMutation) SetField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRecordTheoreticalUsage(v)
+		return nil
+	case tenantinventoryconfig.FieldAutoHideOnStockOut:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoHideOnStockOut(v)
 		return nil
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		v, ok := value.(bool)
@@ -100777,6 +100828,9 @@ func (m *TenantInventoryConfigMutation) ResetField(name string) error {
 		return nil
 	case tenantinventoryconfig.FieldRecordTheoreticalUsage:
 		m.ResetRecordTheoreticalUsage()
+		return nil
+	case tenantinventoryconfig.FieldAutoHideOnStockOut:
+		m.ResetAutoHideOnStockOut()
 		return nil
 	case tenantinventoryconfig.FieldLotsModuleEnabled:
 		m.ResetLotsModuleEnabled()

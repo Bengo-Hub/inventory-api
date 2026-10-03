@@ -257,7 +257,8 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 | `inventory.reservation.released` | Reservation released |
 | `inventory.stock.consumed` | Stock consumption recorded |
 | `inventory.stock.low` | Available quantity drops below threshold |
-| `inventory.stock.out` | Item goes to zero available |
+| `inventory.stock.out` | Item goes to zero available (alert). `affects_availability` says whether consumers may mark it unavailable: false unless the tenant enabled `auto_hide_on_stock_out` (see docs/recipes.md) |
+| `inventory.stock.in` | Recipe producible again after an ingredient restock; only published for `auto_hide_on_stock_out` tenants |
 
 **Consumed events:**
 

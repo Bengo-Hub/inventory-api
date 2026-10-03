@@ -16,6 +16,7 @@ import (
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
+	"github.com/bengobox/inventory-service/internal/modules/tenantconfig"
 	"github.com/bengobox/inventory-service/internal/platform/treasury"
 )
 
@@ -85,6 +86,8 @@ type inventorySettingsResponse struct {
 	// Non-depletion (manual stock tracking) policy
 	RecipeItemsNonDepletingDefault bool `json:"recipe_items_non_depleting_default"`
 	RecordTheoreticalUsage         bool `json:"record_theoretical_usage"`
+	// Availability policy: false (default) keeps availability manual-only; stock-outs only alert.
+	AutoHideOnStockOut bool `json:"auto_hide_on_stock_out"`
 	// Modules
 	LotsModuleEnabled         bool `json:"lots_module_enabled"`
 	RecipesModuleEnabled      bool `json:"recipes_module_enabled"`
@@ -131,7 +134,8 @@ func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettings
 		AutoAdjustOnTransfer:           c.AutoAdjustOnTransfer,
 		RecipeItemsNonDepletingDefault: c.RecipeItemsNonDepletingDefault,
 		RecordTheoreticalUsage:         c.RecordTheoreticalUsage,
-		LotsModuleEnabled:              c.LotsModuleEnabled,
+		AutoHideOnStockOut:             c.AutoHideOnStockOut,
+		LotsModuleEnabled:            c.LotsModuleEnabled,
 		RecipesModuleEnabled:           c.RecipesModuleEnabled,
 		PurchaseOrdersEnabled:          c.PurchaseOrdersEnabled,
 		SupplierManagementEnabled:      c.SupplierManagementEnabled,
@@ -161,9 +165,13 @@ func (h *InventorySettingsHandler) getOrCreate(r *http.Request, tenantID uuid.UU
 	if !ent.IsNotFound(err) {
 		return nil, err
 	}
-	return h.db.TenantInventoryConfig.Create().
+	created, err := h.db.TenantInventoryConfig.Create().
 		SetTenantID(tenantID).
 		Save(ctx)
+	if err == nil {
+		tenantconfig.Invalidate(tenantID)
+	}
+	return created, err
 }
 
 // GetSettings handles GET /{tenant}/inventory/settings
@@ -198,7 +206,8 @@ type updateInventorySettingsInput struct {
 	AutoAdjustOnTransfer           *bool                      `json:"auto_adjust_on_transfer"`
 	RecipeItemsNonDepletingDefault *bool                      `json:"recipe_items_non_depleting_default"`
 	RecordTheoreticalUsage         *bool                      `json:"record_theoretical_usage"`
-	EnableRoomPricing              *bool                      `json:"enable_room_pricing"`
+	AutoHideOnStockOut             *bool                      `json:"auto_hide_on_stock_out"`
+	EnableRoomPricing             *bool                      `json:"enable_room_pricing"`
 	EnableFacilityBooking          *bool                      `json:"enable_facility_booking"`
 	EnableConferencePackages       *bool                      `json:"enable_conference_packages"`
 	PerOutletPricingEnabled        *bool                      `json:"per_outlet_pricing_enabled"`
@@ -308,6 +317,9 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 	if input.RecordTheoreticalUsage != nil {
 		upd = upd.SetRecordTheoreticalUsage(*input.RecordTheoreticalUsage)
 	}
+	if input.AutoHideOnStockOut != nil {
+		upd = upd.SetAutoHideOnStockOut(*input.AutoHideOnStockOut)
+	}
 	if input.CostingMethod != nil {
 		upd = upd.SetCostingMethod(entconfig.CostingMethod(*input.CostingMethod))
 	}
@@ -348,6 +360,7 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to save settings")
 		return
 	}
+	tenantconfig.Invalidate(tenantID)
 	writeJSON(w, http.StatusOK, toInventorySettingsResponse(updated))
 }
 
@@ -399,6 +412,7 @@ func (h *InventorySettingsHandler) PatchModules(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to save module settings")
 		return
 	}
+	tenantconfig.Invalidate(tenantID)
 	writeJSON(w, http.StatusOK, toInventorySettingsResponse(updated))
 }
 

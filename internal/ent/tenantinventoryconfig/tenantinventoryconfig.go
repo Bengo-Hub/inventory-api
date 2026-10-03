@@ -49,6 +49,8 @@ const (
 	FieldRecipeItemsNonDepletingDefault = "recipe_items_non_depleting_default"
 	// FieldRecordTheoreticalUsage holds the string denoting the record_theoretical_usage field in the database.
 	FieldRecordTheoreticalUsage = "record_theoretical_usage"
+	// FieldAutoHideOnStockOut holds the string denoting the auto_hide_on_stock_out field in the database.
+	FieldAutoHideOnStockOut = "auto_hide_on_stock_out"
 	// FieldLotsModuleEnabled holds the string denoting the lots_module_enabled field in the database.
 	FieldLotsModuleEnabled = "lots_module_enabled"
 	// FieldRecipesModuleEnabled holds the string denoting the recipes_module_enabled field in the database.
@@ -105,6 +107,7 @@ var Columns = []string{
 	FieldAutoAdjustOnTransfer,
 	FieldRecipeItemsNonDepletingDefault,
 	FieldRecordTheoreticalUsage,
+	FieldAutoHideOnStockOut,
 	FieldLotsModuleEnabled,
 	FieldRecipesModuleEnabled,
 	FieldPurchaseOrdersEnabled,
@@ -158,6 +161,8 @@ var (
 	DefaultRecipeItemsNonDepletingDefault bool
 	// DefaultRecordTheoreticalUsage holds the default value on creation for the "record_theoretical_usage" field.
 	DefaultRecordTheoreticalUsage bool
+	// DefaultAutoHideOnStockOut holds the default value on creation for the "auto_hide_on_stock_out" field.
+	DefaultAutoHideOnStockOut bool
 	// DefaultLotsModuleEnabled holds the default value on creation for the "lots_module_enabled" field.
 	DefaultLotsModuleEnabled bool
 	// DefaultRecipesModuleEnabled holds the default value on creation for the "recipes_module_enabled" field.
@@ -306,6 +311,11 @@ func ByRecipeItemsNonDepletingDefault(opts ...sql.OrderTermOption) OrderOption {
 // ByRecordTheoreticalUsage orders the results by the record_theoretical_usage field.
 func ByRecordTheoreticalUsage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRecordTheoreticalUsage, opts...).ToFunc()
+}
+
+// ByAutoHideOnStockOut orders the results by the auto_hide_on_stock_out field.
+func ByAutoHideOnStockOut(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutoHideOnStockOut, opts...).ToFunc()
 }
 
 // ByLotsModuleEnabled orders the results by the lots_module_enabled field.

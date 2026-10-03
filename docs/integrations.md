@@ -119,7 +119,7 @@ publishes that subject. Add a consumer again only when ordering ships returns.)
 **Events Published** (inventory-api → pos-api subscribes):
 - `inventory.catalog.updated` — pos-api refreshes `catalog_items` projection (❌ pos-api NATS subscriber not yet wired — Sprint 6 gap)
 - `inventory.stock.low` — pos-api creates stock alert notification (❌ pos-api subscriber not yet wired — Sprint 6 gap)
-- `inventory.stock.out` — pos-api flags item as out-of-stock in checkout UI (❌ pos-api subscriber not yet wired)
+- `inventory.stock.out` / `inventory.stock.in`: pos-api and ordering-backend change catalog override availability only when the payload has `affects_availability: true` (tenants with `auto_hide_on_stock_out` on). By default it's an alert only and availability stays manual.
 
 **Auth**: S2S via `X-API-Key: {INTERNAL_SERVICE_KEY}` header  
 **Env vars (pos-api)**: `INVENTORY_SERVICE_URL=https://inventoryapi.codevertexafrica.com`, `INTERNAL_SERVICE_KEY`

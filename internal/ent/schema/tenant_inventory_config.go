@@ -94,6 +94,14 @@ func (TenantInventoryConfig) Fields() []ent.Field {
 		field.Bool("record_theoretical_usage").
 			Default(true).
 			Comment("When true, non-depleting sales still write theoretical Consumption rows so AvT/food-cost reports stay meaningful"),
+		// Availability policy. Off (the default) means a sellable item is only ever hidden by a
+		// staff toggle: stock running out (its own, or a recipe ingredient's) still raises the
+		// low/out alerts but never marks the item unavailable on POS or the ordering app, and
+		// sales keep depleting into negative so a later restock or stock take settles it. This
+		// stops a system/physical stock mismatch from blocking sales of food that is on the shelf.
+		field.Bool("auto_hide_on_stock_out").
+			Default(false).
+			Comment("When true, items (and recipes whose ingredient ran out) are automatically marked unavailable on stock-out; when false availability is manual-only"),
 		// Module toggles — tenant admin controls active inventory modules
 		field.Bool("lots_module_enabled").
 			Default(false).

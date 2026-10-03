@@ -18,6 +18,11 @@ type ReservedItemJSON struct {
 	ReservedQty     float64 `json:"reserved_qty"`
 	AvailableQty    float64 `json:"available_qty"`
 	IsFullyReserved bool    `json:"is_fully_reserved"`
+	// Composite marks the summary line for a recipe (menu-item) SKU whose stock is held by its
+	// exploded ingredient lines. It is informational only: release/consume must never move the
+	// recipe item's own balance for it, or the recipe item drifts negative while its
+	// ingredients are also deducted.
+	Composite bool `json:"composite,omitempty"`
 }
 
 // Reservation holds the schema definition for stock reservations.

@@ -13,9 +13,9 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
-	enttenantcfg "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	"github.com/bengobox/inventory-service/internal/modules/items"
-	"github.com/bengobox/inventory-service/internal/modules/units"
+	"github.com/bengobox/inventory-service/internal/modules/stockcalc"
+	"github.com/bengobox/inventory-service/internal/modules/tenantconfig"
 )
 
 // maxSubRecipeDepth caps sub-recipe backflush recursion (cycle guard): a menu recipe
@@ -103,14 +103,17 @@ func glPostableReason(r stockadjustment.Reason) bool {
 	return true
 }
 
-// tenantConfig loads the tenant's inventory config row (nil when none exists).
+// tenantConfig loads the tenant's inventory config row (nil when none exists), served from
+// the shared per-pod cache so per-sale-line policy checks don't each query the database.
 func (s *Service) tenantConfig(ctx context.Context, tenantID uuid.UUID) *ent.TenantInventoryConfig {
-	cfg, err := s.client.TenantInventoryConfig.Query().
-		Where(enttenantcfg.TenantID(tenantID)).Only(ctx)
-	if err != nil {
-		return nil
-	}
-	return cfg
+	return tenantconfig.Get(ctx, s.client, tenantID)
+}
+
+// autoHideOnStockOut reports whether a stock-out may mark items unavailable downstream.
+// When false (the platform default) stock-outs only raise alerts; availability is changed
+// solely by a staff toggle and sales keep depleting into negative.
+func (s *Service) autoHideOnStockOut(ctx context.Context, tenantID uuid.UUID) bool {
+	return tenantconfig.AutoHideOnStockOut(s.tenantConfig(ctx, tenantID))
 }
 
 // holdsNoStock reports whether an item is a non-stock sellable (SERVICE, VOUCHER) that a sale,
@@ -124,16 +127,7 @@ func holdsNoStock(itm *ent.Item) bool {
 // recipe_items_non_depleting_default policy — but only RECIPE-type items (goods,
 // ingredients and bottles keep depleting so easy-to-track stock stays accurate).
 func isNonDepleting(itm *ent.Item, cfg *ent.TenantInventoryConfig) bool {
-	if itm == nil {
-		return false
-	}
-	switch itm.StockTrackingMode {
-	case item.StockTrackingModeNonDepleting:
-		return true
-	case item.StockTrackingModeTracked:
-		return false
-	}
-	return itm.Type == item.TypeRECIPE && cfg != nil && cfg.RecipeItemsNonDepletingDefault
+	return stockcalc.NonDepleting(itm, cfg)
 }
 
 // itemNonDepletingLazy is isNonDepleting for call sites that don't already hold the
@@ -155,59 +149,11 @@ func (s *Service) itemNonDepletingLazy(ctx context.Context, itm *ent.Item) bool 
 	return isNonDepleting(itm, s.tenantConfig(ctx, itm.TenantID))
 }
 
-// ConvertToStockUnit converts a quantity expressed in a recipe-line/sale unit into the
-// item's stock (base) unit. Resolution order:
-//  1. the line's unit is blank/unknown (no fromUOM supplied at all) — nothing to convert
-//     against, preserve the historical raw-passthrough so pre-normalised rows (written by
-//     the composite flow already in base units) keep working;
-//  2. the line's unit IS the item's own stock unit — by abbreviation ("btl") OR by its
-//     human-readable Name ("BOTTLE"), since recipe/sale lines are written with either
-//     spelling depending on which picker wrote them — no conversion needed;
-//  3. same-dimension unit conversion (ml→l, g→kg, …) via the built-in units table;
-//  4. content-per-unit bridge for count-stocked packaged goods: a 30 ml line against a
-//     750 ml-per-piece bottle deducts 30/750 = 0.04 pieces (cumulative tots deplete
-//     whole bottles exactly);
-//  5. cross-dimension with no bridge, OR the item carries no stock unit at all → ok=false:
-//     the caller must NOT deduct raw. An item with no assigned stock unit is exactly the
-//     unconfigured/ambiguous case this function exists to protect against — silently
-//     treating "no unit" as "same unit" let an ml-denominated recipe line deduct 1:1 raw
-//     units from a bulk-imported item that was never given a proper unit_id, instead of
-//     refusing like a real cross-dimension mismatch does.
+// ConvertToStockUnit converts a recipe-line/sale quantity into the item's stock unit. The
+// implementation lives in stockcalc so the items read model and recipe costing share it; see
+// stockcalc.ConvertToStockUnit for the resolution order.
 func ConvertToStockUnit(itm *ent.Item, qty float64, fromUOM string) (float64, bool) {
-	from := units.NormalizeUnit(fromUOM)
-	stockUnit := ""
-	stockUnitName := ""
-	if itm != nil && itm.Edges.Units != nil {
-		stockUnit = units.NormalizeUnit(itm.Edges.Units.Abbreviation)
-		stockUnitName = units.NormalizeUnit(itm.Edges.Units.Name)
-	}
-	if from == "" {
-		return qty, true
-	}
-	// A line written with the unit's display Name (e.g. a "BOTTLE" recipe/sale line
-	// against an item stocked in "btl") is the SAME unit, not a cross-dimension mismatch —
-	// the built-in conversion table only knows standard mass/volume/count spellings, never
-	// a tenant's custom unit names (btl/gls/can/box/ptn/…), so it must never be asked to
-	// judge a unit against itself under a different spelling.
-	if from == stockUnit || (stockUnitName != "" && from == stockUnitName) {
-		return qty, true
-	}
-	if stockUnit == "" {
-		// The item has no assigned stock unit at all — there is nothing to safely judge
-		// the line's unit against, so this must refuse exactly like an unbridgeable
-		// cross-dimension mismatch does, not silently pass the raw quantity through.
-		return qty, false
-	}
-	if converted, ok := units.Convert(qty, from, stockUnit); ok {
-		return converted, true
-	}
-	// Content-per-unit bridge (pieces ↔ ml/g) for fixed-content packaged goods.
-	if itm.UnitContentQty != nil && *itm.UnitContentQty > 0 && itm.UnitContentUom != "" {
-		if inContent, ok := units.Convert(qty, from, itm.UnitContentUom); ok {
-			return inContent / *itm.UnitContentQty, true
-		}
-	}
-	return qty, false
+	return stockcalc.ConvertToStockUnit(itm, qty, fromUOM)
 }
 
 // explodeBOM resolves a menu-item SKU to its raw-ingredient stock deductions using the

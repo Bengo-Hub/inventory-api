@@ -306,6 +306,20 @@ func (_u *TenantInventoryConfigUpdate) SetNillableRecordTheoreticalUsage(v *bool
 	return _u
 }
 
+// SetAutoHideOnStockOut sets the "auto_hide_on_stock_out" field.
+func (_u *TenantInventoryConfigUpdate) SetAutoHideOnStockOut(v bool) *TenantInventoryConfigUpdate {
+	_u.mutation.SetAutoHideOnStockOut(v)
+	return _u
+}
+
+// SetNillableAutoHideOnStockOut sets the "auto_hide_on_stock_out" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdate) SetNillableAutoHideOnStockOut(v *bool) *TenantInventoryConfigUpdate {
+	if v != nil {
+		_u.SetAutoHideOnStockOut(*v)
+	}
+	return _u
+}
+
 // SetLotsModuleEnabled sets the "lots_module_enabled" field.
 func (_u *TenantInventoryConfigUpdate) SetLotsModuleEnabled(v bool) *TenantInventoryConfigUpdate {
 	_u.mutation.SetLotsModuleEnabled(v)
@@ -675,6 +689,9 @@ func (_u *TenantInventoryConfigUpdate) sqlSave(ctx context.Context) (_node int, 
 	if value, ok := _u.mutation.RecordTheoreticalUsage(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldRecordTheoreticalUsage, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.AutoHideOnStockOut(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldAutoHideOnStockOut, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.LotsModuleEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldLotsModuleEnabled, field.TypeBool, value)
 	}
@@ -1027,6 +1044,20 @@ func (_u *TenantInventoryConfigUpdateOne) SetRecordTheoreticalUsage(v bool) *Ten
 func (_u *TenantInventoryConfigUpdateOne) SetNillableRecordTheoreticalUsage(v *bool) *TenantInventoryConfigUpdateOne {
 	if v != nil {
 		_u.SetRecordTheoreticalUsage(*v)
+	}
+	return _u
+}
+
+// SetAutoHideOnStockOut sets the "auto_hide_on_stock_out" field.
+func (_u *TenantInventoryConfigUpdateOne) SetAutoHideOnStockOut(v bool) *TenantInventoryConfigUpdateOne {
+	_u.mutation.SetAutoHideOnStockOut(v)
+	return _u
+}
+
+// SetNillableAutoHideOnStockOut sets the "auto_hide_on_stock_out" field if the given value is not nil.
+func (_u *TenantInventoryConfigUpdateOne) SetNillableAutoHideOnStockOut(v *bool) *TenantInventoryConfigUpdateOne {
+	if v != nil {
+		_u.SetAutoHideOnStockOut(*v)
 	}
 	return _u
 }
@@ -1429,6 +1460,9 @@ func (_u *TenantInventoryConfigUpdateOne) sqlSave(ctx context.Context) (_node *T
 	}
 	if value, ok := _u.mutation.RecordTheoreticalUsage(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldRecordTheoreticalUsage, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AutoHideOnStockOut(); ok {
+		_spec.SetField(tenantinventoryconfig.FieldAutoHideOnStockOut, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.LotsModuleEnabled(); ok {
 		_spec.SetField(tenantinventoryconfig.FieldLotsModuleEnabled, field.TypeBool, value)

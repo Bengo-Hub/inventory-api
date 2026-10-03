@@ -3545,6 +3545,7 @@ var (
 		{Name: "auto_adjust_on_transfer", Type: field.TypeBool, Default: true},
 		{Name: "recipe_items_non_depleting_default", Type: field.TypeBool, Default: false},
 		{Name: "record_theoretical_usage", Type: field.TypeBool, Default: true},
+		{Name: "auto_hide_on_stock_out", Type: field.TypeBool, Default: false},
 		{Name: "lots_module_enabled", Type: field.TypeBool, Default: false},
 		{Name: "recipes_module_enabled", Type: field.TypeBool, Default: false},
 		{Name: "purchase_orders_enabled", Type: field.TypeBool, Default: true},
