@@ -38,6 +38,10 @@ const (
 	BulkActionDeactivate    = "deactivate"
 	BulkActionNotForSaleOn  = "not_for_sale_on"
 	BulkActionNotForSaleOff = "not_for_sale_off"
+	// Stock tracking mode: non-depleting items sell without decrementing their own or their
+	// ingredients' stock (a RECIPE item with no BOM yet, a fee). "_off" returns to "default".
+	BulkActionNonDepletingOn  = "non_depleting_on"
+	BulkActionNonDepletingOff = "non_depleting_off"
 )
 
 // bulkTargetState returns whether the item is ALREADY in the action's target
@@ -57,6 +61,10 @@ func bulkTargetState(action string, it *ent.Item) (alreadyThere bool, skipReason
 		return it.NotForSale, "already not-for-sale", true
 	case BulkActionNotForSaleOff:
 		return !it.NotForSale, "already for sale", true
+	case BulkActionNonDepletingOn:
+		return it.StockTrackingMode == item.StockTrackingModeNonDepleting, "already non-depleting", true
+	case BulkActionNonDepletingOff:
+		return it.StockTrackingMode != item.StockTrackingModeNonDepleting, "already depleting", true
 	}
 	return false, "", false
 }
@@ -72,6 +80,10 @@ func applyBulkAction(action string, upd *ent.ItemUpdateOne) *ent.ItemUpdateOne {
 		return upd.SetNotForSale(true)
 	case BulkActionNotForSaleOff:
 		return upd.SetNotForSale(false)
+	case BulkActionNonDepletingOn:
+		return upd.SetStockTrackingMode(item.StockTrackingModeNonDepleting)
+	case BulkActionNonDepletingOff:
+		return upd.SetStockTrackingMode(item.StockTrackingModeDefault)
 	}
 	return upd
 }
@@ -79,7 +91,8 @@ func applyBulkAction(action string, upd *ent.ItemUpdateOne) *ent.ItemUpdateOne {
 // ValidBulkAction reports whether the action name is a known bulk item action.
 func ValidBulkAction(action string) bool {
 	switch action {
-	case BulkActionDelete, BulkActionActivate, BulkActionDeactivate, BulkActionNotForSaleOn, BulkActionNotForSaleOff:
+	case BulkActionDelete, BulkActionActivate, BulkActionDeactivate, BulkActionNotForSaleOn, BulkActionNotForSaleOff,
+		BulkActionNonDepletingOn, BulkActionNonDepletingOff:
 		return true
 	}
 	return false

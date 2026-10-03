@@ -96,7 +96,7 @@ func (h *InventoryHandler) bulkItemAction(w http.ResponseWriter, r *http.Request
 		action = req.Action
 		if !items.ValidBulkAction(action) || action == items.BulkActionDelete {
 			// delete has its own endpoint (and its own RBAC gate) — reject here.
-			writeError(w, http.StatusBadRequest, "INVALID_ACTION", "action must be one of: activate, deactivate, not_for_sale_on, not_for_sale_off")
+			writeError(w, http.StatusBadRequest, "INVALID_ACTION", "action must be one of: activate, deactivate, not_for_sale_on, not_for_sale_off, non_depleting_on, non_depleting_off")
 			return
 		}
 	}
