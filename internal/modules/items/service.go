@@ -676,6 +676,85 @@ func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID,
 	}, nil
 }
 
+// recipePortionsForItems returns, per RECIPE item id, how many whole portions its active recipe's
+// ingredients can produce, summing ingredient balances over the given warehouse scope (nil = all
+// of the tenant's warehouses). Items without an active recipe or ingredients are absent. Two
+// queries regardless of page size: recipes with ingredients (and units), then their balances.
+func (s *Service) recipePortionsForItems(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID, scope map[uuid.UUID]struct{}) map[uuid.UUID]float64 {
+	out := make(map[uuid.UUID]float64, len(itemIDs))
+	if len(itemIDs) == 0 {
+		return out
+	}
+	recs, err := s.client.Recipe.Query().
+		Where(recipe.TenantID(tenantID), recipe.IsActive(true), recipe.ItemIDIn(itemIDs...)).
+		WithIngredients(func(q *ent.RecipeIngredientQuery) {
+			q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
+		}).
+		All(ctx)
+	if err != nil || len(recs) == 0 {
+		return out
+	}
+	ingIDs := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, r := range recs {
+		for _, ing := range r.Edges.Ingredients {
+			if _, ok := seen[ing.ItemID]; !ok {
+				seen[ing.ItemID] = struct{}{}
+				ingIDs = append(ingIDs, ing.ItemID)
+			}
+		}
+	}
+	available := make(map[uuid.UUID]float64, len(ingIDs))
+	if len(ingIDs) > 0 {
+		bals, berr := s.client.InventoryBalance.Query().
+			Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.ItemIDIn(ingIDs...)).
+			All(ctx)
+		if berr != nil {
+			return out
+		}
+		for _, b := range bals {
+			if scope != nil {
+				if _, ok := scope[b.WarehouseID]; !ok {
+					continue
+				}
+			}
+			available[b.ItemID] += b.Available
+		}
+	}
+	cfg := tenantconfig.Get(ctx, s.client, tenantID)
+	constrains := func(ingItem *ent.Item) bool { return !stockcalc.NonDepleting(ingItem, cfg) }
+	for _, r := range recs {
+		if r.ItemID == nil || len(r.Edges.Ingredients) == 0 || r.Kind != recipe.KindMenu {
+			continue
+		}
+		out[*r.ItemID] = stockcalc.ProduciblePortions(r, available, constrains)
+	}
+	return out
+}
+
+// finishedGoodsRecipeItems returns the RECIPE item ids among itemIDs whose active recipe is a
+// production BOM (kind != menu): manufactured finished goods made in production batches, which
+// genuinely hold stock. Every other RECIPE item (menu recipes, or no recipe at all) never does.
+func (s *Service) finishedGoodsRecipeItems(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) map[uuid.UUID]struct{} {
+	out := make(map[uuid.UUID]struct{})
+	if len(itemIDs) == 0 {
+		return out
+	}
+	recs, err := s.client.Recipe.Query().
+		Where(recipe.TenantID(tenantID), recipe.IsActive(true), recipe.ItemIDIn(itemIDs...), recipe.KindNEQ(recipe.KindMenu)).
+		Select(recipe.FieldItemID).
+		All(ctx)
+	if err != nil {
+		return out
+	}
+	for _, r := range recs {
+		if r.ItemID != nil {
+			out[*r.ItemID] = struct{}{}
+		}
+	}
+	return out
+}
+
 // getRecipeAvailability performs BOM explosion: for a RECIPE item, looks up the recipe,
 // sums each ingredient's available balance across the tenant's warehouses, and returns the
 // minimum number of portions that can be produced. It uses the same maths as the deduction
@@ -1507,6 +1586,16 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				balMap[b.ItemID] = prev
 			}
 		}
+		// Recipe items never hold stock of their own: their "in stock" is how many portions their
+		// ingredients can produce (same outlet scope), computed for the whole page in two queries.
+		recipeIDs := make([]uuid.UUID, 0)
+		for _, it := range itms {
+			if it.Type == item.TypeRECIPE {
+				recipeIDs = append(recipeIDs, it.ID)
+			}
+		}
+		recipePortions := s.recipePortionsForItems(innerCtx, tenantID, recipeIDs, balanceScopeWarehouseIDs)
+		finishedGoods := s.finishedGoodsRecipeItems(innerCtx, tenantID, recipeIDs)
 		// Load tenant config once for suggested price computation.
 		cfg, _ := s.client.TenantInventoryConfig.Query().
 			Where(tenantinventoryconfig.TenantID(tenantID)).
@@ -1539,6 +1628,14 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 					onHandContent := math.Round(bs.onHand**it.UnitContentQty*10000) / 10000
 					dto.AvailableContentQty = &availContent
 					dto.OnHandContentQty = &onHandContent
+				}
+			}
+			if _, isFinishedGoods := finishedGoods[it.ID]; it.Type == item.TypeRECIPE && !isFinishedGoods {
+				// Never a menu recipe's own balance. nil (shown as "-") when it has no BOM yet.
+				dto.Available, dto.OnHand = nil, nil
+				if p, ok := recipePortions[it.ID]; ok {
+					portions := p
+					dto.Available, dto.OnHand = &portions, &portions
 				}
 			}
 			// Cost-plus-margin suggested price for SELLABLE non-recipe types (GOODS, SERVICE,

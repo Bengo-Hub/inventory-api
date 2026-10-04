@@ -2,6 +2,7 @@ package stock
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,6 +10,10 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/modules/stockcalc"
 )
+
+// ErrRecipeHoldsNoStock is returned when a stock adjustment targets a RECIPE (menu) item: its
+// stock is tracked only through its ingredients, so adjust those instead.
+var ErrRecipeHoldsNoStock = errors.New("recipe items don't hold stock of their own; adjust their ingredients instead")
 
 // EntryUnitError is returned when a stock movement was entered in a unit that can't be
 // converted to the item's stock unit (no same-dimension conversion and no content-per-unit

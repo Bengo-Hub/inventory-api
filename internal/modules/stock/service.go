@@ -18,6 +18,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
 	"github.com/bengobox/inventory-service/internal/ent/predicate"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
@@ -294,6 +295,18 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	// SERVICE item at urban-loft had actually decremented 100->89 as if every booking sold a unit).
 	if itm.Type == item.TypeSERVICE {
 		return nil, fmt.Errorf("stock: %q is a SERVICE item (capacity/booking, not stock) and cannot be stock-adjusted", req.SKU)
+	}
+	// Menu recipe items never hold stock of their own: their stock is their ingredients'. Only
+	// manufactured finished goods (a RECIPE item whose active recipe is a production BOM, kind
+	// != menu) hold a real balance, so those stay adjustable (stock takes, corrections).
+	if itm.Type == item.TypeRECIPE {
+		finishedGoods, ferr := tx.Recipe.Query().
+			Where(recipe.TenantID(tenantID), recipe.ItemID(itm.ID), recipe.IsActive(true), recipe.KindNEQ(recipe.KindMenu)).
+			Exist(ctx)
+		if ferr != nil || !finishedGoods {
+			err = fmt.Errorf("%w: %q", ErrRecipeHoldsNoStock, req.SKU)
+			return nil, err
+		}
 	}
 
 	bal, err := tx.InventoryBalance.Query().
@@ -1257,7 +1270,9 @@ func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, w
 			zap.String("sku", ing.SKU), zap.Error(qerr))
 		return 0, 0, false, false, nil
 	}
-	if isNonDepleting(itm, cfg) || holdsNoStock(itm) {
+	// A RECIPE item reaches here only when it has no BOM (explodeBOM handles the rest): recipe
+	// items never hold stock of their own, so there is nothing to reserve.
+	if isNonDepleting(itm, cfg) || holdsNoStock(itm) || itm.Type == item.TypeRECIPE {
 		return 0, 0, true, true, nil
 	}
 
@@ -1947,26 +1962,33 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 				WithUnits().
 				Only(ctx); ierr == nil {
 				if itm.Type == item.TypeRECIPE {
-					s.log.Warn("consumption: RECIPE item has no active recipe/ingredients — consuming its own balance directly instead of ingredients",
+					// A recipe item never tracks stock of its own: stock is tracked only through
+					// its ingredients. With no BOM configured there is nothing to deduct, so the
+					// sale is recorded as theoretical usage (visible in reports, flagged on Recipe
+					// Health as missing_bom) and the item's own balance is never touched. It used
+					// to drift negative forever (Beef Burrito -2, Chicken Popsicle -1).
+					s.log.Warn("consumption: RECIPE item has no active recipe/ingredients; recorded as theoretical, no stock deducted",
 						zap.String("sku", stockSKU),
 						zap.String("tenant_id", tenantID.String()),
 						zap.String("item_id", itm.ID.String()),
 					)
-				}
-				line := explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, FinishedItemSKU: stockSKU}
-				if ci.UOM != "" {
-					if converted, ok := ConvertToStockUnit(itm, ci.Quantity, ci.UOM); ok {
-						if converted != ci.Quantity {
+					flattened = append(flattened, explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, Theoretical: true, RequestedUOM: ci.UOM, FinishedItemSKU: stockSKU})
+				} else {
+					line := explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, FinishedItemSKU: stockSKU}
+					if ci.UOM != "" {
+						if converted, ok := ConvertToStockUnit(itm, ci.Quantity, ci.UOM); ok {
+							if converted != ci.Quantity {
+								line.RequestedQty, line.RequestedUOM = ci.Quantity, ci.UOM
+							}
+							line.Quantity = round4(converted)
+						} else {
+							line.UnitMismatch = true
 							line.RequestedQty, line.RequestedUOM = ci.Quantity, ci.UOM
+							line.Quantity = 0
 						}
-						line.Quantity = round4(converted)
-					} else {
-						line.UnitMismatch = true
-						line.RequestedQty, line.RequestedUOM = ci.Quantity, ci.UOM
-						line.Quantity = 0
 					}
+					flattened = append(flattened, line)
 				}
-				flattened = append(flattened, line)
 			} else {
 				flattened = append(flattened, explodedIngredient{SKU: stockSKU, Quantity: ci.Quantity, FinishedItemSKU: stockSKU})
 			}

@@ -2,6 +2,7 @@ package stock
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -78,6 +79,12 @@ func (s *Service) PostStockCountVariances(ctx context.Context, tenantID, countID
 			AdjustedBy:  approver,
 			WarehouseID: count.WarehouseID,
 		}); adjErr != nil {
+			if errors.Is(adjErr, ErrRecipeHoldsNoStock) {
+				// A recipe item on a count sheet has no balance to correct (its stock is its
+				// ingredients'): close the line without an adjustment so it never blocks approval.
+				_, _ = ln.Update().SetPosted(true).Save(ctx)
+				continue
+			}
 			s.log.Warn("post count variance failed", zap.String("sku", ln.Sku), zap.Error(adjErr))
 			res.FailedSKUs = append(res.FailedSKUs, ln.Sku)
 			continue
