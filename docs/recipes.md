@@ -130,6 +130,38 @@ Consumers treat a missing `affects_availability` field as `true`, so events publ
 
 The tenant config is served from a per-pod 30s cache (`internal/modules/tenantconfig`). The writing pod invalidates it immediately on save; other pods pick up the change within 30 seconds.
 
+---
+
+## Menu recipe items never hold stock of their own (2026-10-04)
+
+A menu recipe's stock is tracked only through its ingredients:
+
+- **No BOM.** A sale of a RECIPE item with no active recipe or no ingredient lines is recorded as theoretical usage and never decrements the item's own balance. It's flagged `missing_bom` on Recipe Health.
+- **Reservations** never hold a recipe item's own balance.
+- **`AdjustStock`** refuses menu recipe items with 422 `RECIPE_HOLDS_NO_STOCK`. Stock-count posting closes such lines without blocking approval.
+- **Item list** (`GET /inventory/items`): a menu recipe's `available`/`on_hand` is the number of portions its ingredients can produce, in the same outlet scope (`recipePortionsForItems`, two batched queries per page). It's null when the recipe has no BOM.
+- **Exception: manufactured finished goods** (a RECIPE item whose active recipe is a production BOM, `kind != menu`) keep a real balance, fed by production batches through `RestockItems`.
+
+## Stock units: changing them, and entering stock in another unit (2026-10-04)
+
+- **Changing an item's stock unit** (`UpdateItem`, `items/unit_rescale.go`) rescales everything in the same transaction: balances, reorder levels, lots (quantity and cost), open reservations, `cost_price`, selling guardrails and tier prices.
+  - The purchase basis keeps its money: 450 per "1000 g" becomes 450 per "1 kg".
+  - Values the client changed in the same request are taken as already in the new unit.
+  - A cross-dimension change (g to pc) on an item holding stock returns 422 `STOCK_UNIT_CHANGE_NEEDS_FACTOR` unless `rescale_old_per_new` says how many old units make one new unit.
+  - Audited as `item.stock_unit_changed`; recipes using the item are recosted.
+- **Stock-in in another unit.** A stock adjustment with a `unit_id` different from the stock unit is converted (same dimension, or the content-per-unit bridge) and noted ("entered 5 kg = 5000 g"); an unconvertible unit returns 422 `UNIT_NOT_CONVERTIBLE`. Goods receipts convert quantity and unit cost from the PO line's unit.
+- **Count-stocked produce used by weight** (one tilapia, one lime) gets a content-per-unit bridge on the item, exactly like tots drawn from a bottle, so recipe lines can stay in grams or ml.
+
+## Recipe Health (2026-10-04)
+
+- `GET /inventory/recipes/health/summary` returns counts per issue for the inventory-ui banner:
+  - `missing_bom`
+  - `unconvertible_line`
+  - `cost_basis`: cost per stock unit more than 5x off the purchase basis
+  - `frequent_stock_outs`: 3+ outs in 30 days
+- `GET /inventory/recipes/health?issue=` lists the rows with deep-link ids.
+- `POST /inventory/recipes/recompute-costs` recosts every active recipe (prep first) and publishes each cost through `SetCostPriceAndPublish`, so POS cost snapshots and treasury COGS follow after fixing ingredient costs.
+
 Recipe portion maths shared by the stock engine and the items read model lives in `internal/modules/stockcalc` (`ConvertToStockUnit`, `PerPortionStockQty`, `ProduciblePortions`, `AllIngredientsAvailable`), so the deduction path and every availability figure use the same unit conversion and waste factor.
 
 ---
