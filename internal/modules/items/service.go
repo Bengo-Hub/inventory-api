@@ -676,6 +676,27 @@ func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID,
 	}, nil
 }
 
+// categoryWithDescendants returns the category id plus every descendant category id of the
+// tenant (or platform-global tree), found by the materialized path ("root/parent/self").
+// Falls back to the category alone on a lookup error.
+func (s *Service) categoryWithDescendants(ctx context.Context, tenantID, categoryID uuid.UUID) []uuid.UUID {
+	ids := []uuid.UUID{categoryID}
+	children, err := s.client.ItemCategory.Query().
+		Where(
+			itemcategory.IDNEQ(categoryID),
+			itemcategory.PathContains(categoryID.String()),
+			itemcategory.Or(
+				itemcategory.TenantID(tenantID),
+				itemcategory.And(itemcategory.IsGlobal(true), itemcategory.TenantID(uuid.Nil)),
+			),
+		).
+		IDs(ctx)
+	if err != nil {
+		return ids
+	}
+	return append(ids, children...)
+}
+
 // recipePortionsForItems returns, per RECIPE item id, how many whole portions its active recipe's
 // ingredients can produce, summing ingredient balances over the given warehouse scope (nil = all
 // of the tenant's warehouses). Items without an active recipe or ingredients are absent. Two
@@ -1462,7 +1483,10 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			q = q.Where(item.UseCaseEQ(item.UseCase(useCase)))
 		}
 		if categoryID != nil {
-			q = q.Where(item.CategoryID(*categoryID))
+			// A category includes its sub-categories: menus nest sections (Wines > Red Wines,
+			// Cocktails > The Urban Corretto), so filtering by a parent must list its children's
+			// items too. Descendants carry the parent's id in their materialized path.
+			q = q.Where(item.CategoryIDIn(s.categoryWithDescendants(ctx, tenantID, *categoryID)...))
 		}
 		if bid := brandFilter(ctx); bid != nil {
 			q = q.Where(item.BrandID(*bid))
