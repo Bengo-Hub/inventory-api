@@ -1613,6 +1613,10 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnprocessableEntity, "UNIT_NOT_CONVERTIBLE", entryErr.Error())
 			return
 		}
+		if errors.Is(err, stock.ErrRecipeHoldsNoStock) {
+			writeError(w, http.StatusUnprocessableEntity, "RECIPE_HOLDS_NO_STOCK", err.Error())
+			return
+		}
 		h.log.Error("adjust stock failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "ADJUST_FAILED", err.Error())
 		return
