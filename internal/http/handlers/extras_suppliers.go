@@ -151,13 +151,22 @@ func (h *InventoryExtrasHandler) ListSuppliers(w http.ResponseWriter, r *http.Re
 	// Exclude soft-deleted suppliers (DeleteSupplier sets is_active=false) by default so a
 	// "deleted" supplier no longer appears in lists/pickers. Pass ?include_inactive=true to
 	// include them (e.g. an admin/archive view).
-	if r.URL.Query().Get("include_inactive") != "true" {
+	// ?status=inactive lists only archived suppliers (treasury-ui's Archived Vendors tab) and
+	// ?status=all both; both ride the (tenant_id, is_active) index.
+	switch status := r.URL.Query().Get("status"); {
+	case status == "inactive":
+		q = q.Where(entsupplier.IsActive(false))
+	case status == "all" || r.URL.Query().Get("include_inactive") == "true":
+	default:
 		q = q.Where(entsupplier.IsActive(true))
 	}
-	if search != "" {
+	if search = strings.TrimSpace(search); search != "" {
 		q = q.Where(entsupplier.Or(
 			entsupplier.NameContainsFold(search),
 			entsupplier.ContactNameContainsFold(search),
+			entsupplier.ContactEmailContainsFold(search),
+			entsupplier.ContactPhoneContainsFold(search),
+			entsupplier.TaxPinContainsFold(search),
 		))
 	}
 	total, _ := q.Clone().Count(r.Context())
@@ -252,7 +261,7 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		SetBankBranch(req.BankBranch).
 		SetSwiftBic(req.SwiftBic).
 		SetCurrency(req.Currency).
-		SetTaxPin(req.TaxPin).
+		SetTaxPin(strings.ToUpper(strings.TrimSpace(req.TaxPin))).
 		SetVatNumber(req.VatNumber)
 
 	if req.PaymentMethodType != "" {
@@ -346,7 +355,7 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		SetBankBranch(req.BankBranch).
 		SetSwiftBic(req.SwiftBic).
 		SetCurrency(req.Currency).
-		SetTaxPin(req.TaxPin).
+		SetTaxPin(strings.ToUpper(strings.TrimSpace(req.TaxPin))).
 		SetVatNumber(req.VatNumber)
 
 	if req.Name != "" {
