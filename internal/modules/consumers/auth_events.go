@@ -15,6 +15,7 @@ import (
 	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
+	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
 
@@ -117,6 +118,34 @@ func (c *AuthEventsConsumer) Start(ctx context.Context, nc *nats.Conn) error {
 	return nil
 }
 
+// inventoryServiceRoles are role names only inventory uses; generic names (manager, cashier,
+// staff) prove nothing in a tenant that runs several products.
+var inventoryServiceRoles = map[string]bool{
+	"inventory_admin": true, "warehouse_manager": true, "stock_clerk": true, "storekeeper": true,
+	"store_manager": true, "storemanager": true,
+}
+
+// relevant reports whether an auth.user event concerns inventory (shared UserRelevance): admin
+// roles, an outlet inventory mirrors as a warehouse, or an inventory-only role. Users already
+// provisioned here keep receiving updates, so nothing that works today is dropped.
+func (c *AuthEventsConsumer) relevant(ctx context.Context, evt *sharedevents.Event, userID uuid.UUID) bool {
+	if c.orm == nil {
+		return true
+	}
+	if exists, err := c.orm.InventoryUser.Query().
+		Where(entinvuser.TenantID(evt.TenantID), entinvuser.AuthServiceUserID(userID)).Exist(ctx); err == nil && exists {
+		return true
+	}
+	r := sharedevents.UserRelevance{
+		ServiceRoles: inventoryServiceRoles,
+		OutletKnown: func(ctx context.Context, tenantID, outletID uuid.UUID) bool {
+			ok, err := c.orm.Warehouse.Query().Where(entwarehouse.TenantID(tenantID), entwarehouse.OutletID(outletID)).Exist(ctx)
+			return err == nil && ok
+		},
+	}
+	return r.Relevant(ctx, evt.TenantID, evt.Payload)
+}
+
 func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharedevents.Event) error {
 	userIDStr, _ := evt.Payload["user_id"].(string)
 	email, _ := evt.Payload["email"].(string)
@@ -128,6 +157,10 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharede
 	}
 	if evt.TenantID == uuid.Nil {
 		return fmt.Errorf("missing tenant_id in auth.user.created event")
+	}
+	if !c.relevant(ctx, evt, userID) {
+		c.log.Debug("skipping user outside inventory", zap.String("user_id", userID.String()))
+		return nil
 	}
 
 	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); err != nil {
@@ -160,6 +193,10 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 	}
 	if evt.TenantID == uuid.Nil {
 		return fmt.Errorf("missing tenant_id in auth.user.updated event")
+	}
+	if !c.relevant(ctx, evt, userID) {
+		c.log.Debug("skipping user outside inventory", zap.String("user_id", userID.String()))
+		return nil
 	}
 
 	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); err != nil {
