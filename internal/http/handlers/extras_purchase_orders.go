@@ -780,12 +780,20 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 	for _, line := range remaining {
 		qty := line.QuantityOrdered - line.QuantityReceived
 		lineID := line.ID
-		if _, lerr := h.orm.GoodsReceiptLine.Create().
+		lc := h.orm.GoodsReceiptLine.Create().
 			SetTenantID(tenantID).SetGoodsReceiptID(g.ID).SetItemID(line.ItemID).
 			SetPurchaseOrderLineID(lineID).
 			SetQuantityReceived(qty).SetQuantityAccepted(qty).SetQuantityRejected(0).
-			SetUnitCost(line.UnitPrice).
-			Save(r.Context()); lerr != nil {
+			SetUnitCost(line.UnitPrice)
+		// Carry the selling price decided on the PO line, as the Goods Receipt dialog does.
+		// Without it, Mark Received posted the new cost but silently dropped the new price.
+		if line.NewSellingPrice != nil && *line.NewSellingPrice > 0 {
+			lc = lc.SetNewSellingPrice(*line.NewSellingPrice)
+			if scope := strings.TrimSpace(line.PriceScope); scope != "" {
+				lc = lc.SetPriceScope(scope)
+			}
+		}
+		if _, lerr := lc.Save(r.Context()); lerr != nil {
 			h.log.Warn("auto GRN line create failed", zap.Error(lerr))
 		}
 	}

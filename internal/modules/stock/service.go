@@ -883,6 +883,23 @@ func (s *Service) RecomputeStandardCost(ctx context.Context, tx *ent.Tx, tenantI
 		return unchanged, nil
 	}
 
+	// The most recently received layer is what the business last paid. fifo/lifo/fefo use it
+	// as the standard cost, and every method uses it to keep the item's purchase price current.
+	newest := layers[0]
+	newestAt := newest.CreatedAt
+	if newest.ReceivedAt != nil {
+		newestAt = *newest.ReceivedAt
+	}
+	for _, l := range layers[1:] {
+		at := l.CreatedAt
+		if l.ReceivedAt != nil {
+			at = *l.ReceivedAt
+		}
+		if at.After(newestAt) {
+			newest, newestAt = l, at
+		}
+	}
+
 	var newCost float64
 	if s.costingMethod(ctx, tenantID) == "wavg" {
 		var totalQty, totalValue float64
@@ -909,29 +926,33 @@ func (s *Service) RecomputeStandardCost(ctx context.Context, tx *ent.Tx, tenantI
 		}
 	} else {
 		// fifo/lifo/fefo: pre-fill from the most recently received layer.
-		newest := layers[0]
-		newestAt := newest.CreatedAt
-		if newest.ReceivedAt != nil {
-			newestAt = *newest.ReceivedAt
-		}
-		for _, l := range layers[1:] {
-			at := l.CreatedAt
-			if l.ReceivedAt != nil {
-				at = *l.ReceivedAt
-			}
-			if at.After(newestAt) {
-				newest, newestAt = l, at
-			}
-		}
 		newCost = *newest.CostPrice
 	}
 
-	if itm.CostPrice != nil && *itm.CostPrice == newCost {
+	// The item form, the catalog cost column and new purchase orders show purchase_price (the
+	// price paid per purchase unit) whenever the item has one. Receiving at a new price used to
+	// move only cost_price, so the product kept showing the old buying price. Keep it at what was
+	// last paid: the newest layer's per stock unit cost times the pack size.
+	newPurchasePrice := lastPurchasePrice(itm, *newest.CostPrice)
+	purchasePriceChanged := newPurchasePrice != nil && (itm.PurchasePrice == nil || *itm.PurchasePrice != *newPurchasePrice)
+	costChanged := itm.CostPrice == nil || *itm.CostPrice != newCost
+
+	if !costChanged && !purchasePriceChanged {
 		return unchanged, nil
 	}
 
-	if _, err := tx.Item.UpdateOneID(itemID).SetCostPrice(newCost).Save(ctx); err != nil {
+	upd := tx.Item.UpdateOneID(itemID)
+	if costChanged {
+		upd = upd.SetCostPrice(newCost)
+	}
+	if purchasePriceChanged {
+		upd = upd.SetPurchasePrice(*newPurchasePrice)
+	}
+	if _, err := upd.Save(ctx); err != nil {
 		return nil, fmt.Errorf("stock: recompute standard cost: update item: %w", err)
+	}
+	if !costChanged {
+		return unchanged, nil
 	}
 
 	platformevents.WriteOutboxTx(ctx, tx, s.log, tenantID, itemID, "inventory", "item.cost_changed", map[string]any{
@@ -943,6 +964,21 @@ func (s *Service) RecomputeStandardCost(ctx context.Context, tx *ent.Tx, tenantI
 	})
 
 	return &CostChange{ItemID: itemID, SKU: itm.Sku, PreviousCost: itm.CostPrice, NewCost: &newCost, Changed: true}, nil
+}
+
+// lastPurchasePrice is the purchase_price matching a per stock unit cost: the cost times the
+// purchase pack size (base units per purchase unit), or the cost itself when no pack is set. It
+// returns nil for an item that never recorded a purchase price, whose forms read cost_price.
+func lastPurchasePrice(itm *ent.Item, unitCost float64) *float64 {
+	if itm.PurchasePrice == nil || unitCost <= 0 {
+		return nil
+	}
+	pack := 1.0
+	if itm.PurchasePackSize != nil && *itm.PurchasePackSize > 0 {
+		pack = *itm.PurchasePackSize
+	}
+	v := round4(unitCost * pack)
+	return &v
 }
 
 func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, bal *ent.InventoryBalance, warehouseID uuid.UUID) {

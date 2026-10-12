@@ -182,12 +182,27 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET/POST/PUT/DELETE | `/pricing-tiers` | Pricing tier management |
-| GET/POST/PUT | `/transfers` | Stock transfer CRUD |
+| GET/POST/PUT | `/transfers` | Stock transfer CRUD. The list takes `status` as one value or a comma list (`draft,in_transit` lists every transfer not yet received) plus `search`, `from`, `to`, `page`, `limit` |
 | GET/POST/PUT/DELETE | `/rbac/assignments` | RBAC role assignment |
 | POST | `/media/upload` | Item asset upload |
 | GET/POST/PUT/DELETE | `/modifiers` | Modifier group management |
 
 ---
+
+## Purchase cost and price on receipt (2026-10-12)
+
+Posting a goods receipt (`postGoodsReceiptCore`, also behind PO **Mark Received**) creates one cost
+layer per accepted line and then calls `stock.RecomputeStandardCost` once per item:
+
+- `cost_price` (per stock unit) becomes the newest layer's cost for fifo/lifo/fefo tenants, or the
+  quantity weighted average of open layers for wavg tenants. COGS and stock value still read each
+  layer's own cost, so stock on hand is never revalued.
+- `purchase_price` (price per purchase pack) follows the newest layer: unit cost times
+  `purchase_pack_size`. The item form, the catalog cost column and the PO "last paid" prefill read
+  `purchase_price` first, so before this it kept showing the old buying price after a new purchase.
+  Items that never stored a purchase price keep reading `cost_price`.
+- A selling price change rides on the line (`new_selling_price`, `price_scope`). Mark Received now
+  copies both from the PO line into the auto-created receipt line; it used to drop them.
 
 ## Authentication
 

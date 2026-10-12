@@ -564,11 +564,8 @@ func (s *Service) ListTransfers(ctx context.Context, tenantID uuid.UUID, filter 
 	q := s.client.StockTransfer.Query().
 		Where(stocktransfer.TenantID(tenantID))
 
-	if filter.Status != "" {
-		status := stocktransfer.Status(filter.Status)
-		if stocktransfer.StatusValidator(status) == nil {
-			q = q.Where(stocktransfer.StatusEQ(status))
-		}
+	if statuses := parseTransferStatuses(filter.Status); len(statuses) > 0 {
+		q = q.Where(stocktransfer.StatusIn(statuses...))
 	}
 	if filter.Search != "" {
 		q = q.Where(stocktransfer.TransferNumberContainsFold(filter.Search))
@@ -1153,4 +1150,18 @@ func (s *Service) buildLineItems(lines []*ent.StockTransferLine) []map[string]an
 // Non-fatal: logs on failure so the business operation still succeeds.
 func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, aggregateID uuid.UUID, aggregateType, eventType string, payload map[string]any) {
 	platformevents.WriteOutboxTx(ctx, tx, s.log, tenantID, aggregateID, aggregateType, eventType, payload)
+}
+
+// parseTransferStatuses reads a status filter that may list several statuses separated by commas
+// (e.g. "draft,in_transit" for every transfer not yet received). Unknown values are ignored, so a
+// filter made only of unknown values lists everything, the same as no filter.
+func parseTransferStatuses(raw string) []stocktransfer.Status {
+	var out []stocktransfer.Status
+	for _, part := range strings.Split(raw, ",") {
+		st := stocktransfer.Status(strings.TrimSpace(part))
+		if st != "" && stocktransfer.StatusValidator(st) == nil {
+			out = append(out, st)
+		}
+	}
+	return out
 }
