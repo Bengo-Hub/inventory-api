@@ -53,6 +53,7 @@ type ItemsServicer interface {
 	HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*items.ItemDTO, error)
+	SetTaxCodeBySKU(ctx context.Context, tenantID uuid.UUID, sku, code string) (*items.ItemDTO, bool, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, warehouseID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
@@ -249,6 +250,9 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// called S2S by pos-api's "also update the catalog price" order-line edit. Idempotency-
 		// Key guarded: a retried request must not double-apply a price change.
 		inv.With(perm(rbac.PermItemsChange), invmiddleware.Idempotency(h.orm)).Patch("/items/{sku}/price", h.SetItemPrice)
+		// Targeted tax-code change: tax_code_id only, validated against treasury's active codes.
+		// Never touches KRA (eTIMS registration is a separate, explicit sync in treasury).
+		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{sku}/tax-code", h.SetItemTaxCode)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
 		// Bulk multi-select actions (DataTable): delete keeps the delete permission,
 		// status changes (activate/deactivate/not-for-sale) need items.change.
@@ -1551,6 +1555,54 @@ func (h *InventoryHandler) SetItemPrice(w http.ResponseWriter, r *http.Request) 
 		"price":          *req.Price,
 		"recipe_updated": recipeUpdated,
 	})
+}
+
+// SetItemTaxCode handles PATCH /v1/{tenant}/inventory/items/{sku}/tax-code: changes the item's
+// tax code only (the full PUT /items/{sku} replaces every field). Body: {"tax_code_id": "VAT-16"}.
+// The code must be one of the tenant's active treasury tax codes. Unchanged codes are a no-op.
+//
+//	@Summary      Set an item's tax code
+//	@Tags         items
+//	@Accept       json
+//	@Produce      json
+//	@Param        tenant  path      string  true  "Tenant ID"
+//	@Param        sku     path      string  true  "Item SKU"
+//	@Success      200     {object}  map[string]any
+//	@Failure      400     {object}  map[string]string
+//	@Failure      404     {object}  map[string]string
+//	@Router       /{tenant}/inventory/items/{sku}/tax-code [patch]
+func (h *InventoryHandler) SetItemTaxCode(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	var req struct {
+		TaxCodeID string `json:"tax_code_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TaxCodeID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "tax_code_id is required")
+		return
+	}
+	dto, changed, err := h.itemsSvc.SetTaxCodeBySKU(r.Context(), tenantID, sku, req.TaxCodeID)
+	if err != nil {
+		switch {
+		case ent.IsNotFound(err):
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+		case errors.Is(err, items.ErrUnknownTaxCode):
+			writeError(w, http.StatusBadRequest, "INVALID_TAX_CODE", err.Error())
+		default:
+			h.log.Error("set item tax code failed", zap.Error(err), zap.String("sku", sku))
+			writeError(w, http.StatusInternalServerError, "TAX_CODE_UPDATE_FAILED", err.Error())
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"sku": dto.SKU, "tax_code_id": dto.TaxCodeID, "changed": changed})
 }
 
 // operatingOutletID returns the outlet the request is acting under (from the X-Outlet-ID context),

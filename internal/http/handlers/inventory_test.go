@@ -48,6 +48,10 @@ func (m *mockItemsSvc) EnsureDefaultPrice(ctx context.Context, tenantID, itemID 
 	return nil
 }
 
+func (m *mockItemsSvc) SetTaxCodeBySKU(ctx context.Context, tenantID uuid.UUID, sku, code string) (*items.ItemDTO, bool, error) {
+	return nil, false, nil
+}
+
 func (m *mockItemsSvc) SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*items.ItemDTO, error) {
 	return nil, fmt.Errorf("not implemented")
 }
