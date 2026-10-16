@@ -93,6 +93,9 @@ type supplierPayload struct {
 	AutoPayEnabled               bool    `json:"auto_pay_enabled"`
 	PaymentTermsDays             int     `json:"payment_terms_days"`
 	CreditLimit                  float64 `json:"credit_limit"`
+	// IsActive restores an archived supplier on update (true) or archives it (false); omitted
+	// leaves it as it is. DELETE also archives.
+	IsActive *bool `json:"is_active,omitempty"`
 }
 
 func supplierToDTO(s *ent.Supplier) supplierDTO {
@@ -366,6 +369,9 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 	}
 	if req.CreditLimit > 0 {
 		update = update.SetCreditLimit(req.CreditLimit)
+	}
+	if req.IsActive != nil {
+		update = update.SetIsActive(*req.IsActive)
 	}
 
 	s, err := update.Save(r.Context())
