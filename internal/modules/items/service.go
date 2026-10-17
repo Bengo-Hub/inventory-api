@@ -164,19 +164,47 @@ func strictOutletScope(ctx context.Context) bool {
 }
 
 // strictOutletPredicate builds the strict outlet catalog filter described on strictOutletKey.
-// Items of types that carry stock must hold a non-removed balance in warehouseIDs; every other
-// type must sit in a category relevant to the outlet's use_case (an uncategorised item or an
-// untagged category is universal).
-func (s *Service) strictOutletPredicate(ctx context.Context, tenantID, outletID uuid.UUID, warehouseIDs map[uuid.UUID]struct{}) (predicate.Item, error) {
-	whIDs := make([]uuid.UUID, 0, len(warehouseIDs))
-	for id := range warehouseIDs {
-		whIDs = append(whIDs, id)
+//
+//   - Stock-tracked items (goods, ingredients, equipment) need a non-removed balance in the outlet's
+//     OWN warehouses. A shared, outlet-less warehouse is not enough: a central store usually holds
+//     the whole tenant's stock, which would put every outlet's items on every outlet. Only an outlet
+//     with no warehouse of its own sells from the shared ones.
+//   - A recipe item shows when at least one of its ingredients is stocked at the outlet.
+//   - Every other made-to-order item (services, vouchers) must sit in a category relevant to the
+//     outlet's use_case; an uncategorised item or an untagged category is universal.
+func (s *Service) strictOutletPredicate(ctx context.Context, tenantID, outletID uuid.UUID) (predicate.Item, error) {
+	whIDs, err := s.client.Warehouse.Query().
+		Where(warehouse.TenantID(tenantID), warehouse.OutletIDEQ(outletID)).IDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(whIDs) == 0 { // an outlet served from the shared stores
+		if whIDs, err = s.client.Warehouse.Query().
+			Where(warehouse.TenantID(tenantID), warehouse.OutletIDIsNil()).IDs(ctx); err != nil {
+			return nil, err
+		}
 	}
 	useCase := ""
-	if wh, err := s.client.Warehouse.Query().
-		Where(warehouse.TenantID(tenantID), warehouse.OutletID(outletID)).First(ctx); err == nil {
+	if wh, werr := s.client.Warehouse.Query().
+		Where(warehouse.TenantID(tenantID), warehouse.OutletIDEQ(outletID)).First(ctx); werr == nil {
 		useCase = wh.UseCase
 	}
+
+	stockedRows, err := s.client.InventoryBalance.Query().
+		Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.WarehouseIDIn(whIDs...), inventorybalance.RemovedFromLocation(false)).
+		Select(inventorybalance.FieldItemID).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stockedIDs := make([]uuid.UUID, 0, len(stockedRows))
+	for _, b := range stockedRows {
+		stockedIDs = append(stockedIDs, b.ItemID)
+	}
+	recipeItemIDs, err := s.recipeItemsUsing(ctx, tenantID, stockedIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	cats, err := s.listCategoriesAll(ctx, tenantID)
 	if err != nil {
 		return nil, err
@@ -187,15 +215,75 @@ func (s *Service) strictOutletPredicate(ctx context.Context, tenantID, outletID 
 			relevant = append(relevant, c.ID)
 		}
 	}
-	stocked := item.And(
-		item.TypeIn(item.TypeGOODS, item.TypeINGREDIENT),
-		item.HasBalancesWith(inventorybalance.WarehouseIDIn(whIDs...), inventorybalance.RemovedFromLocation(false)),
-	)
-	madeToOrder := item.And(
-		item.TypeNotIn(item.TypeGOODS, item.TypeINGREDIENT),
-		item.Or(item.CategoryIDIsNil(), item.CategoryIDIn(relevant...)),
-	)
-	return item.Or(stocked, madeToOrder), nil
+	stockTracked := []item.Type{item.TypeGOODS, item.TypeINGREDIENT, item.TypeEQUIPMENT}
+	return item.Or(
+		item.And(item.TypeIn(stockTracked...), item.HasBalancesWith(
+			inventorybalance.WarehouseIDIn(whIDs...), inventorybalance.RemovedFromLocation(false))),
+		item.And(item.TypeEQ(item.TypeRECIPE), idInChunks(recipeItemIDs)),
+		item.And(
+			item.TypeNotIn(item.TypeGOODS, item.TypeINGREDIENT, item.TypeEQUIPMENT, item.TypeRECIPE),
+			item.Or(item.CategoryIDIsNil(), item.CategoryIDIn(relevant...)),
+		),
+	), nil
+}
+
+// inChunk is how many ids go into one IN list: well under Postgres' 65535 bind parameter limit.
+const inChunk = 1000
+
+// idInChunks is item.IDIn for any number of ids (an empty list matches nothing).
+func idInChunks(ids []uuid.UUID) predicate.Item {
+	if len(ids) == 0 {
+		return item.IDIn()
+	}
+	var preds []predicate.Item
+	for i := 0; i < len(ids); i += inChunk {
+		end := min(i+inChunk, len(ids))
+		preds = append(preds, item.IDIn(ids[i:end]...))
+	}
+	return item.Or(preds...)
+}
+
+// recipeItemsUsing returns the item ids of the recipes that have at least one of the given
+// ingredient items, so a recipe shows at an outlet that stocks what it is made from.
+func (s *Service) recipeItemsUsing(ctx context.Context, tenantID uuid.UUID, ingredientItemIDs []uuid.UUID) ([]uuid.UUID, error) {
+	recipeIDs := make(map[uuid.UUID]struct{})
+	for i := 0; i < len(ingredientItemIDs); i += inChunk {
+		end := min(i+inChunk, len(ingredientItemIDs))
+		ids, err := s.client.RecipeIngredient.Query().
+			Where(recipeingredient.ItemIDIn(ingredientItemIDs[i:end]...)).
+			Select(recipeingredient.FieldRecipeID).Strings(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, raw := range ids {
+			if id, perr := uuid.Parse(raw); perr == nil {
+				recipeIDs[id] = struct{}{}
+			}
+		}
+	}
+	if len(recipeIDs) == 0 {
+		return nil, nil
+	}
+	all := make([]uuid.UUID, 0, len(recipeIDs))
+	for id := range recipeIDs {
+		all = append(all, id)
+	}
+	var out []uuid.UUID
+	for i := 0; i < len(all); i += inChunk {
+		end := min(i+inChunk, len(all))
+		itemIDs, err := s.client.Recipe.Query().
+			Where(recipe.TenantID(tenantID), recipe.IDIn(all[i:end]...)).
+			Select(recipe.FieldItemID).Strings(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, raw := range itemIDs {
+			if id, perr := uuid.Parse(raw); perr == nil {
+				out = append(out, id)
+			}
+		}
+	}
+	return out, nil
 }
 
 // brandFilterKey is a context flag set by the HTTP layer (?brand_id=) — scopes ListItems to
@@ -1455,7 +1543,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	// count below. A failure to build it falls back to the lenient rule rather than an empty list.
 	var strictOutletPred predicate.Item
 	if outletID != nil && strictOutletScope(ctx) && itemIDFilter(ctx) == nil {
-		if p, perr := s.strictOutletPredicate(ctx, tenantID, *outletID, outletWarehouseIDs); perr == nil {
+		if p, perr := s.strictOutletPredicate(ctx, tenantID, *outletID); perr == nil {
 			strictOutletPred = p
 		} else {
 			s.log.Warn("items: strict outlet scope unavailable, using the lenient rule", zap.Error(perr))

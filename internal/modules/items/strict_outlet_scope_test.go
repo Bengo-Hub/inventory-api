@@ -17,12 +17,15 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/recipe"
+	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 )
 
 // TestStrictOutletPredicate pins the strict outlet catalog used by ?outlet_strict=1: stock-tracked
-// items need an active balance at the outlet's own or a shared warehouse, and made-to-order items
-// must sit in a category relevant to the outlet's use_case. Runs against a real Postgres
+// items need an active balance at the outlet's own warehouse (a shared store is not enough), a
+// recipe needs one of its ingredients stocked there, and other made-to-order items must sit in a
+// category relevant to the outlet's use_case. Runs against a real Postgres
 // (POSTGRES_URL), skipped when unset like TestOutletScope.
 func TestStrictOutletPredicate(t *testing.T) {
 	dsn := os.Getenv("POSTGRES_URL")
@@ -40,6 +43,8 @@ func TestStrictOutletPredicate(t *testing.T) {
 	svc := NewService(client, zap.NewNop(), nil)
 	tenantID := uuid.New()
 	t.Cleanup(func() {
+		_, _ = client.RecipeIngredient.Delete().Where(recipeingredient.HasRecipeWith(recipe.TenantID(tenantID))).Exec(ctx)
+		_, _ = client.Recipe.Delete().Where(recipe.TenantID(tenantID)).Exec(ctx)
 		_, _ = client.InventoryBalance.Delete().Where(inventorybalance.TenantIDEQ(tenantID)).Exec(ctx)
 		_, _ = client.Item.Delete().Where(item.TenantIDEQ(tenantID)).Exec(ctx)
 		_, _ = client.ItemCategory.Delete().Where(itemcategory.TenantID(tenantID)).Exec(ctx)
@@ -75,6 +80,22 @@ func TestStrictOutletPredicate(t *testing.T) {
 	goodsElsewhere := mk("goods-elsewhere", item.TypeGOODS, nil)
 	goodsRemoved := mk("goods-removed", item.TypeGOODS, nil)
 	goodsUnreceived := mk("goods-unreceived", item.TypeGOODS, nil)
+	// Held only by a shared, outlet-less central store: that must not put it on every outlet.
+	goodsSharedOnly := mk("goods-shared-only", item.TypeGOODS, nil)
+	ingredientHere := mk("ingredient-here", item.TypeINGREDIENT, nil)
+	ingredientElsewhere := mk("ingredient-elsewhere", item.TypeINGREDIENT, nil)
+	recipeHere := mk("recipe-here", item.TypeRECIPE, hospCat)
+	recipeElsewhere := mk("recipe-elsewhere", item.TypeRECIPE, hospCat)
+	whShared, err := client.Warehouse.Create().SetTenantID(tenantID).SetName("Central").SetCode("C-" + uuid.NewString()[:8]).Save(ctx)
+	require.NoError(t, err)
+	link := func(sellable, ingredient *ent.Item) {
+		r, err := client.Recipe.Create().SetTenantID(tenantID).SetSku("R-" + sellable.Sku).SetName(sellable.Name).SetItemID(sellable.ID).Save(ctx)
+		require.NoError(t, err)
+		_, err = client.RecipeIngredient.Create().SetRecipeID(r.ID).SetItemID(ingredient.ID).SetItemSku(ingredient.Sku).SetQuantity(1).Save(ctx)
+		require.NoError(t, err)
+	}
+	link(recipeHere, ingredientHere)
+	link(recipeElsewhere, ingredientElsewhere)
 	serviceRetail := mk("service-retail", item.TypeSERVICE, retailCat)
 	serviceHosp := mk("service-hospitality", item.TypeSERVICE, hospCat)
 	serviceUniversal := mk("service-universal", item.TypeSERVICE, universalCat)
@@ -87,15 +108,17 @@ func TestStrictOutletPredicate(t *testing.T) {
 	bal(goodsHere, whA, false)
 	bal(goodsElsewhere, whB, false)
 	bal(goodsRemoved, whA, true)
+	bal(goodsSharedOnly, whShared, false)
+	bal(ingredientHere, whA, false)
+	bal(ingredientElsewhere, whB, false)
 
-	scope := map[uuid.UUID]struct{}{whA.ID: {}}
-	pred, err := svc.strictOutletPredicate(ctx, tenantID, outletA, scope)
+	pred, err := svc.strictOutletPredicate(ctx, tenantID, outletA)
 	require.NoError(t, err)
 	got, err := client.Item.Query().Where(item.TenantIDEQ(tenantID), pred).IDs(ctx)
 	require.NoError(t, err)
 
-	require.ElementsMatch(t, []uuid.UUID{goodsHere.ID, serviceRetail.ID, serviceUniversal.ID, serviceNoCat.ID}, got)
-	for _, hidden := range []*ent.Item{goodsElsewhere, goodsRemoved, goodsUnreceived, serviceHosp} {
+	require.ElementsMatch(t, []uuid.UUID{goodsHere.ID, ingredientHere.ID, recipeHere.ID, serviceRetail.ID, serviceUniversal.ID, serviceNoCat.ID}, got)
+	for _, hidden := range []*ent.Item{goodsElsewhere, goodsRemoved, goodsUnreceived, goodsSharedOnly, ingredientElsewhere, recipeElsewhere, serviceHosp} {
 		require.NotContains(t, got, hidden.ID, hidden.Name)
 	}
 }
