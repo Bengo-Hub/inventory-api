@@ -21,6 +21,7 @@ import (
 	"go.uber.org/zap"
 
 	sharedcache "github.com/Bengo-Hub/cache"
+	"github.com/Bengo-Hub/httpware/objectstore"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	eventslib "github.com/Bengo-Hub/shared-events"
 
@@ -243,12 +244,19 @@ func New(ctx context.Context) (*App, error) {
 	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
 	authHandler := handlers.NewAuthHandler(log, rbacService, ormClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey)
 
+	// Shared platform object storage (httpware/objectstore): new images go to R2 under
+	// inventory/<tenant>/<type>/...; old /media paths are served from MEDIA_ROOT until
+	// inventory-relink-media moves them. Locally (no OBJECT_STORAGE_*) files stay under MEDIA_ROOT.
+	mediaStore, err := objectstore.New("inventory", objectstore.FromEnv())
+	if err != nil {
+		return nil, fmt.Errorf("object storage: %w", err)
+	}
+
 	// Initialize business modules
-	itemsSvc := items.NewService(ormClient, log, cfg.Media.URLBase)
+	itemsSvc := items.NewService(ormClient, log, mediaStore)
 	// ListItems' heavy catalog fetch routed to a read replica when configured — see readOrmClient.
 	itemsSvc.SetReadClient(readOrmClient)
 	itemsSvc.SetCache(cacheAside)
-	itemsSvc.SetMediaRoot(cfg.Media.Root) // persist multi-image uploads under MEDIA_ROOT
 	// Treasury is the source of truth for tax codes/rates; resolve + cache VAT rates for item
 	// enrichment, and expose the cached tax-code list to inventory-ui for the tax-code picker.
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log)
@@ -288,8 +296,10 @@ func New(ctx context.Context) (*App, error) {
 	pricingTierHandler.SetAuditService(auditSvc)
 	pricingTierHandler.SetItemsService(itemsSvc)
 	brandHandler := handlers.NewBrandHandler(log, ormClient, rbacService)
+	brandHandler.SetMedia(mediaStore)
 	transferHandler := handlers.NewTransferHandler(log, transferSvc, rbacService, approvals.NewService(ormClient))
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
+	inventoryExtrasHandler.SetMedia(mediaStore)
 	inventoryExtrasHandler.SetVendorBalances(vendorbalances.NewService(ormClient, treasuryClient, log))
 	// Purchase orders are checked against treasury budgets before they are sent.
 	inventoryExtrasHandler.SetBudgetChecker(treasuryClient)
@@ -444,11 +454,8 @@ func New(ctx context.Context) (*App, error) {
 		}
 	}
 
-	// Initialize media handler for file uploads
-	var mediaHandler *handlers.MediaHandler
-	if cfg.Media.Root != "" {
-		mediaHandler = handlers.NewMediaHandler(log, cfg.Media)
-	}
+	// Single image uploads (create-mode item images, brand and supplier logos).
+	mediaHandler := handlers.NewMediaHandler(log, mediaStore)
 
 	// Initialize service config handler for platform admin + tenant settings
 	serviceConfigHandler := handlers.NewServiceConfigHandler(ormClient, log)
@@ -496,7 +503,7 @@ func New(ctx context.Context) (*App, error) {
 
 	notificationsStreamHandler := handlers.NewNotificationsStreamHandler(log, notifHub)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, cfg.Media.Root, serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey, notificationsStreamHandler, stockClearanceHandler)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, mediaStore.MediaHandler(), serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey, notificationsStreamHandler, stockClearanceHandler)
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

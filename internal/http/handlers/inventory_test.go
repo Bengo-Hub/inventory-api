@@ -5,12 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -183,7 +183,7 @@ func (m *mockItemsSvc) ListItemImages(ctx context.Context, tenantID, itemID uuid
 	return []items.ItemImageDTO{}, nil
 }
 
-func (m *mockItemsSvc) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, file multipart.File, header *multipart.FileHeader, setPrimary bool) (*items.ItemImageDTO, error) {
+func (m *mockItemsSvc) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, up *objectstore.Upload, setPrimary bool) (*items.ItemImageDTO, error) {
 	return &items.ItemImageDTO{ID: uuid.New(), IsPrimary: setPrimary}, nil
 }
 

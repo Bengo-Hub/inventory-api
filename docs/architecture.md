@@ -138,7 +138,7 @@ inventory-api/
 | `handlers/transfers.go` | Stock transfers |
 | `handlers/user.go` | User management (JIT provisioning) |
 | `handlers/rbac.go` | RBAC role/permission assignment |
-| `handlers/media.go` | Item asset upload |
+| `handlers/media.go` | Single image upload (create-mode item image, brand and supplier logos, `?type=`), stored on the shared object storage |
 | `handlers/modifiers.go` | Modifier groups and options |
 | `handlers/tenant.go` | Tenant provisioning |
 | `handlers/health.go` | Health probe |
@@ -284,3 +284,23 @@ layer per accepted line and then calls `stock.RecomputeStandardCost` once per it
 | `pos.sale.finalized` | BOM backflush (recipe explosion + consumption) |
 | `ordering.return.approved` | Restock returned items |
 | `pos.return.completed` | Restock returned items |
+
+## Media storage (2026-10-17)
+
+Images live on the shared platform object storage (Cloudflare R2 through `httpware/objectstore`,
+see `devops-k8s/docs/object-storage.md`), public bucket, served from `https://media.codevertexafrica.com`.
+
+- Keys: `inventory/<tenant_id>/<type>/...` with `item-images` (items, gallery, variants), `logos`
+  (brands, suppliers) and `images` (uploaded category pictures). Rows store the key; every read
+  (item, gallery, category, brand, supplier DTOs and the `item.created` / `item.updated` events)
+  turns it into the public link, so consumers keep a full URL.
+- Uploads: `POST /{tenant}/inventory/items/{id}/images` (gallery) and `POST /api/v1/media/upload?type=`
+  (create-mode item image, logos). JPEG or PNG, checked from the bytes and re-encoded (EXIF removed).
+  A form may send back the link it was given; writes normalise it to the key.
+- Deleting a gallery image deletes its file once no item or gallery row of the tenant still uses it.
+- The shipped category icons (`/media/icons/*.svg`, copied from the image at start) stay static
+  assets served at `/media`.
+- Existing files: `inventory-relink-media` (report) and `inventory-relink-media --apply` inside the pod
+  move every file a row still references by an old `/media/...` path or `MEDIA_URL_BASE/media/...` URL to
+  its tenant's key, update the row and publish `item.updated` for items. Unreferenced files are not
+  moved. Until a row is relinked its old path keeps being served from the media volume.

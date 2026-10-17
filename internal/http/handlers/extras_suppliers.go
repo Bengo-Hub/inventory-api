@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/Bengo-Hub/pagination"
 	"github.com/bengobox/inventory-service/internal/ent"
 	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
@@ -98,7 +99,8 @@ type supplierPayload struct {
 	IsActive *bool `json:"is_active,omitempty"`
 }
 
-func supplierToDTO(s *ent.Supplier) supplierDTO {
+// supplierToDTO maps a supplier; the stored logo key becomes its link (media may be nil: kept as is).
+func supplierToDTO(s *ent.Supplier, media *objectstore.Store) supplierDTO {
 	dto := supplierDTO{
 		ID:                           s.ID,
 		Name:                         s.Name,
@@ -116,7 +118,7 @@ func supplierToDTO(s *ent.Supplier) supplierDTO {
 		Industry:                     s.Industry,
 		Website:                      s.Website,
 		Notes:                        s.Notes,
-		LogoURL:                      s.LogoURL,
+		LogoURL:                      media.URL(s.LogoURL),
 		IsActive:                     s.IsActive,
 		PaymentMethodType:            string(s.PaymentMethodType),
 		MpesaPhone:                   s.MpesaPhone,
@@ -181,7 +183,7 @@ func (h *InventoryExtrasHandler) ListSuppliers(w http.ResponseWriter, r *http.Re
 
 	result := make([]supplierDTO, len(suppliers))
 	for i, s := range suppliers {
-		result[i] = supplierToDTO(s)
+		result[i] = supplierToDTO(s, h.media)
 	}
 	h.attachVendorBalances(r.Context(), tenantID, suppliers, result)
 	writeJSON(w, http.StatusOK, pagination.NewResponse(result, total, p))
@@ -252,7 +254,7 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		SetIndustry(req.Industry).
 		SetWebsite(req.Website).
 		SetNotes(req.Notes).
-		SetLogoURL(req.LogoURL).
+		SetLogoURL(h.media.Normalize(req.LogoURL)).
 		SetRequiresInvoiceBeforePayment(req.RequiresInvoiceBeforePayment).
 		SetAutoPayEnabled(req.AutoPayEnabled).
 		SetPaymentTermsDays(req.PaymentTermsDays).
@@ -281,7 +283,7 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		return
 	}
 	h.publishSupplierEvent(r.Context(), s, "inventory.supplier.created")
-	writeJSON(w, http.StatusCreated, supplierToDTO(s))
+	writeJSON(w, http.StatusCreated, supplierToDTO(s, h.media))
 }
 
 func (h *InventoryExtrasHandler) GetSupplier(w http.ResponseWriter, r *http.Request) {
@@ -302,7 +304,7 @@ func (h *InventoryExtrasHandler) GetSupplier(w http.ResponseWriter, r *http.Requ
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Supplier not found")
 		return
 	}
-	dto := []supplierDTO{supplierToDTO(s)}
+	dto := []supplierDTO{supplierToDTO(s, h.media)}
 	h.attachVendorBalances(r.Context(), tenantID, []*ent.Supplier{s}, dto)
 	writeJSON(w, http.StatusOK, dto[0])
 }
@@ -346,7 +348,7 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		SetIndustry(req.Industry).
 		SetWebsite(req.Website).
 		SetNotes(req.Notes).
-		SetLogoURL(req.LogoURL).
+		SetLogoURL(h.media.Normalize(req.LogoURL)).
 		SetRequiresInvoiceBeforePayment(req.RequiresInvoiceBeforePayment).
 		SetAutoPayEnabled(req.AutoPayEnabled).
 		SetPaymentTermsDays(req.PaymentTermsDays).
@@ -381,7 +383,7 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		return
 	}
 	h.publishSupplierEvent(r.Context(), s, "inventory.supplier.updated")
-	writeJSON(w, http.StatusOK, supplierToDTO(s))
+	writeJSON(w, http.StatusOK, supplierToDTO(s, h.media))
 }
 
 // DeleteSupplier handles DELETE /inventory/suppliers/{supplierID} — soft-deletes a supplier.

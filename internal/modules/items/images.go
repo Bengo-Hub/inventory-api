@@ -3,18 +3,12 @@ package items
 import (
 	"context"
 	"fmt"
-	"image"
-	"image/jpeg"
-	"image/png"
-	"io"
-	"mime/multipart"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
+	"path"
 	"time"
 
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/item"
@@ -25,11 +19,8 @@ import (
 // 3D_MODEL are valid ItemAsset values reserved for future use but out of scope for now.
 const AssetTypeImage = "IMAGE"
 
-// maxImageUploadBytes caps a single image upload (mirrors media.go's 2MB limit).
-const maxImageUploadBytes = 2 * 1024 * 1024
-
-// ItemImageDTO is the catalog-facing projection of an IMAGE ItemAsset. URLs are resolved
-// (MEDIA_URL_BASE-prefixed) at read time, exactly like ItemDTO.ImageURL.
+// ItemImageDTO is the catalog-facing projection of an IMAGE ItemAsset. URLs are resolved from the
+// stored key at read time, exactly like ItemDTO.ImageURL.
 type ItemImageDTO struct {
 	ID           uuid.UUID `json:"id"`
 	URL          string    `json:"url"`
@@ -40,17 +31,11 @@ type ItemImageDTO struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
-// SetMediaRoot wires the media root directory used to persist uploaded item images
-// (mirrors the MediaHandler storage path: {root}/uploads/menu/...).
-func (s *Service) SetMediaRoot(root string) {
-	s.mediaRoot = root
-}
-
 // mapAssetToDTO converts an ItemAsset row to an ItemImageDTO with a resolved URL.
 func (s *Service) mapAssetToDTO(a *ent.ItemAsset) ItemImageDTO {
 	return ItemImageDTO{
 		ID:           a.ID,
-		URL:          s.resolveMediaURL(a.URL),
+		URL:          s.mediaURL(a.URL),
 		FileName:     a.FileName,
 		MimeType:     a.MimeType,
 		DisplayOrder: a.DisplayOrder,
@@ -108,92 +93,13 @@ func (s *Service) ListItemImages(ctx context.Context, tenantID, itemID uuid.UUID
 	return out, nil
 }
 
-// storeImageFile re-encodes (stripping EXIF) and persists an uploaded image to
-// {mediaRoot}/uploads/menu/{uuid}_{ts}.{ext}, returning the relative /media path, the
-// detected mime type, and the generated filename. Logic mirrors handlers/media.go so item
-// images share the same storage location/sanitisation as the legacy single-image uploader.
-func (s *Service) storeImageFile(file multipart.File, header *multipart.FileHeader) (relPath, mimeType, filename string, err error) {
-	// Detect content type from the leading bytes.
-	buffer := make([]byte, 512)
-	n, _ := file.Read(buffer)
-	contentType := http.DetectContentType(buffer[:n])
-	if _, serr := file.Seek(0, 0); serr != nil {
-		return "", "", "", fmt.Errorf("items: seek upload: %w", serr)
-	}
-
-	allowed := map[string]bool{"image/jpeg": true, "image/jpg": true, "image/png": true}
-	if !allowed[contentType] {
-		ext := strings.ToLower(filepath.Ext(header.Filename))
-		headerCT := header.Header.Get("Content-Type")
-		switch {
-		case ext == ".jpg" || ext == ".jpeg" || headerCT == "image/jpeg":
-			contentType = "image/jpeg"
-		case ext == ".png" || headerCT == "image/png":
-			contentType = "image/png"
-		}
-	}
-	if !allowed[contentType] {
-		return "", "", "", fmt.Errorf("items: only JPEG, JPG and PNG images are allowed")
-	}
-
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
-		if contentType == "image/png" {
-			ext = ".png"
-		} else {
-			ext = ".jpg"
-		}
-	}
-	filename = fmt.Sprintf("%s_%d%s", uuid.New().String(), time.Now().Unix(), ext)
-
-	root := s.mediaRoot
-	if root == "" {
-		root = "./media"
-	}
-	dir := filepath.Join(root, "uploads", "menu")
-	if mkErr := os.MkdirAll(dir, 0o755); mkErr != nil {
-		return "", "", "", fmt.Errorf("items: create upload dir: %w", mkErr)
-	}
-	dstPath := filepath.Join(dir, filename)
-	dst, cErr := os.Create(dstPath)
-	if cErr != nil {
-		return "", "", "", fmt.Errorf("items: create file: %w", cErr)
-	}
-	defer dst.Close()
-
-	// Re-encode to strip EXIF / neutralise image-based exploits; fall back to raw copy if decode fails.
-	written := false
-	if img, _, decErr := image.Decode(file); decErr == nil {
-		var encErr error
-		if contentType == "image/png" {
-			encErr = png.Encode(dst, img)
-		} else {
-			encErr = jpeg.Encode(dst, img, &jpeg.Options{Quality: 85})
-		}
-		if encErr == nil {
-			written = true
-		} else {
-			if _, sErr := file.Seek(0, 0); sErr != nil {
-				return "", "", "", fmt.Errorf("items: seek for fallback copy: %w", sErr)
-			}
-			_ = dst.Truncate(0)
-			_, _ = dst.Seek(0, 0)
-		}
-	}
-	if !written {
-		if _, copyErr := io.Copy(dst, file); copyErr != nil {
-			return "", "", "", fmt.Errorf("items: write file: %w", copyErr)
-		}
-	}
-
-	return fmt.Sprintf("/media/uploads/menu/%s", filename), contentType, filename, nil
-}
-
 // AddItemImage stores an uploaded image and creates an IMAGE ItemAsset for the item. When the
 // item has no images yet (or setPrimary is requested) the new asset becomes the primary and the
 // item's legacy image_url mirror is updated, so existing single-image clients keep working.
 // The per-item / feature subscription gating happens in the HTTP layer before this is called.
-func (s *Service) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, file multipart.File, header *multipart.FileHeader, setPrimary bool) (*ItemImageDTO, error) {
+//
+// up is an upload already validated and re-encoded by objectstore.ReadUpload (item-images type).
+func (s *Service) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, up *objectstore.Upload, setPrimary bool) (*ItemImageDTO, error) {
 	itm, err := s.resolveTenantItem(ctx, tenantID, itemID)
 	if err != nil {
 		return nil, err
@@ -208,18 +114,23 @@ func (s *Service) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, 
 	// The very first image is always primary regardless of the flag.
 	makePrimary := setPrimary || existing == 0
 
-	relPath, mimeType, filename, err := s.storeImageFile(file, header)
+	key, err := s.media.NewKey(objectstore.Owner{TenantID: tenantID.String()}, objectstore.TypeItemImages, up.Ext)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("items: name image: %w", err)
+	}
+	if err = s.media.Put(ctx, key, up.Data, up.ContentType); err != nil {
+		return nil, fmt.Errorf("items: store image: %w", err)
 	}
 
 	tx, err := s.client.Tx(ctx)
 	if err != nil {
+		s.dropImage(ctx, tenantID, key)
 		return nil, fmt.Errorf("items: begin tx: %w", err)
 	}
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
+			s.dropImage(ctx, tenantID, key) // keep storage and the gallery in step
 		}
 	}()
 
@@ -236,9 +147,9 @@ func (s *Service) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, 
 	asset, err := tx.ItemAsset.Create().
 		SetItemID(itemID).
 		SetAssetType(AssetTypeImage).
-		SetURL(relPath).
-		SetFileName(filename).
-		SetMimeType(mimeType).
+		SetURL(key).
+		SetFileName(path.Base(key)).
+		SetMimeType(up.ContentType).
 		SetDisplayOrder(existing).
 		SetIsPrimary(makePrimary).
 		Save(ctx)
@@ -251,7 +162,7 @@ func (s *Service) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, 
 	if makePrimary {
 		if _, uerr := tx.Item.UpdateOneID(itm.ID).
 			Where(item.TenantID(tenantID)).
-			SetImageURL(relPath).Save(ctx); uerr != nil {
+			SetImageURL(key).Save(ctx); uerr != nil {
 			err = fmt.Errorf("items: sync image_url: %w", uerr)
 			return nil, err
 		}
@@ -397,5 +308,30 @@ func (s *Service) DeleteItemImage(ctx context.Context, tenantID, itemID, imageID
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("items: commit: %w", err)
 	}
+	s.dropImage(ctx, tenantID, asset.URL)
 	return nil
+}
+
+// dropImage deletes a stored image once nothing references it any more: only this service's own
+// keys (an old /media file or an external URL may be shared and is left alone), and only when no
+// item or gallery row still points at it. Best effort: a failure leaves an orphan, never a broken
+// image.
+//
+// A key carries its tenant, so only that tenant's rows can reference it; both checks are scoped to
+// the tenant (tenant_id index) and stop at the first match.
+func (s *Service) dropImage(ctx context.Context, tenantID uuid.UUID, ref string) {
+	if !s.media.Owned(ref) {
+		return
+	}
+	key := s.media.Normalize(ref)
+	if used, err := s.client.Item.Query().Where(item.TenantID(tenantID), item.ImageURL(key)).Exist(ctx); err != nil || used {
+		return
+	}
+	if used, err := s.client.ItemAsset.Query().
+		Where(itemasset.URL(key), itemasset.HasItemWith(item.TenantID(tenantID))).Exist(ctx); err != nil || used {
+		return
+	}
+	if err := s.media.Delete(ctx, key); err != nil {
+		s.log.Warn("item image not deleted from storage", zap.String("key", key), zap.Error(err))
+	}
 }

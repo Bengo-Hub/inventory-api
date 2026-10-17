@@ -1428,6 +1428,12 @@ definitions:
         type: integer
       requires_age_verification:
         type: boolean
+      rescale_old_per_new:
+        description: |-
+          RescaleOldPerNew (update only) is how many OLD stock units make one NEW unit when a stock-
+          unit change crosses dimensions with no built-in conversion (g to pc: 1 pc = 450 g → 450).
+          Required then if the item holds stock; same-dimension changes (g to kg) convert themselves.
+        type: number
       return_window_days:
         description: nil = tenant default
         type: integer
@@ -3551,6 +3557,44 @@ paths:
       summary: Export a product's stock history
       tags:
       - stock
+  /{tenant}/inventory/items/{sku}/tax-code:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: Item SKU
+        in: path
+        name: sku
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Set an item's tax code
+      tags:
+      - items
   /{tenant}/inventory/items/bulk-delete:
     post:
       consumes:
@@ -5720,6 +5764,38 @@ paths:
       summary: Recompute supplier performance from PO + GRN data
       tags:
       - Procurement
+  /api/v1/media/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: JPEG or PNG, up to 2 MB (5 MB for images)
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: item-images (default), menu-images, logos or images
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload an image
+      tags:
+      - Media
   /healthz:
     get:
       description: Returns OK when the inventory API process is running.

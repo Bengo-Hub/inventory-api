@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -12,9 +13,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
 )
-
-// maxImageUpload caps a single item-image upload at 2MB (mirrors the media handler).
-const maxImageUpload = 2 * 1024 * 1024
 
 // ListItemImages handles GET /{tenant}/inventory/items/{itemID}/images.
 // Returns the item's IMAGE assets (primary first, then display_order). No subscription gate.
@@ -81,28 +79,23 @@ func (h *InventoryHandler) UploadItemImage(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	r.Body = http.MaxBytesReader(w, r.Body, maxImageUpload)
-	if err := r.ParseMultipartForm(maxImageUpload); err != nil {
-		writeError(w, http.StatusBadRequest, "UPLOAD_TOO_LARGE", "File too large (max 2MB)")
-		return
-	}
-	file, header, err := r.FormFile("file")
+	// Size limit, type check (from the bytes) and EXIF-stripping re-encode: the shared rules.
+	up, err := objectstore.ReadUpload(w, r, "file", objectstore.TypeItemImages)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_FILE", "Invalid file upload")
+		if objectstore.IsUploadError(err) {
+			writeError(w, http.StatusBadRequest, "INVALID_FILE", err.Error())
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to read the upload")
 		return
 	}
-	defer file.Close()
 
 	setPrimary := parseBoolForm(r.FormValue("set_primary")) || parseBoolForm(r.FormValue("is_primary"))
 
-	img, err := h.itemsSvc.AddItemImage(r.Context(), tenantID, itemID, file, header, setPrimary)
+	img, err := h.itemsSvc.AddItemImage(r.Context(), tenantID, itemID, up, setPrimary)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
-			return
-		}
-		if strings.Contains(err.Error(), "allowed") {
-			writeError(w, http.StatusBadRequest, "INVALID_TYPE", "Only JPEG, JPG and PNG images are allowed")
 			return
 		}
 		h.log.Error("add item image failed", zap.Error(err))

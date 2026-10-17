@@ -152,7 +152,7 @@ func (s *Service) emitItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenantID
 			"unit_name":                 unitName,
 			"is_active":                 i.IsActive,
 			"end_of_life_at":            i.EndOfLifeAt,
-			"image_url":                 i.ImageURL,
+			"image_url":                 s.mediaURL(i.ImageURL), // consumers keep the link
 			"tags":                      i.Tags,
 			"barcode":                   i.Barcode,
 			"barcode_type":              i.BarcodeType,
@@ -177,12 +177,12 @@ func (s *Service) emitItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenantID
 			// pricing_enrich.go effectivePrice). Consumers that want the real customer-facing
 			// price (treasury's eTIMS item mirror, any future price-aware subscriber) need these
 			// on every item.updated event, not just cost_price.
-			"min_selling_price":         i.MinSellingPrice,
-			"max_selling_price":         i.MaxSellingPrice,
-			"selling_price":             i.MaxSellingPrice,
-			"unit_content_qty":          i.UnitContentQty,
-			"unit_content_uom":          i.UnitContentUom,
-			"stock_tracking_mode":       i.StockTrackingMode,
+			"min_selling_price":   i.MinSellingPrice,
+			"max_selling_price":   i.MaxSellingPrice,
+			"selling_price":       i.MaxSellingPrice,
+			"unit_content_qty":    i.UnitContentQty,
+			"unit_content_uom":    i.UnitContentUom,
+			"stock_tracking_mode": i.StockTrackingMode,
 		},
 		Timestamp: time.Now().UTC(),
 	}
@@ -355,19 +355,43 @@ func (s *Service) eolHasBlockingHistory(ctx context.Context, id uuid.UUID) (bool
 		name  string
 		exist func() (bool, error)
 	}{
-		{"purchase_order_line", func() (bool, error) { return s.client.PurchaseOrderLine.Query().Where(purchaseorderline.ItemID(id)).Exist(ctx) }},
-		{"goods_receipt_line", func() (bool, error) { return s.client.GoodsReceiptLine.Query().Where(goodsreceiptline.ItemID(id)).Exist(ctx) }},
-		{"stock_adjustment", func() (bool, error) { return s.client.StockAdjustment.Query().Where(stockadjustment.ItemID(id)).Exist(ctx) }},
-		{"stock_level_event", func() (bool, error) { return s.client.StockLevelEvent.Query().Where(stocklevelevent.ItemID(id)).Exist(ctx) }},
-		{"purchase_return_line", func() (bool, error) { return s.client.PurchaseReturnLine.Query().Where(purchasereturnline.ItemID(id)).Exist(ctx) }},
-		{"stock_transfer_line", func() (bool, error) { return s.client.StockTransferLine.Query().Where(stocktransferline.ItemID(id)).Exist(ctx) }},
-		{"requisition_line", func() (bool, error) { return s.client.RequisitionLine.Query().Where(requisitionline.ItemID(id)).Exist(ctx) }},
+		{"purchase_order_line", func() (bool, error) {
+			return s.client.PurchaseOrderLine.Query().Where(purchaseorderline.ItemID(id)).Exist(ctx)
+		}},
+		{"goods_receipt_line", func() (bool, error) {
+			return s.client.GoodsReceiptLine.Query().Where(goodsreceiptline.ItemID(id)).Exist(ctx)
+		}},
+		{"stock_adjustment", func() (bool, error) {
+			return s.client.StockAdjustment.Query().Where(stockadjustment.ItemID(id)).Exist(ctx)
+		}},
+		{"stock_level_event", func() (bool, error) {
+			return s.client.StockLevelEvent.Query().Where(stocklevelevent.ItemID(id)).Exist(ctx)
+		}},
+		{"purchase_return_line", func() (bool, error) {
+			return s.client.PurchaseReturnLine.Query().Where(purchasereturnline.ItemID(id)).Exist(ctx)
+		}},
+		{"stock_transfer_line", func() (bool, error) {
+			return s.client.StockTransferLine.Query().Where(stocktransferline.ItemID(id)).Exist(ctx)
+		}},
+		{"requisition_line", func() (bool, error) {
+			return s.client.RequisitionLine.Query().Where(requisitionline.ItemID(id)).Exist(ctx)
+		}},
 		{"rfq_line", func() (bool, error) { return s.client.RFQLine.Query().Where(rfqline.ItemID(id)).Exist(ctx) }},
-		{"stock_count_line", func() (bool, error) { return s.client.StockCountLine.Query().Where(stockcountline.ItemID(id)).Exist(ctx) }},
-		{"item_consumption_daily", func() (bool, error) { return s.client.ItemConsumptionDaily.Query().Where(itemconsumptiondaily.ItemID(id)).Exist(ctx) }},
-		{"inventory_serial", func() (bool, error) { return s.client.InventorySerial.Query().Where(inventoryserial.ItemID(id)).Exist(ctx) }},
-		{"used_as_recipe_ingredient", func() (bool, error) { return s.client.RecipeIngredient.Query().Where(recipeingredient.ItemID(id)).Exist(ctx) }},
-		{"used_as_bundle_component", func() (bool, error) { return s.client.BundleComponent.Query().Where(bundlecomponent.ComponentItemID(id)).Exist(ctx) }},
+		{"stock_count_line", func() (bool, error) {
+			return s.client.StockCountLine.Query().Where(stockcountline.ItemID(id)).Exist(ctx)
+		}},
+		{"item_consumption_daily", func() (bool, error) {
+			return s.client.ItemConsumptionDaily.Query().Where(itemconsumptiondaily.ItemID(id)).Exist(ctx)
+		}},
+		{"inventory_serial", func() (bool, error) {
+			return s.client.InventorySerial.Query().Where(inventoryserial.ItemID(id)).Exist(ctx)
+		}},
+		{"used_as_recipe_ingredient", func() (bool, error) {
+			return s.client.RecipeIngredient.Query().Where(recipeingredient.ItemID(id)).Exist(ctx)
+		}},
+		{"used_as_bundle_component", func() (bool, error) {
+			return s.client.BundleComponent.Query().Where(bundlecomponent.ComponentItemID(id)).Exist(ctx)
+		}},
 	}
 	for _, c := range checks {
 		ok, qerr := c.exist()

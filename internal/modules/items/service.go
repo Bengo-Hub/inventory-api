@@ -11,6 +11,7 @@ import (
 	"time"
 
 	sharedcache "github.com/Bengo-Hub/cache"
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -517,13 +518,12 @@ type StockAvailability struct {
 
 // Service handles item-related business logic.
 type Service struct {
-	client       *ent.Client
-	cache        *sharedcache.Aside
-	log          *zap.Logger
-	mediaURLBase string      // public base URL for resolving relative /media/ paths
-	mediaRoot    string      // filesystem root for persisting uploaded item images (MEDIA_ROOT)
-	taxResolver  TaxResolver // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
-	auditSvc     *audit.Service
+	client      *ent.Client
+	cache       *sharedcache.Aside
+	log         *zap.Logger
+	media       *objectstore.Store // item images: stored keys, links on read (httpware/objectstore)
+	taxResolver TaxResolver        // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
+	auditSvc    *audit.Service
 	// onStockUnitChanged runs after a stock-unit change rescaled the item (recipe recosting).
 	onStockUnitChanged func(ctx context.Context, tenantID, itemID uuid.UUID)
 	// readClient, when set, is used ONLY for ListItems' multi-row catalog fetch (see rc()) — a
@@ -537,12 +537,13 @@ type Service struct {
 	seq *documents.SequenceService
 }
 
-// NewService creates a new items service.
-func NewService(client *ent.Client, log *zap.Logger, mediaURLBase string) *Service {
+// NewService creates a new items service. media may be nil (stored values are returned as they
+// are and image uploads fail).
+func NewService(client *ent.Client, log *zap.Logger, media *objectstore.Store) *Service {
 	return &Service{
-		client:       client,
-		mediaURLBase: strings.TrimRight(mediaURLBase, "/"),
-		log:          log.Named("items.service"),
+		client: client,
+		media:  media,
+		log:    log.Named("items.service"),
 	}
 }
 
@@ -563,18 +564,10 @@ func (s *Service) rc() *ent.Client {
 	return s.client
 }
 
-// resolveMediaURL converts a relative /media/ path to a full URL using MEDIA_URL_BASE.
-// Also encodes spaces in filenames to ensure valid URLs.
-func (s *Service) resolveMediaURL(path string) string {
-	if path == "" || strings.HasPrefix(path, "http") {
-		// Even full URLs may have unencoded spaces from legacy data
-		return strings.ReplaceAll(path, " ", "%20")
-	}
-	path = strings.ReplaceAll(path, " ", "%20")
-	if s.mediaURLBase != "" {
-		return s.mediaURLBase + path
-	}
-	return path
+// mediaURL turns a stored image value (an object key, an old /media path or an external URL) into
+// the link clients load. External URLs from old data may carry unencoded spaces; those are encoded.
+func (s *Service) mediaURL(ref string) string {
+	return strings.ReplaceAll(s.media.URL(ref), " ", "%20")
 }
 
 // SetCache injects the cache helper (optional; caching is skipped if nil).
@@ -1079,7 +1072,7 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		AllowBackorder:              boolPtr(i.AllowBackorder),
 		IsDiscontinued:              boolPtr(i.IsDiscontinued),
 		EndOfLifeAt:                 i.EndOfLifeAt,
-		ImageURL:                    s.resolveMediaURL(i.ImageURL),
+		ImageURL:                    s.mediaURL(i.ImageURL),
 		Tags:                        i.Tags,
 		Metadata:                    i.Metadata,
 		Barcode:                     i.Barcode,
@@ -2078,7 +2071,7 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		q = q.SetDescription(dto.Description)
 	}
 	if dto.Icon != "" {
-		q = q.SetIcon(dto.Icon)
+		q = q.SetIcon(s.media.Normalize(dto.Icon))
 	} else {
 		// No icon supplied: infer a sensible default from the name (falling back to
 		// the first use_case tag) rather than leaving it blank — see
@@ -2113,7 +2106,7 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		Name:        c.Name,
 		Code:        c.Code,
 		Description: c.Description,
-		Icon:        c.Icon,
+		Icon:        s.mediaURL(c.Icon),
 		ParentID:    c.ParentID,
 		IsActive:    c.IsActive,
 		IsGlobal:    c.IsGlobal,
@@ -2168,7 +2161,7 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		q = q.SetDescription(dto.Description)
 	}
 	if dto.Icon != "" {
-		q = q.SetIcon(dto.Icon)
+		q = q.SetIcon(s.media.Normalize(dto.Icon))
 	} else if existing.Icon == "" {
 		// Icon left empty on both the request and the existing row: auto-assign a
 		// default rather than leaving it blank. Never overwrites a non-empty existing
@@ -2207,7 +2200,7 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 		Name:        c.Name,
 		Code:        c.Code,
 		Description: c.Description,
-		Icon:        c.Icon,
+		Icon:        s.mediaURL(c.Icon),
 		ParentID:    c.ParentID,
 		IsActive:    c.IsActive,
 		Depth:       c.Depth,
@@ -2356,7 +2349,7 @@ func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]
 				Name:        c.Name,
 				Code:        c.Code,
 				Description: c.Description,
-				Icon:        s.resolveMediaURL(c.Icon),
+				Icon:        s.mediaURL(c.Icon),
 				ParentID:    c.ParentID,
 				IsActive:    c.IsActive,
 				IsGlobal:    c.IsGlobal,
@@ -2702,6 +2695,8 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 	}
 	// Auto-compute EP cost from purchase fields when not explicitly set.
 	resolveEPCost(&dto, s.stockUnitAbbr(ctx, dto.UnitID))
+	// Store the image's key, not the link a client sends back from an upload.
+	dto.ImageURL = s.media.Normalize(dto.ImageURL)
 
 	// Reject a fractional opening quantity for a discrete/count-based item (e.g. a phone stocked
 	// in PIECE) before creating anything — covers manual item creation AND the bulk-import Items
@@ -3061,7 +3056,7 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 			"unit_id":                   i.UnitID,
 			"unit_name":                 unitName,
 			"is_active":                 i.IsActive,
-			"image_url":                 i.ImageURL,
+			"image_url":                 s.mediaURL(i.ImageURL), // consumers keep the link
 			"tags":                      i.Tags,
 			"barcode":                   i.Barcode,
 			"barcode_type":              i.BarcodeType,
@@ -3184,6 +3179,8 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	}
 	// Auto-compute EP cost from purchase fields if not explicitly provided.
 	resolveEPCost(&dto, s.stockUnitAbbr(ctx, dto.UnitID))
+	// Store the image's key, not the link a client sends back (often the item's own image URL).
+	dto.ImageURL = s.media.Normalize(dto.ImageURL)
 
 	updateBuilder := tx.Item.UpdateOneID(id).
 		Where(item.TenantID(tenantID)).

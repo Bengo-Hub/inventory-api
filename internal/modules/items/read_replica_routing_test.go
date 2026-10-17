@@ -10,8 +10,8 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/google/uuid"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -52,7 +52,7 @@ func TestListItemsReadReplicaRouting(t *testing.T) {
 	fakeReadReplica := openClient(t, maintenanceDSN)
 
 	ctx := context.Background()
-	svc := NewService(primary, zap.NewNop(), "")
+	svc := NewService(primary, zap.NewNop(), nil)
 	svc.SetReadClient(fakeReadReplica)
 
 	tenantID := uuid.New()

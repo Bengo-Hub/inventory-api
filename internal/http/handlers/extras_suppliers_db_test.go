@@ -3,57 +3,26 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
 	"testing"
 
-	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
 	"github.com/Bengo-Hub/httpware"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
+	"github.com/bengobox/inventory-service/internal/testutil"
 )
 
 // supplierTestClient runs against Postgres when INVENTORY_TEST_DATABASE_URL is set: a throwaway
 // schema with the current ent schema, dropped when the test ends.
 func supplierTestClient(t *testing.T) *ent.Client {
 	t.Helper()
-	url := os.Getenv("INVENTORY_TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("INVENTORY_TEST_DATABASE_URL not set")
-	}
-	admin, err := sql.Open("pgx", url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	schema := "inv_sup_" + strings.ReplaceAll(uuid.NewString()[:8], "-", "")
-	if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _, _ = admin.Exec("DROP SCHEMA " + schema + " CASCADE"); _ = admin.Close() })
-	sep := "?"
-	if strings.Contains(url, "?") {
-		sep = "&"
-	}
-	db, err := sql.Open("pgx", url+sep+"search_path="+schema)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, db)))
-	t.Cleanup(func() { _ = client.Close() })
-	if err := client.Schema.Create(context.Background()); err != nil {
-		t.Fatalf("schema: %v", err)
-	}
-	return client
+	return testutil.SchemaClient(t, "inv_sup_")
 }
 
 // Archive (DELETE), restore (PUT is_active=true) and a full round-trip PUT that must keep the
@@ -92,7 +61,7 @@ func TestSupplierArchiveRestoreAndRoundTrip(t *testing.T) {
 	}
 
 	// The edit flow sends the stored supplier back with its edits: everything is kept.
-	full := supplierToDTO(client.Supplier.GetX(ctx, s.ID))
+	full := supplierToDTO(client.Supplier.GetX(ctx, s.ID), nil)
 	raw, _ := json.Marshal(full)
 	var body map[string]any
 	_ = json.Unmarshal(raw, &body)

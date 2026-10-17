@@ -42,7 +42,7 @@ func New(
 	rbacService *rbac.Service,
 	allowedOrigins []string,
 	mediaHandler *handlers.MediaHandler,
-	mediaRoot string,
+	mediaFiles http.Handler,
 	serviceConfigHandler *handlers.ServiceConfigHandler,
 	inventorySettingsHandler *handlers.InventorySettingsHandler,
 	redisClient *redis.Client,
@@ -116,10 +116,10 @@ func New(
 		r.With(authMiddleware.RequireAuth).Post("/api/v1/media/upload", mediaHandler.Upload)
 	}
 
-	// Serve uploaded media files from the media root directory
-	if mediaRoot != "" {
-		// No directory listings; UUID-named uploads cached as immutable, other names 1 day.
-		r.Handle("/media/*", http.StripPrefix("/media", httpware.StaticMedia(mediaRoot, httpware.MediaOptions{})))
+	// /media: shipped icons and images not yet moved to object storage, served from the media
+	// directory; object keys redirect to the public media domain (objectstore.MediaHandler).
+	if mediaFiles != nil {
+		r.Handle("/media/*", http.StripPrefix("/media", mediaFiles))
 	}
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {

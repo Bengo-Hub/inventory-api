@@ -9,7 +9,7 @@ require (
 	ariga.io/atlas v1.1.0
 	entgo.io/ent v0.14.5
 	github.com/Bengo-Hub/cache v0.5.7
-	github.com/Bengo-Hub/httpware v0.6.1
+	github.com/Bengo-Hub/httpware v0.10.0
 	github.com/Bengo-Hub/pagination v0.4.0
 	github.com/Bengo-Hub/shared-auth-client v0.0.0-00010101000000-000000000000
 	github.com/Bengo-Hub/shared-events v0.7.4
@@ -115,6 +115,6 @@ require (
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

@@ -12,6 +12,7 @@ RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory ./cmd/api
 RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-migrate ./cmd/migrate
 RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-seed ./cmd/seed
 RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-prune-users ./cmd/prune-users
+RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-relink-media ./cmd/relink-media
 
 FROM alpine:3.20
 # rclone powers the best-effort remote backup-destination mirror (PVC stays primary).
@@ -22,6 +23,7 @@ COPY --from=builder /out/inventory /usr/local/bin/inventory
 COPY --from=builder /out/inventory-migrate /usr/local/bin/inventory-migrate
 COPY --from=builder /out/inventory-seed /usr/local/bin/inventory-seed
 COPY --from=builder /out/inventory-prune-users /usr/local/bin/inventory-prune-users
+COPY --from=builder /out/inventory-relink-media /usr/local/bin/inventory-relink-media
 COPY internal/ent/migrate/migrations ./internal/ent/migrate/migrations
 COPY media/ ./media/
 # Entrypoint script: wait for DB, run migrations, seed, then start server

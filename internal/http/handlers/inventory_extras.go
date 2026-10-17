@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	"github.com/Bengo-Hub/httpware/objectstore"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/audit"
@@ -28,6 +29,7 @@ import (
 
 // InventoryExtrasHandler handles stock, lots, suppliers, purchase-orders, bundles, activity, and report endpoints.
 type InventoryExtrasHandler struct {
+	media       *objectstore.Store // supplier logos: stored keys, links on read
 	log         *zap.Logger
 	orm         *ent.Client
 	rbacSvc     *rbac.Service
@@ -100,6 +102,9 @@ func (h *InventoryExtrasHandler) skuForItem(ctx context.Context, tenantID, itemI
 }
 
 // NewInventoryExtrasHandler creates the handler.
+// SetMedia wires the shared object storage that resolves supplier logo keys to links.
+func (h *InventoryExtrasHandler) SetMedia(m *objectstore.Store) { h.media = m }
+
 func NewInventoryExtrasHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.Service) *InventoryExtrasHandler {
 	return &InventoryExtrasHandler{
 		log:     log.Named("inventory_extras.handler"),

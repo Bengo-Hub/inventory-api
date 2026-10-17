@@ -1,172 +1,88 @@
 package handlers
 
 import (
-	"fmt"
-	"image"
-	"image/jpeg"
-	"image/png"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
+	"path"
 
-	"github.com/google/uuid"
+	"github.com/Bengo-Hub/httpware/objectstore"
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"go.uber.org/zap"
-
-	"github.com/bengobox/inventory-service/internal/config"
 )
 
-// MediaHandler handles media file uploads for inventory items.
+// mediaUploadTypes are the media types the generic upload accepts (query "type"): item and
+// menu pictures (the default), brand and supplier logos, and other catalogue pictures.
+var mediaUploadTypes = map[string]bool{
+	objectstore.TypeItemImages: true,
+	objectstore.TypeMenuImages: true,
+	objectstore.TypeLogos:      true,
+	objectstore.TypeImages:     true,
+}
+
+// MediaHandler handles single image uploads (items in create mode, brand and supplier logos).
 type MediaHandler struct {
-	log *zap.Logger
-	cfg config.MediaConfig
+	log   *zap.Logger
+	store *objectstore.Store
 }
 
-// NewMediaHandler creates a new media handler.
-func NewMediaHandler(log *zap.Logger, cfg config.MediaConfig) *MediaHandler {
-	return &MediaHandler{
-		log: log.Named("media.handler"),
-		cfg: cfg,
-	}
+// NewMediaHandler creates a new media handler on the shared object storage.
+func NewMediaHandler(log *zap.Logger, store *objectstore.Store) *MediaHandler {
+	return &MediaHandler{log: log.Named("media.handler"), store: store}
 }
 
-// Upload handles file uploads for menu item images and other media.
-// It validates file size and content type, strips EXIF metadata via re-encoding,
-// and saves the file to the configured media root directory.
+// Upload stores one image for the caller's tenant: JPEG or PNG within the type's limit, checked from the bytes
+// and re-encoded (EXIF and anything appended removed). It answers the image's link ("url", what a
+// form puts in image_url or logo_url) and its key; saving either stores the key.
+//
+// @Summary Upload an image
+// @Tags Media
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "JPEG or PNG, up to 2 MB (5 MB for images)"
+// @Param type query string false "item-images (default), menu-images, logos or images"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /api/v1/media/upload [post]
 func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
-	// Limit upload size to 2MB
-	r.Body = http.MaxBytesReader(w, r.Body, 2*1024*1024)
-	if err := r.ParseMultipartForm(2 * 1024 * 1024); err != nil {
-		h.log.Error("failed to parse multipart form", zap.Error(err))
-		writeError(w, http.StatusBadRequest, "UPLOAD_TOO_LARGE", "File too large (max 2MB)")
+	claims, ok := authclient.ClaimsFromContext(r.Context())
+	if !ok || claims.TenantID == "" {
+		writeError(w, http.StatusBadRequest, "TENANT_REQUIRED", "Sign in to an organisation to upload")
 		return
 	}
-
-	file, header, err := r.FormFile("file")
+	if !h.store.Enabled() {
+		writeError(w, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "File storage is not configured")
+		return
+	}
+	// The type decides the limits, so it is read before the body (query string).
+	mediaType := r.URL.Query().Get("type")
+	if mediaType == "" {
+		mediaType = objectstore.TypeItemImages
+	}
+	if !mediaUploadTypes[mediaType] {
+		writeError(w, http.StatusBadRequest, "INVALID_TYPE", "type must be item-images, menu-images, logos or images")
+		return
+	}
+	up, err := objectstore.ReadUpload(w, r, "file", mediaType)
 	if err != nil {
-		h.log.Error("failed to get file from form", zap.Error(err))
-		writeError(w, http.StatusBadRequest, "INVALID_FILE", "Invalid file upload")
-		return
-	}
-	defer file.Close()
-
-	// Detect content type from file bytes
-	buffer := make([]byte, 512)
-	n, _ := file.Read(buffer)
-	contentType := http.DetectContentType(buffer[:n])
-	if _, err := file.Seek(0, 0); err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Internal server error")
-		return
-	}
-
-	// Only allow JPEG and PNG — re-encoding below strips EXIF and neutralizes
-	// image-based exploits, acting as a sanitization/virus mitigation step.
-	allowedTypes := map[string]bool{
-		"image/jpeg": true,
-		"image/jpg":  true,
-		"image/png":  true,
-	}
-
-	// Fall back to extension if content detection is ambiguous
-	if !allowedTypes[contentType] {
-		ext := strings.ToLower(filepath.Ext(header.Filename))
-		headerCT := header.Header.Get("Content-Type")
-
-		switch {
-		case ext == ".jpg" || ext == ".jpeg" || headerCT == "image/jpeg":
-			contentType = "image/jpeg"
-		case ext == ".png" || headerCT == "image/png":
-			contentType = "image/png"
-		}
-	}
-
-	if !allowedTypes[contentType] {
-		h.log.Warn("rejected file upload", zap.String("detected_type", contentType), zap.String("filename", header.Filename))
-		writeError(w, http.StatusBadRequest, "INVALID_TYPE", "Only JPEG, JPG and PNG images are allowed")
-		return
-	}
-
-	// Generate unique filename
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext == "" || (ext != ".jpg" && ext != ".jpeg" && ext != ".png") {
-		switch contentType {
-		case "image/jpeg":
-			ext = ".jpg"
-		case "image/png":
-			ext = ".png"
-		}
-	}
-	filename := fmt.Sprintf("%s_%d%s", uuid.New().String(), time.Now().Unix(), ext)
-
-	// Create upload directory
-	dir := filepath.Join(h.cfg.Root, "uploads", "menu")
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		h.log.Error("failed to create upload directory", zap.Error(err))
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Internal server error")
-		return
-	}
-
-	dstPath := filepath.Join(dir, filename)
-	dst, err := os.Create(dstPath)
-	if err != nil {
-		h.log.Error("failed to create destination file", zap.Error(err))
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Internal server error")
-		return
-	}
-	defer dst.Close()
-
-	// Re-encode JPEG/PNG to strip EXIF metadata (security measure)
-	written := false
-	if contentType == "image/jpeg" || contentType == "image/png" {
-		img, _, decErr := image.Decode(file)
-		if decErr == nil {
-			var encErr error
-			if contentType == "image/jpeg" {
-				encErr = jpeg.Encode(dst, img, &jpeg.Options{Quality: 85})
-			} else {
-				encErr = png.Encode(dst, img)
-			}
-			if encErr == nil {
-				written = true
-			} else {
-				h.log.Warn("re-encoding failed, falling back to direct copy", zap.Error(encErr))
-				if _, err := file.Seek(0, 0); err != nil {
-					writeError(w, http.StatusInternalServerError, "INTERNAL", "Internal server error")
-					return
-				}
-				if err := dst.Truncate(0); err != nil {
-					writeError(w, http.StatusInternalServerError, "INTERNAL", "Internal server error")
-					return
-				}
-				if _, err := dst.Seek(0, 0); err != nil {
-					writeError(w, http.StatusInternalServerError, "INTERNAL", "Internal server error")
-					return
-				}
-			}
-		}
-	}
-
-	if !written {
-		if _, err := io.Copy(dst, file); err != nil {
-			h.log.Error("failed to copy file", zap.Error(err))
-			writeError(w, http.StatusInternalServerError, "INTERNAL", "Internal server error")
+		if objectstore.IsUploadError(err) {
+			writeError(w, http.StatusBadRequest, "INVALID_FILE", err.Error())
 			return
 		}
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to read the upload")
+		return
 	}
-
-	// Build URL: full URL if URLBase is configured, otherwise relative path
-	var url string
-	relativePath := fmt.Sprintf("/media/uploads/menu/%s", filename)
-	if h.cfg.URLBase != "" {
-		url = fmt.Sprintf("%s%s", strings.TrimRight(h.cfg.URLBase, "/"), relativePath)
-	} else {
-		url = relativePath
+	key, err := h.store.NewKey(objectstore.Owner{TenantID: claims.TenantID}, mediaType, up.Ext)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "TENANT_REQUIRED", "Invalid organisation")
+		return
 	}
-
+	if err := h.store.Put(r.Context(), key, up.Data, up.ContentType); err != nil {
+		h.log.Error("media upload not stored", zap.Error(err))
+		writeError(w, http.StatusBadGateway, "STORAGE_UNAVAILABLE", "File storage is unavailable")
+		return
+	}
 	writeJSON(w, http.StatusCreated, map[string]string{
-		"url":      url,
-		"filename": filename,
+		"url":      h.store.URL(key),
+		"key":      key,
+		"filename": path.Base(key),
 	})
 }

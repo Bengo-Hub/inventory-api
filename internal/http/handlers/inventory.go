@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/Bengo-Hub/pagination"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
@@ -67,7 +67,7 @@ type ItemsServicer interface {
 	// Multi-image (ItemAsset) management.
 	CountItemImages(ctx context.Context, tenantID, itemID uuid.UUID) (int, error)
 	ListItemImages(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.ItemImageDTO, error)
-	AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, file multipart.File, header *multipart.FileHeader, setPrimary bool) (*items.ItemImageDTO, error)
+	AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, up *objectstore.Upload, setPrimary bool) (*items.ItemImageDTO, error)
 	UpdateItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID, in items.UpdateItemImageInput) (*items.ItemImageDTO, error)
 	DeleteItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID) error
 }

@@ -8,8 +8,8 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/google/uuid"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
@@ -46,7 +46,7 @@ func TestOutletScope(t *testing.T) {
 	t.Cleanup(func() { _ = client.Close() })
 
 	ctx := context.Background()
-	svc := NewService(client, zap.NewNop(), "")
+	svc := NewService(client, zap.NewNop(), nil)
 
 	tenantID := uuid.New()
 	t.Cleanup(func() {

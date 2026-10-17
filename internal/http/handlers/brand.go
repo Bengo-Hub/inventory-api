@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -22,7 +23,11 @@ type BrandHandler struct {
 	log     *zap.Logger
 	orm     *ent.Client
 	rbacSvc *rbac.Service
+	media   *objectstore.Store // brand logos: stored keys, links on read
 }
+
+// SetMedia wires the shared object storage that resolves brand logo keys to links.
+func (h *BrandHandler) SetMedia(m *objectstore.Store) { h.media = m }
 
 func NewBrandHandler(log *zap.Logger, orm *ent.Client, rbacSvc *rbac.Service) *BrandHandler {
 	return &BrandHandler{
@@ -146,7 +151,7 @@ func (h *BrandHandler) ListBrands(w http.ResponseWriter, r *http.Request) {
 
 	dtos := make([]brandDTO, 0, len(brands))
 	for _, b := range brands {
-		dtos = append(dtos, toBrandDTO(b))
+		dtos = append(dtos, toBrandDTO(b, h.media))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"data":  dtos,
@@ -181,7 +186,7 @@ func (h *BrandHandler) CreateBrand(w http.ResponseWriter, r *http.Request) {
 		SetName(req.Name).
 		SetCode(code).
 		SetDescription(req.Description).
-		SetLogoURL(req.LogoURL).
+		SetLogoURL(h.media.Normalize(req.LogoURL)).
 		SetSortOrder(req.SortOrder).
 		Save(r.Context())
 	if err != nil {
@@ -189,7 +194,7 @@ func (h *BrandHandler) CreateBrand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create brand")
 		return
 	}
-	writeJSON(w, http.StatusCreated, toBrandDTO(brand))
+	writeJSON(w, http.StatusCreated, toBrandDTO(brand, h.media))
 }
 
 // UpdateBrand handles PUT /inventory/brands/{brandID}.
@@ -229,7 +234,7 @@ func (h *BrandHandler) UpdateBrand(w http.ResponseWriter, r *http.Request) {
 		upd = upd.SetDescription(req.Description)
 	}
 	if req.LogoURL != "" {
-		upd = upd.SetLogoURL(req.LogoURL)
+		upd = upd.SetLogoURL(h.media.Normalize(req.LogoURL))
 	}
 	if req.IsActive != nil {
 		upd = upd.SetIsActive(*req.IsActive)
@@ -244,7 +249,7 @@ func (h *BrandHandler) UpdateBrand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to update brand")
 		return
 	}
-	writeJSON(w, http.StatusOK, toBrandDTO(updated))
+	writeJSON(w, http.StatusOK, toBrandDTO(updated, h.media))
 }
 
 // DeleteBrand handles DELETE /inventory/brands/{brandID} — soft-deletes (deactivates) a brand.
@@ -295,14 +300,15 @@ func slugify(s string) string {
 	return strings.Trim(b.String(), "-")
 }
 
-func toBrandDTO(b *ent.ItemBrand) brandDTO {
+// toBrandDTO maps a brand; the stored logo key becomes its link (media may be nil: kept as is).
+func toBrandDTO(b *ent.ItemBrand, media *objectstore.Store) brandDTO {
 	return brandDTO{
 		ID:          b.ID,
 		TenantID:    b.TenantID,
 		Name:        b.Name,
 		Code:        b.Code,
 		Description: b.Description,
-		LogoURL:     b.LogoURL,
+		LogoURL:     media.URL(b.LogoURL),
 		IsActive:    b.IsActive,
 		SortOrder:   b.SortOrder,
 	}
