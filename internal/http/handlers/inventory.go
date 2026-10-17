@@ -1298,6 +1298,10 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 	// checkbox; "exclude" is the sales-surface guarantee (pos-api catalog proxy and
 	// ordering storefront fetch with it so flagged items never leave inventory). Legacy
 	// truthy values ("1"/"true") mean "only" for filter-checkbox ergonomics.
+	// ?outlet_strict=1 — list only the active outlet's own catalog (see items.WithStrictOutletScope).
+	if v := r.URL.Query().Get("outlet_strict"); v == "1" || strings.EqualFold(v, "true") {
+		ctx = items.WithStrictOutletScope(ctx)
+	}
 	switch v := r.URL.Query().Get("not_for_sale"); {
 	case v == "only" || v == "1" || strings.EqualFold(v, "true"):
 		ctx = items.WithNotForSaleFilter(ctx, "only")

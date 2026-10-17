@@ -145,6 +145,59 @@ func notForSaleFilter(ctx context.Context) string {
 	return v
 }
 
+// strictOutletKey is a context flag set by the HTTP layer (?outlet_strict=1). With an active
+// outlet it narrows ListItems from the lenient browse rule (hide only goods stocked solely
+// elsewhere) to the outlet's own catalog: stock-tracked items with an active balance at the
+// outlet's or a shared warehouse, plus made-to-order items whose category is relevant to the
+// outlet's use_case. Back-office pickers that must list "this outlet's items" (the eTIMS item
+// master) ask for it; POS and ordering keep the lenient rule.
+type strictOutletKey struct{}
+
+// WithStrictOutletScope turns on the strict outlet catalog for ListItems.
+func WithStrictOutletScope(ctx context.Context) context.Context {
+	return context.WithValue(ctx, strictOutletKey{}, true)
+}
+
+func strictOutletScope(ctx context.Context) bool {
+	v, _ := ctx.Value(strictOutletKey{}).(bool)
+	return v
+}
+
+// strictOutletPredicate builds the strict outlet catalog filter described on strictOutletKey.
+// Items of types that carry stock must hold a non-removed balance in warehouseIDs; every other
+// type must sit in a category relevant to the outlet's use_case (an uncategorised item or an
+// untagged category is universal).
+func (s *Service) strictOutletPredicate(ctx context.Context, tenantID, outletID uuid.UUID, warehouseIDs map[uuid.UUID]struct{}) (predicate.Item, error) {
+	whIDs := make([]uuid.UUID, 0, len(warehouseIDs))
+	for id := range warehouseIDs {
+		whIDs = append(whIDs, id)
+	}
+	useCase := ""
+	if wh, err := s.client.Warehouse.Query().
+		Where(warehouse.TenantID(tenantID), warehouse.OutletID(outletID)).First(ctx); err == nil {
+		useCase = wh.UseCase
+	}
+	cats, err := s.listCategoriesAll(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	relevant := make([]uuid.UUID, 0, len(cats))
+	for _, c := range cats {
+		if c.RelevantToUseCase(useCase) {
+			relevant = append(relevant, c.ID)
+		}
+	}
+	stocked := item.And(
+		item.TypeIn(item.TypeGOODS, item.TypeINGREDIENT),
+		item.HasBalancesWith(inventorybalance.WarehouseIDIn(whIDs...), inventorybalance.RemovedFromLocation(false)),
+	)
+	madeToOrder := item.And(
+		item.TypeNotIn(item.TypeGOODS, item.TypeINGREDIENT),
+		item.Or(item.CategoryIDIsNil(), item.CategoryIDIn(relevant...)),
+	)
+	return item.Or(stocked, madeToOrder), nil
+}
+
 // brandFilterKey is a context flag set by the HTTP layer (?brand_id=) — scopes ListItems to
 // one ItemBrand master row, same shape as the categoryID positional filter.
 type brandFilterKey struct{}
@@ -1398,6 +1451,16 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	// scope to it — summing balances across every warehouse in the tenant let a Malaba-HQ terminal
 	// see (and oversell) stock that was physically sitting at Eldoret/Busia/Home/Nelly/Guest.
 	outletExcludeIDs, hasOperationalHistory, outletWarehouseIDs, _ := s.OutletScope(ctx, tenantID, outletID)
+	// Strict outlet catalog (?outlet_strict=1): computed once here, applied to the list and the
+	// count below. A failure to build it falls back to the lenient rule rather than an empty list.
+	var strictOutletPred predicate.Item
+	if outletID != nil && strictOutletScope(ctx) && itemIDFilter(ctx) == nil {
+		if p, perr := s.strictOutletPredicate(ctx, tenantID, *outletID, outletWarehouseIDs); perr == nil {
+			strictOutletPred = p
+		} else {
+			s.log.Warn("items: strict outlet scope unavailable, using the lenient rule", zap.Error(perr))
+		}
+	}
 	// balanceScopeWarehouseIDs is what the Available/OnHand summation below actually filters
 	// against. A specific warehouseID (Stock Transfer's "From Warehouse") always narrows to just
 	// that one warehouse, regardless of how many warehouses the outlet itself spans — the visibility
@@ -1515,6 +1578,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		// stocked in another outlet.
 		if len(outletExcludeIDs) > 0 && itemIDFilter(ctx) == nil {
 			q = q.Where(item.IDNotIn(outletExcludeIDs...))
+		}
+		if strictOutletPred != nil {
+			q = q.Where(strictOutletPred)
 		}
 		// An outlet with real operational history must not show the tenant's entire "never
 		// received anywhere" backlog (see the long comment above `hasOperationalHistory`) —
@@ -1711,7 +1777,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		countKey := sharedcache.Key("inv", "items-count", tenantID.String(),
 			typeFilter, statusFilter, useCase, notForSaleFilter(ctx),
 			categoryKey, unitKey, outletKey, brandKey, modelFilter(ctx), search, strings.Join(tagsFilter, ","),
-			fmt.Sprintf("recipe=%v,nonbill=%v", recipeInputScope(ctx), includeNonBillable(ctx)),
+			fmt.Sprintf("recipe=%v,nonbill=%v,strict=%v", recipeInputScope(ctx), includeNonBillable(ctx), strictOutletPred != nil),
 		)
 		total, err = sharedcache.GetOrSet(ctx, s.cache, countKey, outletScopeCacheTTL, func(ctx context.Context) (int, error) {
 			return buildQuery().Count(ctx)
