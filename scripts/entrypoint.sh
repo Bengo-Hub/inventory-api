@@ -38,12 +38,6 @@ echo "Running seed (idempotent)"
 echo "=========================================="
 POSTGRES_URL="$MIGRATE_URL" /usr/local/bin/inventory-seed || echo "Seed completed with warnings (non-fatal)"
 
-echo "Syncing media assets to persistent volume..."
-mkdir -p "${MEDIA_ROOT:-/data/media}/icons"
-mkdir -p "${MEDIA_ROOT:-/data/media}/images"
-cp -r ./media/icons/* "${MEDIA_ROOT:-/data/media}/icons/" 2>/dev/null || true
-cp -rn ./media/images/* "${MEDIA_ROOT:-/data/media}/images/" 2>/dev/null || true
-
 echo ""
 echo "=========================================="
 echo "Starting Inventory-API server"
