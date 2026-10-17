@@ -249,6 +249,11 @@ func (h *BrandHandler) UpdateBrand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to update brand")
 		return
 	}
+	// A replaced logo frees its file unless another of the tenant's brands shows it.
+	releaseFile(r.Context(), h.media, h.log, existing.LogoURL, updated.LogoURL, func(key string) bool {
+		used, err := h.orm.ItemBrand.Query().Where(entib.TenantID(tenantID), entib.LogoURL(key)).Exist(r.Context())
+		return err != nil || used
+	})
 	writeJSON(w, http.StatusOK, toBrandDTO(updated, h.media))
 }
 

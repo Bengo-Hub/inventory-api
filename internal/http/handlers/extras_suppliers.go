@@ -383,6 +383,11 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		return
 	}
 	h.publishSupplierEvent(r.Context(), s, "inventory.supplier.updated")
+	// A replaced logo frees its file unless another of the tenant's suppliers shows it.
+	releaseFile(r.Context(), h.media, h.log, existing.LogoURL, s.LogoURL, func(key string) bool {
+		used, err := h.orm.Supplier.Query().Where(entsupplier.TenantID(tenantID), entsupplier.LogoURL(key)).Exist(r.Context())
+		return err != nil || used
+	})
 	writeJSON(w, http.StatusOK, supplierToDTO(s, h.media))
 }
 

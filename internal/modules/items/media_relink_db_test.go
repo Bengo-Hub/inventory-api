@@ -20,7 +20,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/testutil"
 )
 
-// fakeBucket is a minimal S3 endpoint: PUT, GET and HEAD of objects, HEAD of buckets.
+// fakeBucket is a minimal S3 endpoint: PUT, GET, HEAD and DELETE of objects, HEAD of buckets.
 func fakeBucket(t *testing.T) (map[string][]byte, string) {
 	var mu sync.Mutex
 	objects := map[string][]byte{}
@@ -41,6 +41,9 @@ func fakeBucket(t *testing.T) (map[string][]byte, string) {
 			if r.Method == http.MethodGet {
 				_, _ = w.Write(b)
 			}
+		case http.MethodDelete:
+			delete(objects, p)
+			w.WriteHeader(http.StatusNoContent)
 		}
 	}))
 	t.Cleanup(srv.Close)
@@ -92,6 +95,9 @@ func TestRelinkMedia(t *testing.T) {
 	cat, err := client.ItemCategory.Create().SetTenantID(tenantID).SetName("Drinks").SetCode("DR").
 		SetIcon("/media/icons/coffee-colored.svg").Save(ctx)
 	require.NoError(t, err)
+	demo, err := client.Item.Create().SetTenantID(tenantID).SetSku("DEMO-1").SetName("Demo latte").
+		SetImageURL("/media/images/outlets/menu/icedlatte.jpeg").Save(ctx)
+	require.NoError(t, err)
 
 	// A report changes nothing.
 	rep, err := svc.RelinkMedia(ctx, false)
@@ -99,6 +105,7 @@ func TestRelinkMedia(t *testing.T) {
 	require.Equal(t, 1, rep.Found["items"])
 	require.Equal(t, 1, rep.Found["item_assets"])
 	require.Equal(t, 0, rep.Found["item_categories"], "shipped icons stay")
+	require.Equal(t, 1, rep.Shipped["items"], "shipped demo pictures stay")
 	require.Empty(t, objects)
 
 	rep, err = svc.RelinkMedia(ctx, true)
@@ -116,6 +123,7 @@ func TestRelinkMedia(t *testing.T) {
 	require.True(t, strings.HasPrefix(logo, "inventory/"+tenantID.String()+"/logos/"), logo)
 	require.Equal(t, "/media/uploads/menu/gone.png", client.Supplier.GetX(ctx, sup.ID).LogoURL, "missing file: row unchanged")
 	require.Equal(t, "/media/icons/coffee-colored.svg", client.ItemCategory.GetX(ctx, cat.ID).Icon)
+	require.Equal(t, "/media/images/outlets/menu/icedlatte.jpeg", client.Item.GetX(ctx, demo.ID).ImageURL)
 
 	// The item's consumers hear about the new link.
 	events := client.OutboxEvent.Query().Where(outboxevent.EventType("item.updated")).AllX(ctx)
@@ -132,4 +140,18 @@ func TestRelinkMedia(t *testing.T) {
 	require.Equal(t, 0, rep.Moved)
 	require.Equal(t, before, len(objects))
 	require.Equal(t, 1, rep.Found["suppliers"])
+
+	// Replacing an image frees the old file only when nothing of the tenant still shows it: the
+	// gallery row still uses the photo, so it stays; once the gallery row goes too, it is deleted.
+	photo := it.ImageURL
+	client.Item.UpdateOneID(it.ID).SetImageURL("https://cdn.example.com/new.png").ExecX(ctx)
+	svc.dropImage(ctx, tenantID, photo)
+	require.Contains(t, objects, "pub/"+photo, "still used by the gallery row")
+	client.ItemAsset.DeleteOneID(asset.ID).ExecX(ctx)
+	svc.dropImage(ctx, tenantID, photo)
+	require.NotContains(t, objects, "pub/"+photo, "unused file deleted")
+	// Old volume files and external URLs are never deleted.
+	svc.dropImage(ctx, tenantID, "/media/uploads/menu/photo.jpg")
+	_, statErr := os.Stat(filepath.Join(root, "uploads", "menu", "photo.jpg"))
+	require.NoError(t, statErr)
 }

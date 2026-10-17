@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Bengo-Hub/httpware/objectstore"
 	"github.com/google/uuid"
@@ -21,14 +22,26 @@ import (
 // large enough that a catalogue of a few hundred thousand rows takes minutes, not hours.
 const relinkPage = 500
 
-// shippedIconsPrefix holds the category icons the image ships (copied to MEDIA_ROOT/icons at
-// start). They are platform assets, not tenant media, and stay served from the image.
-const shippedIconsPrefix = "/media/icons/"
+// shippedAssetPrefixes are the platform assets the image ships in ./media (category icons and the
+// demo menu pictures the seeds use), copied to MEDIA_ROOT at start and served at /media. They are
+// not tenant uploads, so they are not moved.
+var shippedAssetPrefixes = []string{"/media/icons/", "/media/images/outlets/"}
+
+// isShippedAsset reports whether a stored value points at a shipped platform asset.
+func isShippedAsset(ref string) bool {
+	for _, p := range shippedAssetPrefixes {
+		if strings.Contains(ref, p) {
+			return true
+		}
+	}
+	return false
+}
 
 // MediaRelinkReport counts one relink run, per field.
 type MediaRelinkReport struct {
 	Apply    bool           `json:"apply"`
 	Found    map[string]int `json:"found"`    // rows still on an old /media path
+	Shipped  map[string]int `json:"shipped"`  // rows on a shipped platform asset (left as they are)
 	Relinked map[string]int `json:"relinked"` // rows updated to an object key
 	Moved    int            `json:"files_moved"`
 	Reused   int            `json:"files_reused"`
@@ -45,11 +58,15 @@ func (s *Service) RelinkMedia(ctx context.Context, apply bool) (*MediaRelinkRepo
 	if !s.media.Remote() {
 		return nil, fmt.Errorf("items: relinking needs object storage configured (OBJECT_STORAGE_*)")
 	}
-	rep := &MediaRelinkReport{Apply: apply, Found: map[string]int{}, Relinked: map[string]int{}}
+	rep := &MediaRelinkReport{Apply: apply, Found: map[string]int{}, Shipped: map[string]int{}, Relinked: map[string]int{}}
 	rl := s.media.NewRelinker()
 	owner := func(t uuid.UUID) objectstore.Owner { return objectstore.Owner{TenantID: t.String()} }
 	// relink returns the new value for one row's field, or "" when the row stays as it is.
 	relink := func(table string, id uuid.UUID, ref string, t uuid.UUID, mediaType string) (string, error) {
+		if isShippedAsset(ref) {
+			rep.Shipped[table]++
+			return "", nil
+		}
 		rep.Found[table]++
 		if !apply {
 			return "", nil
@@ -147,11 +164,12 @@ func (s *Service) RelinkMedia(ctx context.Context, apply bool) (*MediaRelinkRepo
 		after = rows[len(rows)-1].ID
 	}
 
-	// Category icons that are uploaded pictures (not an icon name, not the shipped icon set).
+	// Category icons that are uploaded pictures (not an icon name). The shipped icon set is
+	// excluded in the query: every category carries one, so it would dominate the scan.
 	for after := uuid.Nil; ; {
 		rows, err := s.client.ItemCategory.Query().
 			Where(itemcategory.IDGT(after), itemcategory.IconContains(objectstore.LegacyPrefix),
-				itemcategory.Not(itemcategory.IconContains(shippedIconsPrefix))).
+				itemcategory.Not(itemcategory.IconContains(shippedAssetPrefixes[0]))).
 			Order(ent.Asc(itemcategory.FieldID)).Limit(relinkPage).All(ctx)
 		if err != nil {
 			return rep, fmt.Errorf("items: list categories: %w", err)

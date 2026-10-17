@@ -297,9 +297,14 @@ see `devops-k8s/docs/object-storage.md`), public bucket, served from `https://me
 - Uploads: `POST /{tenant}/inventory/items/{id}/images` (gallery) and `POST /api/v1/media/upload?type=`
   (create-mode item image, logos). JPEG or PNG, checked from the bytes and re-encoded (EXIF removed).
   A form may send back the link it was given; writes normalise it to the key.
-- Deleting a gallery image deletes its file once no item or gallery row of the tenant still uses it.
-- The shipped category icons (`/media/icons/*.svg`, copied from the image at start) stay static
-  assets served at `/media`.
+- Storage only keeps files in use: replacing or removing an item image, deleting a gallery image or
+  deleting an item frees its files, and replacing a brand or supplier logo frees the old logo, each
+  once no other row of the tenant uses the file. The file is deleted right after the row is saved,
+  so a failed save never leaves a row on a deleted file.
+- Shipped platform assets stay static files of the image, served at `/media`: the category icons
+  (`/media/icons/*.svg`) and the demo menu pictures the seeds use (`/media/images/outlets/menu/*`,
+  shipped since 2026-10-17; before that the seeded demo items pointed at files that were never
+  deployed and showed broken images).
 - Existing files: `inventory-relink-media` (report) and `inventory-relink-media --apply` inside the pod
   move every file a row still references by an old `/media/...` path or `MEDIA_URL_BASE/media/...` URL to
   its tenant's key, update the row and publish `item.updated` for items. Unreferenced files are not

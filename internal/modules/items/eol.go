@@ -466,6 +466,25 @@ func (s *Service) hardDeleteItem(ctx context.Context, id uuid.UUID) (err error) 
 		}
 	}
 
+	// The item's images (its own, its gallery's, its variants'), freed after the commit.
+	owner, oerr := tx.Item.Query().Where(item.ID(id)).Select(item.FieldTenantID, item.FieldImageURL).Only(ctx)
+	if oerr != nil {
+		err = oerr
+		return err
+	}
+	images := []string{owner.ImageURL}
+	assetURLs, aerr := tx.ItemAsset.Query().Where(itemasset.ItemID(id)).Select(itemasset.FieldURL).Strings(ctx)
+	if aerr != nil {
+		err = aerr
+		return err
+	}
+	variantURLs, verr := tx.ItemVariant.Query().Where(itemvariant.ItemID(id)).Select(itemvariant.FieldImageURL).Strings(ctx)
+	if verr != nil {
+		err = verr
+		return err
+	}
+	images = append(append(images, assetURLs...), variantURLs...)
+
 	// Flat owned children keyed directly by item_id.
 	if _, err = tx.InventoryBalance.Delete().Where(inventorybalance.ItemID(id)).Exec(ctx); err != nil {
 		return err
@@ -499,6 +518,13 @@ func (s *Service) hardDeleteItem(ctx context.Context, id uuid.UUID) (err error) 
 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("commit: %w", err)
+	}
+	seen := map[string]bool{}
+	for _, ref := range images {
+		if ref != "" && !seen[ref] {
+			seen[ref] = true
+			s.dropImage(ctx, owner.TenantID, ref)
+		}
 	}
 	return nil
 }

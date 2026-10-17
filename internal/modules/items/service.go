@@ -3458,6 +3458,13 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		return nil, fmt.Errorf("items: commit transaction: %w", err)
 	}
 
+	// A replaced or removed image frees its file (once nothing else of the tenant uses it), so
+	// storage holds only images in use. Done after the commit, so a failed update never leaves
+	// the item pointing at a deleted file.
+	if pErr == nil && prevItm.ImageURL != "" && prevItm.ImageURL != i.ImageURL {
+		s.dropImage(ctx, tenantID, prevItm.ImageURL)
+	}
+
 	// Audit a real standard-cost change. This is the "default/pre-fill" cost only — it never
 	// touches the value of stock already on hand (see InventoryLot cost layers) — but every
 	// change to it should still be attributable and reviewable.
