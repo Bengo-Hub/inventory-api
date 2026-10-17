@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bengo-Hub/httpware/money"
+
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"go.uber.org/zap"
@@ -203,12 +205,7 @@ func planProcurement(lines []planLine, available map[uuid.UUID]float64) (plan []
 		toBuyCost += l.shortfall * l.unitCost
 		plan = append(plan, l)
 	}
-	return plan, roundDecimal(fromStockCost), roundDecimal(toBuyCost)
-}
-
-// roundDecimal rounds a money amount to 2 decimal places.
-func roundDecimal(v float64) float64 {
-	return math.Round(v*100) / 100
+	return plan, money.Round2(fromStockCost), money.Round2(toBuyCost)
 }
 
 // nonStockItemType reports item types that are never bought through a purchase order.
@@ -287,7 +284,7 @@ func (c *GoodsCommittedConsumer) procure(ctx context.Context, tenantID, rootID u
 		// Per-line quantities still to buy: treasury pre-fills "Buy goods for this job" with them.
 		toBuyLines = append(toBuyLines, map[string]any{
 			"item_id": l.line.ItemID, "sku": l.line.SKU, "description": l.line.Description,
-			"quantity": roundDecimal(l.shortfall), "unit_cost": l.unitCost,
+			"quantity": money.Round2(l.shortfall), "unit_cost": l.unitCost,
 		})
 	}
 	poIDs, poNumbers, err := c.createPurchaseOrders(ctx, tenantID, rootID, p, toOrder)
@@ -300,7 +297,7 @@ func (c *GoodsCommittedConsumer) procure(ctx context.Context, tenantID, rootID u
 		"root_id":          rootID.String(),
 		"root_number":      p.RootNumber,
 		"invoice_id":       p.InvoiceID,
-		"goods_cost":       roundDecimal(fromStockCost + toBuyCost),
+		"goods_cost":       money.Round2(fromStockCost + toBuyCost),
 		"from_stock_cost":  fromStockCost,
 		"to_buy_cost":      toBuyCost,
 		"po_ids":           poIDs,
@@ -347,7 +344,7 @@ func (c *GoodsCommittedConsumer) createPurchaseOrders(ctx context.Context, tenan
 		poNumber := fmt.Sprintf("PTO-%s-%s", stem, suffix)
 		create := c.orm.PurchaseOrder.Create().
 			SetTenantID(tenantID).SetPoNumber(poNumber).SetStatus("draft").
-			SetTotalAmount(roundDecimal(total)).SetCurrency(currency).
+			SetTotalAmount(money.Round2(total)).SetCurrency(currency).
 			// quotation_id/number hold the sale's root document (quotation, sales order or invoice).
 			SetQuotationID(rootID).SetQuotationNumber(p.RootNumber).
 			SetNotes(fmt.Sprintf("Procure for the job: %s (customer: %s). Only the quantity not in stock, at buying cost. %s Review before issuing.",
@@ -365,7 +362,7 @@ func (c *GoodsCommittedConsumer) createPurchaseOrders(ctx context.Context, tenan
 		for _, l := range lines {
 			if _, lerr := c.orm.PurchaseOrderLine.Create().
 				SetPoID(po.ID).SetItemID(l.itemID).SetQuantityOrdered(l.quantity).
-				SetUnitPrice(l.unitCost).SetTotalPrice(roundDecimal(l.unitCost * l.quantity)).Save(ctx); lerr != nil {
+				SetUnitPrice(l.unitCost).SetTotalPrice(money.Round2(l.unitCost * l.quantity)).Save(ctx); lerr != nil {
 				// A duplicate item on the sale hits the (po_id,item_id) unique index: keep the PO.
 				c.log.Warn("goods committed: purchase order line not created", zap.Error(lerr), zap.Stringer("po_id", po.ID))
 			}
@@ -373,7 +370,7 @@ func (c *GoodsCommittedConsumer) createPurchaseOrders(ctx context.Context, tenan
 		payload := map[string]any{
 			"tenant_id": tenantID.String(), "po_id": po.ID.String(), "po_number": poNumber,
 			"root_id": rootID.String(), "root_number": p.RootNumber, "customer_name": p.CustomerName,
-			"total_amount": roundDecimal(total), "currency": currency, "line_count": len(lines),
+			"total_amount": money.Round2(total), "currency": currency, "line_count": len(lines),
 			"notification": map[string]any{"target": "admin"},
 		}
 		if supplierID != nil {
@@ -497,13 +494,13 @@ func (c *GoodsCommittedConsumer) withdrawFromDrafts(ctx context.Context, tenantI
 				continue
 			}
 			if err := c.orm.PurchaseOrderLine.UpdateOneID(l.ID).
-				SetQuantityOrdered(rest).SetTotalPrice(roundDecimal(rest * l.UnitPrice)).Exec(ctx); err != nil {
+				SetQuantityOrdered(rest).SetTotalPrice(money.Round2(rest * l.UnitPrice)).Exec(ctx); err != nil {
 				return err
 			}
 			total += rest * l.UnitPrice
 			kept++
 		}
-		upd := c.orm.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(roundDecimal(total))
+		upd := c.orm.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(money.Round2(total))
 		if kept == 0 {
 			upd = upd.SetStatus("cancelled").
 				SetNotes("Cancelled: the goods for this job were bought directly and paid from a bank account in treasury.")

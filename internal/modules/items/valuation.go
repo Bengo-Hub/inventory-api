@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/Bengo-Hub/httpware/money"
+
 	"github.com/google/uuid"
 
 	"github.com/bengobox/inventory-service/internal/ent"
@@ -146,7 +148,7 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 		costBasis := "item_cost_fallback"
 		if la := layerTotals[id]; la != nil && la.qty > 0 {
 			value = la.value
-			unitCost = round2(la.value / la.qty)
+			unitCost = money.Round2(la.value / la.qty)
 			costBasis = "layers"
 		}
 		val.TotalValue += value

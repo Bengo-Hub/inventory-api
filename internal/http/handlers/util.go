@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"math"
 	"net/http"
+
+	"github.com/Bengo-Hub/httpware/money"
 )
 
 // decimalPlaces is the precision we keep for all money/quantity/cost values so the
@@ -18,8 +20,7 @@ func roundDecimal(v float64) float64 {
 	if math.IsNaN(v) || math.IsInf(v, 0) {
 		return 0
 	}
-	factor := math.Pow(10, decimalPlaces)
-	return math.Round(v*factor) / factor
+	return money.Round(v, decimalPlaces)
 }
 
 // writeJSON writes the provided payload as a JSON response with the given status code.

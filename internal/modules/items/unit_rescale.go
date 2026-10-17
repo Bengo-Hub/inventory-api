@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Bengo-Hub/httpware/money"
+
 	"github.com/google/uuid"
 
 	"github.com/bengobox/inventory-service/internal/ent"
@@ -138,22 +140,17 @@ func rewritePurchaseUnit(label, fromAbbr, toAbbr string, factor float64) string 
 		fields[i] = toAbbr
 		if i > 0 {
 			if n, err := strconv.ParseFloat(fields[i-1], 64); err == nil {
-				fields[i-1] = strconv.FormatFloat(roundTo(n*factor, 6), 'f', -1, 64)
+				fields[i-1] = strconv.FormatFloat(money.Round(n*factor, 6), 'f', -1, 64)
 			}
 		} else {
 			// Bare unit ("g"): one old unit is factor new units ("0.001 kg").
 			if factor != 1 {
-				fields[i] = strconv.FormatFloat(roundTo(factor, 6), 'f', -1, 64) + " " + toAbbr
+				fields[i] = strconv.FormatFloat(money.Round(factor, 6), 'f', -1, 64) + " " + toAbbr
 			}
 		}
 		return strings.Join(fields, " ")
 	}
 	return label
-}
-
-func roundTo(v float64, places int) float64 {
-	p := math.Pow(10, float64(places))
-	return math.Round(v*p) / p
 }
 
 // scaleReorder converts an integer reorder level/quantity, never letting a positive policy
@@ -178,9 +175,9 @@ func (s *Service) applyStockUnitRescale(ctx context.Context, tx *ent.Tx, tenantI
 	}
 	for _, b := range bals {
 		if _, err := tx.InventoryBalance.UpdateOneID(b.ID).
-			SetOnHand(roundTo(b.OnHand*f, 4)).
-			SetAvailable(roundTo(b.Available*f, 4)).
-			SetReserved(roundTo(b.Reserved*f, 4)).
+			SetOnHand(money.Round(b.OnHand*f, 4)).
+			SetAvailable(money.Round(b.Available*f, 4)).
+			SetReserved(money.Round(b.Reserved*f, 4)).
 			SetReorderLevel(scaleReorder(b.ReorderLevel, f)).
 			SetReorderQuantity(scaleReorder(b.ReorderQuantity, f)).
 			SetUnitOfMeasure(label).
@@ -196,9 +193,9 @@ func (s *Service) applyStockUnitRescale(ctx context.Context, tx *ent.Tx, tenantI
 		return nil, fmt.Errorf("items: load lots for rescale: %w", err)
 	}
 	for _, l := range lots {
-		upd := tx.InventoryLot.UpdateOneID(l.ID).SetQuantity(roundTo(l.Quantity*f, 4))
+		upd := tx.InventoryLot.UpdateOneID(l.ID).SetQuantity(money.Round(l.Quantity*f, 4))
 		if l.CostPrice != nil {
-			upd = upd.SetCostPrice(roundTo(*l.CostPrice/f, 6))
+			upd = upd.SetCostPrice(money.Round(*l.CostPrice/f, 6))
 		}
 		if _, err := upd.Save(ctx); err != nil {
 			return nil, fmt.Errorf("items: rescale lot: %w", err)
@@ -214,7 +211,7 @@ func (s *Service) applyStockUnitRescale(ctx context.Context, tx *ent.Tx, tenantI
 			return nil, fmt.Errorf("items: load tier prices for rescale: %w", perr)
 		}
 		for _, p := range pricings {
-			if _, err := tx.ItemPricing.UpdateOneID(p.ID).SetPrice(roundTo(p.Price/f, 4)).Save(ctx); err != nil {
+			if _, err := tx.ItemPricing.UpdateOneID(p.ID).SetPrice(money.Round(p.Price/f, 4)).Save(ctx); err != nil {
 				return nil, fmt.Errorf("items: rescale tier price: %w", err)
 			}
 			pricesScaled++
@@ -253,9 +250,9 @@ func rescaleOpenReservations(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID
 		lines := make([]entschema.ReservedItemJSON, len(resv.Items))
 		for i, ri := range resv.Items {
 			if ri.SKU == sku && !ri.Composite {
-				ri.RequestedQty = roundTo(ri.RequestedQty*f, 4)
-				ri.ReservedQty = roundTo(ri.ReservedQty*f, 4)
-				ri.AvailableQty = roundTo(ri.AvailableQty*f, 4)
+				ri.RequestedQty = money.Round(ri.RequestedQty*f, 4)
+				ri.ReservedQty = money.Round(ri.ReservedQty*f, 4)
+				ri.AvailableQty = money.Round(ri.AvailableQty*f, 4)
 				changed = true
 			}
 			lines[i] = ri

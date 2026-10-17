@@ -2,7 +2,8 @@ package items
 
 import (
 	"context"
-	"math"
+
+	"github.com/Bengo-Hub/httpware/money"
 
 	"github.com/google/uuid"
 )
@@ -31,15 +32,13 @@ type TaxSplit struct {
 //   - exclusive: net = price; tax = price*rate; gross = net + tax
 func ComputeTaxSplit(price, ratePct float64, inclusive bool) TaxSplit {
 	if price <= 0 || ratePct <= 0 {
-		return TaxSplit{Net: round2(price), Tax: 0, Gross: round2(price), Rate: ratePct}
+		return TaxSplit{Net: money.Round2(price), Tax: 0, Gross: money.Round2(price), Rate: ratePct}
 	}
 	r := ratePct / 100.0
 	if inclusive {
 		net := price / (1 + r)
-		return TaxSplit{Net: round2(net), Tax: round2(price - net), Gross: round2(price), Rate: ratePct}
+		return TaxSplit{Net: money.Round2(net), Tax: money.Round2(price - net), Gross: money.Round2(price), Rate: ratePct}
 	}
 	tax := price * r
-	return TaxSplit{Net: round2(price), Tax: round2(tax), Gross: round2(price + tax), Rate: ratePct}
+	return TaxSplit{Net: money.Round2(price), Tax: money.Round2(tax), Gross: money.Round2(price + tax), Rate: ratePct}
 }
-
-func round2(v float64) float64 { return math.Round(v*100) / 100 }
