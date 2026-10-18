@@ -22,6 +22,7 @@ import (
 
 	sharedcache "github.com/Bengo-Hub/cache"
 	"github.com/Bengo-Hub/httpware/objectstore"
+	"github.com/Bengo-Hub/httpware/tenantexport"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	eventslib "github.com/Bengo-Hub/shared-events"
 
@@ -74,6 +75,15 @@ func terminalJWTSecret(cfg *config.Config) string {
 // readOrmClient are built in New(). A smaller pool than the primary's — this backs a handful of
 // specific endpoints (ListItems' catalog fetch), not general traffic. No migration/schema
 // management here; the replica streams the primary's schema.
+// tenantExportHandler serves auth-api's SSO tenant backups (httpware/tenantexport). Nil without an
+// INTERNAL_SERVICE_KEY, so the export is never reachable unauthenticated.
+func tenantExportHandler(db *sql.DB, internalKey string) http.Handler {
+	if internalKey == "" {
+		return nil
+	}
+	return tenantexport.Handler(db, tenantexport.Options{Service: "inventory", InternalKey: internalKey})
+}
+
 func newReadOnlyEntClient(cfg config.PostgresConfig) (*ent.Client, error) {
 	sqlDB, err := sql.Open("pgx", cfg.ReadOnlyURL)
 	if err != nil {
@@ -503,7 +513,8 @@ func New(ctx context.Context) (*App, error) {
 
 	notificationsStreamHandler := handlers.NewNotificationsStreamHandler(log, notifHub)
 
-	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, mediaStore.MediaHandler(), serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey, notificationsStreamHandler, stockClearanceHandler)
+	chiRouter := router.New(log, healthHandler, userHandler, inventoryHandler, warehouseHandler, warehouseLocationHandler, pricingTierHandler, brandHandler, transferHandler, inventoryExtrasHandler, analyticsHandler, rbacHandler, authHandler, authMiddleware, tenantSyncer, rbacService, cfg.HTTP.AllowedOrigins, mediaHandler, mediaStore.MediaHandler(), serviceConfigHandler, inventorySettingsHandler, redisClient, ormClient, stockCountHandler, backupsHandler, backupDestHandler, pinAuthHandler, cfg.Auth.APIKey, notificationsStreamHandler, stockClearanceHandler,
+		tenantExportHandler(sqlDB, cfg.Auth.APIKey))
 
 	httpServer := &http.Server{
 		Addr:              fmt.Sprintf("%s:%d", cfg.HTTP.Host, cfg.HTTP.Port),

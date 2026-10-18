@@ -54,6 +54,7 @@ func New(
 	internalServiceKey string,
 	notificationsStreamHandler *handlers.NotificationsStreamHandler,
 	stockClearanceHandler *handlers.StockClearanceHandler,
+	tenantExport http.Handler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -108,6 +109,11 @@ func New(
 
 	r.Get("/healthz", health.Liveness)
 	r.Get("/readyz", health.Readiness)
+	// Tenant export for auth-api's SSO tenant backups; the handler checks INTERNAL_SERVICE_KEY
+	// itself (httpware/tenantexport, Options.InternalKey).
+	if tenantExport != nil {
+		r.Get("/api/v1/s2s/tenant-export", tenantExport.ServeHTTP)
+	}
 	r.Get("/metrics", health.Metrics)
 	r.Get("/v1/docs/*", handlers.SwaggerUI)
 
