@@ -15,8 +15,6 @@ RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-prune-users ./cmd/
 RUN GOTOOLCHAIN=auto CGO_ENABLED=0 go build -o /out/inventory-relink-media ./cmd/relink-media
 
 FROM alpine:3.20
-# rclone powers the best-effort remote backup-destination mirror (PVC stays primary).
-RUN apk add --no-cache rclone
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=builder /out/inventory /usr/local/bin/inventory

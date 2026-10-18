@@ -48,8 +48,6 @@ func New(
 	redisClient *redis.Client,
 	ormClient *ent.Client,
 	stockCountHandler *handlers.StockCountHandler,
-	backupsHandler *handlers.Backups,
-	backupDestHandler *handlers.BackupDestinationHandler,
 	pinAuthHandler *handlers.PINAuthHandler,
 	internalServiceKey string,
 	notificationsStreamHandler *handlers.NotificationsStreamHandler,
@@ -200,10 +198,6 @@ func New(
 			if inventoryHandler != nil {
 				inventoryHandler.RegisterAdminRoutes(admin)
 			}
-			// Platform-default backup destination (OneDrive/GDrive/S3/WebDAV/SFTP/SMB).
-			if backupDestHandler != nil {
-				backupDestHandler.RegisterPlatformRoutes(admin)
-			}
 		})
 
 		api.Route("/{tenant}", func(tenant chi.Router) {
@@ -292,15 +286,6 @@ func New(
 					}
 					if inventorySettingsHandler != nil {
 						inventorySettingsHandler.RegisterRoutes(inv)
-					}
-					// Tenant-scoped backups (this tenant's data only) — settings-gated.
-					if backupsHandler != nil {
-						backupsHandler.RegisterRoutes(inv)
-					}
-					// Per-tenant backup-destination override (mirrors backups off the PVC)
-					// — same settings permission gate as the tenant backups routes.
-					if backupDestHandler != nil {
-						backupDestHandler.RegisterRoutes(inv)
 					}
 					// Self-service "Set PIN" (Team page) — unlike PINOutlets/IdentifyByPIN/Login
 					// above (the public, pre-auth PIN *login* surface), this is a manager action

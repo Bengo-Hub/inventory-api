@@ -20,7 +20,6 @@ type Config struct {
 	Telemetry     TelemetryConfig
 	Auth          AuthConfig
 	Services      ServicesConfig
-	Backup        BackupConfig
 	EOL           EOLConfig
 	ExpiryAlert   ExpiryAlertConfig
 	Subscriptions SubscriptionsConfig
@@ -46,15 +45,6 @@ type SubscriptionsConfig struct {
 	ServiceURL     string        `envconfig:"SUBSCRIPTION_BASE_URL" default:"https://pricingapi.codevertexafrica.com"`
 	RequestTimeout time.Duration `envconfig:"SUBSCRIPTIONS_REQUEST_TIMEOUT" default:"10s"`
 	APIKey         string        `envconfig:"INTERNAL_SERVICE_KEY" default:""`
-}
-
-// BackupConfig controls the tenant-scoped backup scheduler + retention churn. Artifacts are
-// written to a local directory (Dir) — typically a PVC, separate from the public media path.
-type BackupConfig struct {
-	Dir             string `envconfig:"BACKUP_DIR" default:"/app/backups/inventory"`
-	ScheduleEnabled bool   `envconfig:"BACKUP_SCHEDULE_ENABLED" default:"true"`
-	ScheduleHour    int    `envconfig:"BACKUP_SCHEDULE_HOUR" default:"2"`
-	RetentionDays   int    `envconfig:"BACKUP_RETENTION_DAYS" default:"4"`
 }
 
 type AppConfig struct {
