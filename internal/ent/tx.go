@@ -38,10 +38,6 @@ type Tx struct {
 	AssetTransfer *AssetTransferClient
 	// AuditLog is the client for interacting with the AuditLog builders.
 	AuditLog *AuditLogClient
-	// Backup is the client for interacting with the Backup builders.
-	Backup *BackupClient
-	// BackupSetting is the client for interacting with the BackupSetting builders.
-	BackupSetting *BackupSettingClient
 	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
 	BatchRawMaterial *BatchRawMaterialClient
 	// BulkJob is the client for interacting with the BulkJob builders.
@@ -344,8 +340,6 @@ func (tx *Tx) init() {
 	tx.AssetReservation = NewAssetReservationClient(tx.config)
 	tx.AssetTransfer = NewAssetTransferClient(tx.config)
 	tx.AuditLog = NewAuditLogClient(tx.config)
-	tx.Backup = NewBackupClient(tx.config)
-	tx.BackupSetting = NewBackupSettingClient(tx.config)
 	tx.BatchRawMaterial = NewBatchRawMaterialClient(tx.config)
 	tx.BulkJob = NewBulkJobClient(tx.config)
 	tx.Bundle = NewBundleClient(tx.config)

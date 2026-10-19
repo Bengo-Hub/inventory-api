@@ -29,8 +29,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/assetreservation"
 	"github.com/bengobox/inventory-service/internal/ent/assettransfer"
 	"github.com/bengobox/inventory-service/internal/ent/auditlog"
-	"github.com/bengobox/inventory-service/internal/ent/backup"
-	"github.com/bengobox/inventory-service/internal/ent/backupsetting"
 	"github.com/bengobox/inventory-service/internal/ent/batchrawmaterial"
 	"github.com/bengobox/inventory-service/internal/ent/bulkjob"
 	"github.com/bengobox/inventory-service/internal/ent/bundle"
@@ -143,10 +141,6 @@ type Client struct {
 	AssetTransfer *AssetTransferClient
 	// AuditLog is the client for interacting with the AuditLog builders.
 	AuditLog *AuditLogClient
-	// Backup is the client for interacting with the Backup builders.
-	Backup *BackupClient
-	// BackupSetting is the client for interacting with the BackupSetting builders.
-	BackupSetting *BackupSettingClient
 	// BatchRawMaterial is the client for interacting with the BatchRawMaterial builders.
 	BatchRawMaterial *BatchRawMaterialClient
 	// BulkJob is the client for interacting with the BulkJob builders.
@@ -329,8 +323,6 @@ func (c *Client) init() {
 	c.AssetReservation = NewAssetReservationClient(c.config)
 	c.AssetTransfer = NewAssetTransferClient(c.config)
 	c.AuditLog = NewAuditLogClient(c.config)
-	c.Backup = NewBackupClient(c.config)
-	c.BackupSetting = NewBackupSettingClient(c.config)
 	c.BatchRawMaterial = NewBatchRawMaterialClient(c.config)
 	c.BulkJob = NewBulkJobClient(c.config)
 	c.Bundle = NewBundleClient(c.config)
@@ -515,8 +507,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AssetReservation:       NewAssetReservationClient(cfg),
 		AssetTransfer:          NewAssetTransferClient(cfg),
 		AuditLog:               NewAuditLogClient(cfg),
-		Backup:                 NewBackupClient(cfg),
-		BackupSetting:          NewBackupSettingClient(cfg),
 		BatchRawMaterial:       NewBatchRawMaterialClient(cfg),
 		BulkJob:                NewBulkJobClient(cfg),
 		Bundle:                 NewBundleClient(cfg),
@@ -628,8 +618,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AssetReservation:       NewAssetReservationClient(cfg),
 		AssetTransfer:          NewAssetTransferClient(cfg),
 		AuditLog:               NewAuditLogClient(cfg),
-		Backup:                 NewBackupClient(cfg),
-		BackupSetting:          NewBackupSettingClient(cfg),
 		BatchRawMaterial:       NewBatchRawMaterialClient(cfg),
 		BulkJob:                NewBulkJobClient(cfg),
 		Bundle:                 NewBundleClient(cfg),
@@ -740,19 +728,19 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApprovalAction, c.ApprovalRequest, c.ApprovalRule, c.ApprovalStep, c.Asset,
 		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
-		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog, c.Backup,
-		c.BackupSetting, c.BatchRawMaterial, c.BulkJob, c.Bundle, c.BundleComponent,
-		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
-		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
-		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
-		c.GoodsReceiptLine, c.IdempotencyKey, c.InventoryBalance, c.InventoryLot,
-		c.InventoryPermission, c.InventoryRole, c.InventorySerial, c.InventoryUser,
-		c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics,
-		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PendingPriceChange,
-		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
-		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
-		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
+		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog,
+		c.BatchRawMaterial, c.BulkJob, c.Bundle, c.BundleComponent, c.Consumption,
+		c.ConsumptionLine, c.Contract, c.ContractOrderLink, c.CustomFieldDefinition,
+		c.CustomFieldValue, c.DocumentSequence, c.DrugInteractionRule,
+		c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine,
+		c.IdempotencyKey, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
+		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily, c.ItemPricing,
+		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PendingPriceChange, c.PricingTier,
+		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
+		c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine,
+		c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
 		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
 		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
 		c.StockClearance, c.StockCount, c.StockCountLine, c.StockCountTemplate,
@@ -771,19 +759,19 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApprovalAction, c.ApprovalRequest, c.ApprovalRule, c.ApprovalStep, c.Asset,
 		c.AssetAudit, c.AssetCategory, c.AssetDisposal, c.AssetInsurance,
-		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog, c.Backup,
-		c.BackupSetting, c.BatchRawMaterial, c.BulkJob, c.Bundle, c.BundleComponent,
-		c.Consumption, c.ConsumptionLine, c.Contract, c.ContractOrderLink,
-		c.CustomFieldDefinition, c.CustomFieldValue, c.DocumentSequence,
-		c.DrugInteractionRule, c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt,
-		c.GoodsReceiptLine, c.IdempotencyKey, c.InventoryBalance, c.InventoryLot,
-		c.InventoryPermission, c.InventoryRole, c.InventorySerial, c.InventoryUser,
-		c.Item, c.ItemAsset, c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily,
-		c.ItemPricing, c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics,
-		c.ModifierGroup, c.ModifierOption, c.OutboxEvent, c.PendingPriceChange,
-		c.PricingTier, c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine,
-		c.PurchaseReturn, c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward,
-		c.RFQLine, c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
+		c.AssetMaintenance, c.AssetReservation, c.AssetTransfer, c.AuditLog,
+		c.BatchRawMaterial, c.BulkJob, c.Bundle, c.BundleComponent, c.Consumption,
+		c.ConsumptionLine, c.Contract, c.ContractOrderLink, c.CustomFieldDefinition,
+		c.CustomFieldValue, c.DocumentSequence, c.DrugInteractionRule,
+		c.ExpiryAlertLog, c.FoodCostVariance, c.GoodsReceipt, c.GoodsReceiptLine,
+		c.IdempotencyKey, c.InventoryBalance, c.InventoryLot, c.InventoryPermission,
+		c.InventoryRole, c.InventorySerial, c.InventoryUser, c.Item, c.ItemAsset,
+		c.ItemBrand, c.ItemCategory, c.ItemConsumptionDaily, c.ItemPricing,
+		c.ItemTranslation, c.ItemVariant, c.ManufacturingAnalytics, c.ModifierGroup,
+		c.ModifierOption, c.OutboxEvent, c.PendingPriceChange, c.PricingTier,
+		c.ProductionBatch, c.PurchaseOrder, c.PurchaseOrderLine, c.PurchaseReturn,
+		c.PurchaseReturnLine, c.QualityCheck, c.RFQ, c.RFQAward, c.RFQLine,
+		c.RateLimitConfig, c.RawMaterialUsage, c.Recipe, c.RecipeIngredient,
 		c.Requisition, c.RequisitionLine, c.Reservation, c.RolePermission,
 		c.ServiceConfig, c.ServiceDelivery, c.StockAdjustment, c.StockBreakdown,
 		c.StockClearance, c.StockCount, c.StockCountLine, c.StockCountTemplate,
@@ -825,10 +813,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AssetTransfer.mutate(ctx, m)
 	case *AuditLogMutation:
 		return c.AuditLog.mutate(ctx, m)
-	case *BackupMutation:
-		return c.Backup.mutate(ctx, m)
-	case *BackupSettingMutation:
-		return c.BackupSetting.mutate(ctx, m)
 	case *BatchRawMaterialMutation:
 		return c.BatchRawMaterial.mutate(ctx, m)
 	case *BulkJobMutation:
@@ -2782,272 +2766,6 @@ func (c *AuditLogClient) mutate(ctx context.Context, m *AuditLogMutation) (Value
 		return (&AuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AuditLog mutation op: %q", m.Op())
-	}
-}
-
-// BackupClient is a client for the Backup schema.
-type BackupClient struct {
-	config
-}
-
-// NewBackupClient returns a client for the Backup from the given config.
-func NewBackupClient(c config) *BackupClient {
-	return &BackupClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `backup.Hooks(f(g(h())))`.
-func (c *BackupClient) Use(hooks ...Hook) {
-	c.hooks.Backup = append(c.hooks.Backup, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `backup.Intercept(f(g(h())))`.
-func (c *BackupClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Backup = append(c.inters.Backup, interceptors...)
-}
-
-// Create returns a builder for creating a Backup entity.
-func (c *BackupClient) Create() *BackupCreate {
-	mutation := newBackupMutation(c.config, OpCreate)
-	return &BackupCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Backup entities.
-func (c *BackupClient) CreateBulk(builders ...*BackupCreate) *BackupCreateBulk {
-	return &BackupCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *BackupClient) MapCreateBulk(slice any, setFunc func(*BackupCreate, int)) *BackupCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &BackupCreateBulk{err: fmt.Errorf("calling to BackupClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*BackupCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &BackupCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Backup.
-func (c *BackupClient) Update() *BackupUpdate {
-	mutation := newBackupMutation(c.config, OpUpdate)
-	return &BackupUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *BackupClient) UpdateOne(_m *Backup) *BackupUpdateOne {
-	mutation := newBackupMutation(c.config, OpUpdateOne, withBackup(_m))
-	return &BackupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *BackupClient) UpdateOneID(id uuid.UUID) *BackupUpdateOne {
-	mutation := newBackupMutation(c.config, OpUpdateOne, withBackupID(id))
-	return &BackupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Backup.
-func (c *BackupClient) Delete() *BackupDelete {
-	mutation := newBackupMutation(c.config, OpDelete)
-	return &BackupDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *BackupClient) DeleteOne(_m *Backup) *BackupDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BackupClient) DeleteOneID(id uuid.UUID) *BackupDeleteOne {
-	builder := c.Delete().Where(backup.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BackupDeleteOne{builder}
-}
-
-// Query returns a query builder for Backup.
-func (c *BackupClient) Query() *BackupQuery {
-	return &BackupQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeBackup},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Backup entity by its id.
-func (c *BackupClient) Get(ctx context.Context, id uuid.UUID) (*Backup, error) {
-	return c.Query().Where(backup.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *BackupClient) GetX(ctx context.Context, id uuid.UUID) *Backup {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *BackupClient) Hooks() []Hook {
-	return c.hooks.Backup
-}
-
-// Interceptors returns the client interceptors.
-func (c *BackupClient) Interceptors() []Interceptor {
-	return c.inters.Backup
-}
-
-func (c *BackupClient) mutate(ctx context.Context, m *BackupMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&BackupCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&BackupUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&BackupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&BackupDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Backup mutation op: %q", m.Op())
-	}
-}
-
-// BackupSettingClient is a client for the BackupSetting schema.
-type BackupSettingClient struct {
-	config
-}
-
-// NewBackupSettingClient returns a client for the BackupSetting from the given config.
-func NewBackupSettingClient(c config) *BackupSettingClient {
-	return &BackupSettingClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `backupsetting.Hooks(f(g(h())))`.
-func (c *BackupSettingClient) Use(hooks ...Hook) {
-	c.hooks.BackupSetting = append(c.hooks.BackupSetting, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `backupsetting.Intercept(f(g(h())))`.
-func (c *BackupSettingClient) Intercept(interceptors ...Interceptor) {
-	c.inters.BackupSetting = append(c.inters.BackupSetting, interceptors...)
-}
-
-// Create returns a builder for creating a BackupSetting entity.
-func (c *BackupSettingClient) Create() *BackupSettingCreate {
-	mutation := newBackupSettingMutation(c.config, OpCreate)
-	return &BackupSettingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of BackupSetting entities.
-func (c *BackupSettingClient) CreateBulk(builders ...*BackupSettingCreate) *BackupSettingCreateBulk {
-	return &BackupSettingCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *BackupSettingClient) MapCreateBulk(slice any, setFunc func(*BackupSettingCreate, int)) *BackupSettingCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &BackupSettingCreateBulk{err: fmt.Errorf("calling to BackupSettingClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*BackupSettingCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &BackupSettingCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for BackupSetting.
-func (c *BackupSettingClient) Update() *BackupSettingUpdate {
-	mutation := newBackupSettingMutation(c.config, OpUpdate)
-	return &BackupSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *BackupSettingClient) UpdateOne(_m *BackupSetting) *BackupSettingUpdateOne {
-	mutation := newBackupSettingMutation(c.config, OpUpdateOne, withBackupSetting(_m))
-	return &BackupSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *BackupSettingClient) UpdateOneID(id uuid.UUID) *BackupSettingUpdateOne {
-	mutation := newBackupSettingMutation(c.config, OpUpdateOne, withBackupSettingID(id))
-	return &BackupSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for BackupSetting.
-func (c *BackupSettingClient) Delete() *BackupSettingDelete {
-	mutation := newBackupSettingMutation(c.config, OpDelete)
-	return &BackupSettingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *BackupSettingClient) DeleteOne(_m *BackupSetting) *BackupSettingDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BackupSettingClient) DeleteOneID(id uuid.UUID) *BackupSettingDeleteOne {
-	builder := c.Delete().Where(backupsetting.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BackupSettingDeleteOne{builder}
-}
-
-// Query returns a query builder for BackupSetting.
-func (c *BackupSettingClient) Query() *BackupSettingQuery {
-	return &BackupSettingQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeBackupSetting},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a BackupSetting entity by its id.
-func (c *BackupSettingClient) Get(ctx context.Context, id uuid.UUID) (*BackupSetting, error) {
-	return c.Query().Where(backupsetting.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *BackupSettingClient) GetX(ctx context.Context, id uuid.UUID) *BackupSetting {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *BackupSettingClient) Hooks() []Hook {
-	return c.hooks.BackupSetting
-}
-
-// Interceptors returns the client interceptors.
-func (c *BackupSettingClient) Interceptors() []Interceptor {
-	return c.inters.BackupSetting
-}
-
-func (c *BackupSettingClient) mutate(ctx context.Context, m *BackupSettingMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&BackupSettingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&BackupSettingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&BackupSettingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&BackupSettingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown BackupSetting mutation op: %q", m.Op())
 	}
 }
 
@@ -15099,14 +14817,13 @@ type (
 	hooks struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
 		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
-		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
-		BatchRawMaterial, BulkJob, Bundle, BundleComponent, Consumption,
-		ConsumptionLine, Contract, ContractOrderLink, CustomFieldDefinition,
-		CustomFieldValue, DocumentSequence, DrugInteractionRule, ExpiryAlertLog,
-		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, IdempotencyKey,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
-		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
+		AssetReservation, AssetTransfer, AuditLog, BatchRawMaterial, BulkJob, Bundle,
+		BundleComponent, Consumption, ConsumptionLine, Contract, ContractOrderLink,
+		CustomFieldDefinition, CustomFieldValue, DocumentSequence, DrugInteractionRule,
+		ExpiryAlertLog, FoodCostVariance, GoodsReceipt, GoodsReceiptLine,
+		IdempotencyKey, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand,
+		ItemCategory, ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
 		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
 		PendingPriceChange, PricingTier, ProductionBatch, PurchaseOrder,
 		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,
@@ -15122,14 +14839,13 @@ type (
 	inters struct {
 		ApprovalAction, ApprovalRequest, ApprovalRule, ApprovalStep, Asset, AssetAudit,
 		AssetCategory, AssetDisposal, AssetInsurance, AssetMaintenance,
-		AssetReservation, AssetTransfer, AuditLog, Backup, BackupSetting,
-		BatchRawMaterial, BulkJob, Bundle, BundleComponent, Consumption,
-		ConsumptionLine, Contract, ContractOrderLink, CustomFieldDefinition,
-		CustomFieldValue, DocumentSequence, DrugInteractionRule, ExpiryAlertLog,
-		FoodCostVariance, GoodsReceipt, GoodsReceiptLine, IdempotencyKey,
-		InventoryBalance, InventoryLot, InventoryPermission, InventoryRole,
-		InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand, ItemCategory,
-		ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
+		AssetReservation, AssetTransfer, AuditLog, BatchRawMaterial, BulkJob, Bundle,
+		BundleComponent, Consumption, ConsumptionLine, Contract, ContractOrderLink,
+		CustomFieldDefinition, CustomFieldValue, DocumentSequence, DrugInteractionRule,
+		ExpiryAlertLog, FoodCostVariance, GoodsReceipt, GoodsReceiptLine,
+		IdempotencyKey, InventoryBalance, InventoryLot, InventoryPermission,
+		InventoryRole, InventorySerial, InventoryUser, Item, ItemAsset, ItemBrand,
+		ItemCategory, ItemConsumptionDaily, ItemPricing, ItemTranslation, ItemVariant,
 		ManufacturingAnalytics, ModifierGroup, ModifierOption, OutboxEvent,
 		PendingPriceChange, PricingTier, ProductionBatch, PurchaseOrder,
 		PurchaseOrderLine, PurchaseReturn, PurchaseReturnLine, QualityCheck, RFQ,

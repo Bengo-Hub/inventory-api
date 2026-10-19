@@ -54,8 +54,6 @@ var tenantScopedTables = []string{
 	"asset_transfers",
 	"assets",
 	"audit_logs",
-	"backup_settings",
-	"backups",
 	"batch_raw_materials",
 	"bundles",
 	"consumptions",
