@@ -198,6 +198,11 @@ type AdjustStockRequest struct {
 	// by the handler, not trusted from the request body.
 	OutletID uuid.UUID  `json:"-"`
 	UnitID   *uuid.UUID `json:"unit_id,omitempty"` // optional; when set, records the balance's unit of measure
+	// AdjustmentDate ("YYYY-MM-DD") backdates the movement: it is stored as adjusted_at, so the
+	// ledger, the Adjustments list, reports and the books place it on that day instead of on top
+	// under today. Blank or today means a normal adjustment. Never a future date (see
+	// ResolveAdjustmentDate). The real entry time stays in created_at.
+	AdjustmentDate string `json:"adjustment_date,omitempty"`
 	// ApprovalIntentID ties a large adjustment to its approval workflow: the
 	// client passes a stable UUID on the first (blocked) attempt and again on the
 	// retry after a manager approves.
@@ -261,6 +266,11 @@ type ListAdjustmentsRequest struct {
 
 // AdjustStock adjusts stock levels for an item, creates an audit trail, and publishes events.
 func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req AdjustStockRequest) (*AdjustStockResponse, error) {
+	// Validate the optional backdate before anything is read or locked.
+	adjustedAt, err := ResolveAdjustmentDate(req.AdjustmentDate, time.Now())
+	if err != nil {
+		return nil, err
+	}
 	whID, err := s.resolveWarehouseIDForOutlet(ctx, tenantID, req.WarehouseID, req.OutletID)
 	if err != nil {
 		return nil, err
@@ -424,8 +434,8 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		adjReason = stockadjustment.ReasonOther
 	}
 
-	// Create StockAdjustment audit record
-	now := time.Now()
+	// Create StockAdjustment audit record. adjusted_at is the effective date (the backdate when
+	// one was given); created_at keeps the real entry time.
 	adjBuilder := tx.StockAdjustment.Create().
 		SetTenantID(tenantID).
 		SetItemID(itm.ID).
@@ -434,7 +444,7 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		SetQuantityChange(qtyChange).
 		SetQuantityAfter(qtyAfter).
 		SetReason(adjReason).
-		SetAdjustedAt(now)
+		SetAdjustedAt(adjustedAt)
 
 	if req.AdjustedBy != uuid.Nil {
 		adjBuilder.SetAdjustedBy(req.AdjustedBy)
@@ -538,7 +548,7 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 				"cost_value":    costValue,
 				"reference":     req.Reference,
 				"notes":         req.Notes,
-				"adjusted_at":   now.UTC().Format(time.RFC3339),
+				"adjusted_at":   adjustedAt.UTC().Format(time.RFC3339), // the effective date: treasury books it on this day
 			})
 		}
 	}
@@ -576,7 +586,7 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		QtyBefore:  qtyBefore,
 		QtyChange:  qtyChange,
 		QtyAfter:   qtyAfter,
-		AdjustedAt: now,
+		AdjustedAt: adjustedAt,
 	}, nil
 }
 

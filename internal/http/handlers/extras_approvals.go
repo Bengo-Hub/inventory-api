@@ -660,6 +660,7 @@ func adjustmentRequestFromPayload(payload map[string]any) (stock.AdjustStockRequ
 	req.Reason, _ = payload["reason"].(string)
 	req.Reference, _ = payload["reference"].(string)
 	req.Notes, _ = payload["notes"].(string)
+	req.AdjustmentDate, _ = payload["adjustment_date"].(string)
 	if s, _ := payload["adjusted_by"].(string); s != "" {
 		if id, err := uuid.Parse(s); err == nil {
 			req.AdjustedBy = id

@@ -1646,6 +1646,10 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	if req.Reason == "" {
 		req.Reason = "adjustment"
 	}
+	if _, err := stock.ResolveAdjustmentDate(req.AdjustmentDate, time.Now()); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ADJUSTMENT_DATE", err.Error())
+		return
+	}
 	// Give an unreferenced adjustment its own document number so the movement is printable and
 	// auditable (GET /inventory/adjustments/document?reference=…). Never overwrites a reference
 	// the caller supplied.
@@ -2218,6 +2222,11 @@ func adjustmentPayload(req stock.AdjustStockRequest, actor uuid.UUID) map[string
 		"notes":       req.Notes,
 		"adjusted_by": actor.String(),
 	}
+	// A backdate is kept so the approved movement posts on the day the requester chose. "Today" is
+	// not a backdate and is left out, or the replay (possibly days later) would read it as one.
+	if d := strings.TrimSpace(req.AdjustmentDate); d != "" && d != time.Now().UTC().Format("2006-01-02") {
+		p["adjustment_date"] = d
+	}
 	if req.WarehouseID != uuid.Nil {
 		p["warehouse_id"] = req.WarehouseID.String()
 	}
@@ -2254,6 +2263,10 @@ func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Reque
 	}
 	if req.Reason == "" {
 		req.Reason = "other"
+	}
+	if _, err := stock.ResolveAdjustmentDate(req.AdjustmentDate, time.Now()); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ADJUSTMENT_DATE", err.Error())
+		return
 	}
 	// Same document-number mint as /adjust: an adjustment created without a reference gets one
 	// so it can be printed and filed as a stock adjustment note.

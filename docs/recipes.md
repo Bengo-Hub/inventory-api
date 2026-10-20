@@ -162,6 +162,15 @@ A menu recipe's stock is tracked only through its ingredients:
 - `GET /inventory/recipes/health?issue=` lists the rows with deep-link ids.
 - `POST /inventory/recipes/recompute-costs` recosts every active recipe (prep first) and publishes each cost through `SetCostPriceAndPublish`, so POS cost snapshots and treasury COGS follow after fixing ingredient costs.
 
+### Scope: only tenants that use recipes see it (2026-10-20)
+
+A pure retail tenant (boi-enterprises: 0 recipes, no hospitality outlet) was shown Recipes / BOM, Recipe Health, Food Cost Variance and Menu Engineering, and a banner about recipe costs that made no sense for a shop. inventory-ui now decides once, in `useRecipeScope` (`lib/use-case-modules.ts`: `RECIPE_USE_CASES`, `usesRecipes`, `hasHealthPage`):
+
+- **Uses recipes**: the outlet's use case is hospitality, quick service or manufacturing, or the tenant already has at least one recipe (a retail shop baking in house). It gets the full surface, unchanged.
+- **Does not**: Recipes / BOM and the two recipe-cost reports leave the menu, and the health page becomes **Stock Health** for retail and warehouse outlets: only `frequent_stock_outs` is shown, worded for a shop ("check that deliveries are received in the system and that each item's unit matches how it is counted"), with no recipe cost recalculation. The banner follows the same rule and counts only the stock problem.
+- **Other use cases** (pharmacy, services): no health entry, because `/recipes/health` is only served to hospitality, quick service, warehouse, manufacturing and retail outlets (`RequireOutletUseCase`). `HEALTH_USE_CASES` mirrors that list; keep them in step.
+- The first recipe a retail tenant creates flips it to the full surface (the recipe check is one cached `GET /recipes?limit=1`, invalidated by recipe changes).
+
 Recipe portion maths shared by the stock engine and the items read model lives in `internal/modules/stockcalc` (`ConvertToStockUnit`, `PerPortionStockQty`, `ProduciblePortions`, `AllIngredientsAvailable`), so the deduction path and every availability figure use the same unit conversion and waste factor.
 
 ---

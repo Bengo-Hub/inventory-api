@@ -204,6 +204,43 @@ func backfillQuantityAfter(rows []MovementRow, currentStock float64) {
 	}
 }
 
+// shiftStaleAnchors corrects the stored quantity_after of adjustment rows for movements that were
+// entered AFTER them but dated BEFORE them. An adjustment snapshots the balance as it was when it
+// was written, so a movement back-dated into its past later makes that snapshot short by the
+// movement's change: adjustment A written 1 Sep (balance 100), then +10 back-dated to 15 Aug,
+// leaves A's true figure at 110. backfillQuantityAfter trusts snapshots as anchors, so without
+// this the running balance would jump at A. Only rows in the same warehouse count, because the
+// snapshot is per warehouse balance. Back-dated rows carry EnteredAt (their real entry time),
+// which is how a late entry is told from a normal one. Pure for tests.
+func shiftStaleAnchors(rows []MovementRow) {
+	var late []int
+	for i := range rows {
+		if rows[i].EnteredAt != nil && rows[i].WarehouseID != nil {
+			late = append(late, i)
+		}
+	}
+	if len(late) == 0 {
+		return
+	}
+	for i := range rows {
+		a := &rows[i]
+		if a.QuantityAfter == nil || a.EnteredAt != nil || a.WarehouseID == nil {
+			continue
+		}
+		var shift float64
+		for _, j := range late {
+			b := rows[j]
+			if *b.WarehouseID == *a.WarehouseID && b.EnteredAt.After(a.OccurredAt) && b.OccurredAt.Before(a.OccurredAt) {
+				shift += b.QuantityChange
+			}
+		}
+		if shift != 0 {
+			v := round4(*a.QuantityAfter + shift)
+			a.QuantityAfter = &v
+		}
+	}
+}
+
 // inRange applies the optional date window.
 func (f StockHistoryFilter) inRange(t time.Time) bool {
 	if f.DateFrom != nil && t.Before(*f.DateFrom) {
@@ -288,12 +325,23 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		if a.Reason == stockadjustment.ReasonPurchaseReturn && a.Reference != "" {
 			returnRowsByNumber[a.Reference] = append(returnRowsByNumber[a.Reference], len(rows))
 		}
-		rows = append(rows, MovementRow{
+		row := MovementRow{
 			Type: mvType, Label: label,
 			QuantityChange: a.QuantityChange, QuantityAfter: &after,
 			OccurredAt: a.AdjustedAt, Reference: a.Reference,
 			WarehouseID: &wid, ActorID: &actor,
-		})
+		}
+		// A backdated adjustment sits on its effective date, but the quantity_after it stored is
+		// the balance at ENTRY time. Trusting that snapshot as a running-balance anchor (see
+		// backfillQuantityAfter) would put today's figure in the middle of older rows, so leave it
+		// nil and let the walk from the live stock compute it among the row's real neighbours. The
+		// real entry time is kept as a note, like a backdated transfer's.
+		if IsBackdatedAdjustment(a.AdjustedAt, a.CreatedAt) {
+			entered := a.CreatedAt
+			row.QuantityAfter = nil
+			row.EnteredAt = &entered
+		}
+		rows = append(rows, row)
 	}
 
 	// 2) GoodsReceiptLine — purchases in (POSTED receipts only).
@@ -603,6 +651,7 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 	// transfers, sales and sell-returns leave it nil (the historical "dashes" in the New
 	// quantity column). Back-fill those from a running balance anchored on the live current
 	// stock and any known adjustment snapshots.
+	shiftStaleAnchors(rows)
 	backfillQuantityAfter(rows, res.Summary.CurrentStock)
 
 	// Movement-type filter narrows the TABLE view only — applied after the summary cards and
