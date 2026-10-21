@@ -2,14 +2,12 @@ package router
 
 import (
 	"context"
-	"crypto/subtle"
 	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
@@ -94,14 +92,7 @@ func New(
 	// request timeout is meaningless for a stream that's SUPPOSED to stay open indefinitely.
 	r.Use(httpware.BypassForStreaming(middleware.Timeout(30 * time.Second)))
 	r.Use(middleware.RequestSize(10 << 20)) // 10 MB max body size
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Origin", "X-Request-ID", "X-Tenant-ID", "X-Tenant-Slug", "X-API-Key", "Idempotency-Key", "X-Outlet-ID"},
-		ExposedHeaders:   []string{"Link", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset", "Retry-After"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	r.Use(httpware.CORS(httpware.StandardCORS(allowedOrigins)))
 	// After CORS so 429 responses still carry Access-Control-Allow-* headers.
 	r.Use(ratelimitmw.IPRateLimit(redisClient, log, ratelimitmw.DefaultRateLimitConfig()))
 
@@ -462,11 +453,9 @@ func publicCatalogReads(pinSecret []byte, authMiddleware *authclient.AuthMiddlew
 // bng_* API keys). GETs previously bypassed auth entirely on this tree — the only callers are
 // pos-api and ordering-backend, which always send the key, so nothing anonymous depends on it.
 func requireInternalKeyOrAuth(internalKey string, pinSecret []byte, authMiddleware *authclient.AuthMiddleware) func(http.Handler) http.Handler {
-	expected := []byte(internalKey)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if provided := r.Header.Get("X-API-Key"); provided != "" && len(expected) > 0 &&
-				subtle.ConstantTimeCompare([]byte(provided), expected) == 1 {
+			if httpware.ValidServiceKey(r, internalKey) {
 				claims := &authclient.Claims{
 					IsService:          true,
 					ServiceName:        "platform-internal",
