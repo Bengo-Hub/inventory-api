@@ -65047,6 +65047,10 @@ type PurchaseReturnMutation struct {
 	return_amount_due    *float64
 	addreturn_amount_due *float64
 	payment_status       *purchasereturn.PaymentStatus
+	destination          *purchasereturn.Destination
+	service_status       *purchasereturn.ServiceStatus
+	expected_back_date   *time.Time
+	metadata             *map[string]interface{}
 	date_returned        *time.Time
 	updated_at           *time.Time
 	clearedFields        map[string]struct{}
@@ -65689,6 +65693,189 @@ func (m *PurchaseReturnMutation) ResetPaymentStatus() {
 	m.payment_status = nil
 }
 
+// SetDestination sets the "destination" field.
+func (m *PurchaseReturnMutation) SetDestination(pu purchasereturn.Destination) {
+	m.destination = &pu
+}
+
+// Destination returns the value of the "destination" field in the mutation.
+func (m *PurchaseReturnMutation) Destination() (r purchasereturn.Destination, exists bool) {
+	v := m.destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDestination returns the old "destination" field's value of the PurchaseReturn entity.
+// If the PurchaseReturn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnMutation) OldDestination(ctx context.Context) (v purchasereturn.Destination, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDestination is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDestination requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDestination: %w", err)
+	}
+	return oldValue.Destination, nil
+}
+
+// ResetDestination resets all changes to the "destination" field.
+func (m *PurchaseReturnMutation) ResetDestination() {
+	m.destination = nil
+}
+
+// SetServiceStatus sets the "service_status" field.
+func (m *PurchaseReturnMutation) SetServiceStatus(ps purchasereturn.ServiceStatus) {
+	m.service_status = &ps
+}
+
+// ServiceStatus returns the value of the "service_status" field in the mutation.
+func (m *PurchaseReturnMutation) ServiceStatus() (r purchasereturn.ServiceStatus, exists bool) {
+	v := m.service_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServiceStatus returns the old "service_status" field's value of the PurchaseReturn entity.
+// If the PurchaseReturn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnMutation) OldServiceStatus(ctx context.Context) (v *purchasereturn.ServiceStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServiceStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServiceStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServiceStatus: %w", err)
+	}
+	return oldValue.ServiceStatus, nil
+}
+
+// ClearServiceStatus clears the value of the "service_status" field.
+func (m *PurchaseReturnMutation) ClearServiceStatus() {
+	m.service_status = nil
+	m.clearedFields[purchasereturn.FieldServiceStatus] = struct{}{}
+}
+
+// ServiceStatusCleared returns if the "service_status" field was cleared in this mutation.
+func (m *PurchaseReturnMutation) ServiceStatusCleared() bool {
+	_, ok := m.clearedFields[purchasereturn.FieldServiceStatus]
+	return ok
+}
+
+// ResetServiceStatus resets all changes to the "service_status" field.
+func (m *PurchaseReturnMutation) ResetServiceStatus() {
+	m.service_status = nil
+	delete(m.clearedFields, purchasereturn.FieldServiceStatus)
+}
+
+// SetExpectedBackDate sets the "expected_back_date" field.
+func (m *PurchaseReturnMutation) SetExpectedBackDate(t time.Time) {
+	m.expected_back_date = &t
+}
+
+// ExpectedBackDate returns the value of the "expected_back_date" field in the mutation.
+func (m *PurchaseReturnMutation) ExpectedBackDate() (r time.Time, exists bool) {
+	v := m.expected_back_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpectedBackDate returns the old "expected_back_date" field's value of the PurchaseReturn entity.
+// If the PurchaseReturn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnMutation) OldExpectedBackDate(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpectedBackDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpectedBackDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpectedBackDate: %w", err)
+	}
+	return oldValue.ExpectedBackDate, nil
+}
+
+// ClearExpectedBackDate clears the value of the "expected_back_date" field.
+func (m *PurchaseReturnMutation) ClearExpectedBackDate() {
+	m.expected_back_date = nil
+	m.clearedFields[purchasereturn.FieldExpectedBackDate] = struct{}{}
+}
+
+// ExpectedBackDateCleared returns if the "expected_back_date" field was cleared in this mutation.
+func (m *PurchaseReturnMutation) ExpectedBackDateCleared() bool {
+	_, ok := m.clearedFields[purchasereturn.FieldExpectedBackDate]
+	return ok
+}
+
+// ResetExpectedBackDate resets all changes to the "expected_back_date" field.
+func (m *PurchaseReturnMutation) ResetExpectedBackDate() {
+	m.expected_back_date = nil
+	delete(m.clearedFields, purchasereturn.FieldExpectedBackDate)
+}
+
+// SetMetadata sets the "metadata" field.
+func (m *PurchaseReturnMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *PurchaseReturnMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the PurchaseReturn entity.
+// If the PurchaseReturn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *PurchaseReturnMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[purchasereturn.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *PurchaseReturnMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[purchasereturn.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *PurchaseReturnMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, purchasereturn.FieldMetadata)
+}
+
 // SetDateReturned sets the "date_returned" field.
 func (m *PurchaseReturnMutation) SetDateReturned(t time.Time) {
 	m.date_returned = &t
@@ -65849,7 +66036,7 @@ func (m *PurchaseReturnMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseReturnMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 17)
 	if m.tenant_id != nil {
 		fields = append(fields, purchasereturn.FieldTenantID)
 	}
@@ -65882,6 +66069,18 @@ func (m *PurchaseReturnMutation) Fields() []string {
 	}
 	if m.payment_status != nil {
 		fields = append(fields, purchasereturn.FieldPaymentStatus)
+	}
+	if m.destination != nil {
+		fields = append(fields, purchasereturn.FieldDestination)
+	}
+	if m.service_status != nil {
+		fields = append(fields, purchasereturn.FieldServiceStatus)
+	}
+	if m.expected_back_date != nil {
+		fields = append(fields, purchasereturn.FieldExpectedBackDate)
+	}
+	if m.metadata != nil {
+		fields = append(fields, purchasereturn.FieldMetadata)
 	}
 	if m.date_returned != nil {
 		fields = append(fields, purchasereturn.FieldDateReturned)
@@ -65919,6 +66118,14 @@ func (m *PurchaseReturnMutation) Field(name string) (ent.Value, bool) {
 		return m.ReturnAmountDue()
 	case purchasereturn.FieldPaymentStatus:
 		return m.PaymentStatus()
+	case purchasereturn.FieldDestination:
+		return m.Destination()
+	case purchasereturn.FieldServiceStatus:
+		return m.ServiceStatus()
+	case purchasereturn.FieldExpectedBackDate:
+		return m.ExpectedBackDate()
+	case purchasereturn.FieldMetadata:
+		return m.Metadata()
 	case purchasereturn.FieldDateReturned:
 		return m.DateReturned()
 	case purchasereturn.FieldUpdatedAt:
@@ -65954,6 +66161,14 @@ func (m *PurchaseReturnMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldReturnAmountDue(ctx)
 	case purchasereturn.FieldPaymentStatus:
 		return m.OldPaymentStatus(ctx)
+	case purchasereturn.FieldDestination:
+		return m.OldDestination(ctx)
+	case purchasereturn.FieldServiceStatus:
+		return m.OldServiceStatus(ctx)
+	case purchasereturn.FieldExpectedBackDate:
+		return m.OldExpectedBackDate(ctx)
+	case purchasereturn.FieldMetadata:
+		return m.OldMetadata(ctx)
 	case purchasereturn.FieldDateReturned:
 		return m.OldDateReturned(ctx)
 	case purchasereturn.FieldUpdatedAt:
@@ -66043,6 +66258,34 @@ func (m *PurchaseReturnMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPaymentStatus(v)
+		return nil
+	case purchasereturn.FieldDestination:
+		v, ok := value.(purchasereturn.Destination)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDestination(v)
+		return nil
+	case purchasereturn.FieldServiceStatus:
+		v, ok := value.(purchasereturn.ServiceStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServiceStatus(v)
+		return nil
+	case purchasereturn.FieldExpectedBackDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpectedBackDate(v)
+		return nil
+	case purchasereturn.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
 		return nil
 	case purchasereturn.FieldDateReturned:
 		v, ok := value.(time.Time)
@@ -66136,6 +66379,15 @@ func (m *PurchaseReturnMutation) ClearedFields() []string {
 	if m.FieldCleared(purchasereturn.FieldReason) {
 		fields = append(fields, purchasereturn.FieldReason)
 	}
+	if m.FieldCleared(purchasereturn.FieldServiceStatus) {
+		fields = append(fields, purchasereturn.FieldServiceStatus)
+	}
+	if m.FieldCleared(purchasereturn.FieldExpectedBackDate) {
+		fields = append(fields, purchasereturn.FieldExpectedBackDate)
+	}
+	if m.FieldCleared(purchasereturn.FieldMetadata) {
+		fields = append(fields, purchasereturn.FieldMetadata)
+	}
 	return fields
 }
 
@@ -66170,6 +66422,15 @@ func (m *PurchaseReturnMutation) ClearField(name string) error {
 		return nil
 	case purchasereturn.FieldReason:
 		m.ClearReason()
+		return nil
+	case purchasereturn.FieldServiceStatus:
+		m.ClearServiceStatus()
+		return nil
+	case purchasereturn.FieldExpectedBackDate:
+		m.ClearExpectedBackDate()
+		return nil
+	case purchasereturn.FieldMetadata:
+		m.ClearMetadata()
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseReturn nullable field %s", name)
@@ -66211,6 +66472,18 @@ func (m *PurchaseReturnMutation) ResetField(name string) error {
 		return nil
 	case purchasereturn.FieldPaymentStatus:
 		m.ResetPaymentStatus()
+		return nil
+	case purchasereturn.FieldDestination:
+		m.ResetDestination()
+		return nil
+	case purchasereturn.FieldServiceStatus:
+		m.ResetServiceStatus()
+		return nil
+	case purchasereturn.FieldExpectedBackDate:
+		m.ResetExpectedBackDate()
+		return nil
+	case purchasereturn.FieldMetadata:
+		m.ResetMetadata()
 		return nil
 	case purchasereturn.FieldDateReturned:
 		m.ResetDateReturned()
@@ -66319,6 +66592,10 @@ type PurchaseReturnLineMutation struct {
 	addquantity            *float64
 	sub_total              *float64
 	addsub_total           *float64
+	received_back_qty      *float64
+	addreceived_back_qty   *float64
+	written_off_qty        *float64
+	addwritten_off_qty     *float64
 	created_at             *time.Time
 	clearedFields          map[string]struct{}
 	purchase_return        *uuid.UUID
@@ -66701,6 +66978,118 @@ func (m *PurchaseReturnLineMutation) ResetSubTotal() {
 	m.addsub_total = nil
 }
 
+// SetReceivedBackQty sets the "received_back_qty" field.
+func (m *PurchaseReturnLineMutation) SetReceivedBackQty(f float64) {
+	m.received_back_qty = &f
+	m.addreceived_back_qty = nil
+}
+
+// ReceivedBackQty returns the value of the "received_back_qty" field in the mutation.
+func (m *PurchaseReturnLineMutation) ReceivedBackQty() (r float64, exists bool) {
+	v := m.received_back_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReceivedBackQty returns the old "received_back_qty" field's value of the PurchaseReturnLine entity.
+// If the PurchaseReturnLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnLineMutation) OldReceivedBackQty(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReceivedBackQty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReceivedBackQty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReceivedBackQty: %w", err)
+	}
+	return oldValue.ReceivedBackQty, nil
+}
+
+// AddReceivedBackQty adds f to the "received_back_qty" field.
+func (m *PurchaseReturnLineMutation) AddReceivedBackQty(f float64) {
+	if m.addreceived_back_qty != nil {
+		*m.addreceived_back_qty += f
+	} else {
+		m.addreceived_back_qty = &f
+	}
+}
+
+// AddedReceivedBackQty returns the value that was added to the "received_back_qty" field in this mutation.
+func (m *PurchaseReturnLineMutation) AddedReceivedBackQty() (r float64, exists bool) {
+	v := m.addreceived_back_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetReceivedBackQty resets all changes to the "received_back_qty" field.
+func (m *PurchaseReturnLineMutation) ResetReceivedBackQty() {
+	m.received_back_qty = nil
+	m.addreceived_back_qty = nil
+}
+
+// SetWrittenOffQty sets the "written_off_qty" field.
+func (m *PurchaseReturnLineMutation) SetWrittenOffQty(f float64) {
+	m.written_off_qty = &f
+	m.addwritten_off_qty = nil
+}
+
+// WrittenOffQty returns the value of the "written_off_qty" field in the mutation.
+func (m *PurchaseReturnLineMutation) WrittenOffQty() (r float64, exists bool) {
+	v := m.written_off_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWrittenOffQty returns the old "written_off_qty" field's value of the PurchaseReturnLine entity.
+// If the PurchaseReturnLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseReturnLineMutation) OldWrittenOffQty(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWrittenOffQty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWrittenOffQty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWrittenOffQty: %w", err)
+	}
+	return oldValue.WrittenOffQty, nil
+}
+
+// AddWrittenOffQty adds f to the "written_off_qty" field.
+func (m *PurchaseReturnLineMutation) AddWrittenOffQty(f float64) {
+	if m.addwritten_off_qty != nil {
+		*m.addwritten_off_qty += f
+	} else {
+		m.addwritten_off_qty = &f
+	}
+}
+
+// AddedWrittenOffQty returns the value that was added to the "written_off_qty" field in this mutation.
+func (m *PurchaseReturnLineMutation) AddedWrittenOffQty() (r float64, exists bool) {
+	v := m.addwritten_off_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWrittenOffQty resets all changes to the "written_off_qty" field.
+func (m *PurchaseReturnLineMutation) ResetWrittenOffQty() {
+	m.written_off_qty = nil
+	m.addwritten_off_qty = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *PurchaseReturnLineMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -66798,7 +67187,7 @@ func (m *PurchaseReturnLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseReturnLineMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 9)
 	if m.tenant_id != nil {
 		fields = append(fields, purchasereturnline.FieldTenantID)
 	}
@@ -66816,6 +67205,12 @@ func (m *PurchaseReturnLineMutation) Fields() []string {
 	}
 	if m.sub_total != nil {
 		fields = append(fields, purchasereturnline.FieldSubTotal)
+	}
+	if m.received_back_qty != nil {
+		fields = append(fields, purchasereturnline.FieldReceivedBackQty)
+	}
+	if m.written_off_qty != nil {
+		fields = append(fields, purchasereturnline.FieldWrittenOffQty)
 	}
 	if m.created_at != nil {
 		fields = append(fields, purchasereturnline.FieldCreatedAt)
@@ -66840,6 +67235,10 @@ func (m *PurchaseReturnLineMutation) Field(name string) (ent.Value, bool) {
 		return m.Quantity()
 	case purchasereturnline.FieldSubTotal:
 		return m.SubTotal()
+	case purchasereturnline.FieldReceivedBackQty:
+		return m.ReceivedBackQty()
+	case purchasereturnline.FieldWrittenOffQty:
+		return m.WrittenOffQty()
 	case purchasereturnline.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -66863,6 +67262,10 @@ func (m *PurchaseReturnLineMutation) OldField(ctx context.Context, name string) 
 		return m.OldQuantity(ctx)
 	case purchasereturnline.FieldSubTotal:
 		return m.OldSubTotal(ctx)
+	case purchasereturnline.FieldReceivedBackQty:
+		return m.OldReceivedBackQty(ctx)
+	case purchasereturnline.FieldWrittenOffQty:
+		return m.OldWrittenOffQty(ctx)
 	case purchasereturnline.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -66916,6 +67319,20 @@ func (m *PurchaseReturnLineMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetSubTotal(v)
 		return nil
+	case purchasereturnline.FieldReceivedBackQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReceivedBackQty(v)
+		return nil
+	case purchasereturnline.FieldWrittenOffQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWrittenOffQty(v)
+		return nil
 	case purchasereturnline.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -66937,6 +67354,12 @@ func (m *PurchaseReturnLineMutation) AddedFields() []string {
 	if m.addsub_total != nil {
 		fields = append(fields, purchasereturnline.FieldSubTotal)
 	}
+	if m.addreceived_back_qty != nil {
+		fields = append(fields, purchasereturnline.FieldReceivedBackQty)
+	}
+	if m.addwritten_off_qty != nil {
+		fields = append(fields, purchasereturnline.FieldWrittenOffQty)
+	}
 	return fields
 }
 
@@ -66949,6 +67372,10 @@ func (m *PurchaseReturnLineMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedQuantity()
 	case purchasereturnline.FieldSubTotal:
 		return m.AddedSubTotal()
+	case purchasereturnline.FieldReceivedBackQty:
+		return m.AddedReceivedBackQty()
+	case purchasereturnline.FieldWrittenOffQty:
+		return m.AddedWrittenOffQty()
 	}
 	return nil, false
 }
@@ -66971,6 +67398,20 @@ func (m *PurchaseReturnLineMutation) AddField(name string, value ent.Value) erro
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSubTotal(v)
+		return nil
+	case purchasereturnline.FieldReceivedBackQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReceivedBackQty(v)
+		return nil
+	case purchasereturnline.FieldWrittenOffQty:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWrittenOffQty(v)
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseReturnLine numeric field %s", name)
@@ -67025,6 +67466,12 @@ func (m *PurchaseReturnLineMutation) ResetField(name string) error {
 		return nil
 	case purchasereturnline.FieldSubTotal:
 		m.ResetSubTotal()
+		return nil
+	case purchasereturnline.FieldReceivedBackQty:
+		m.ResetReceivedBackQty()
+		return nil
+	case purchasereturnline.FieldWrittenOffQty:
+		m.ResetWrittenOffQty()
 		return nil
 	case purchasereturnline.FieldCreatedAt:
 		m.ResetCreatedAt()

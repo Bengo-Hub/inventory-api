@@ -1583,11 +1583,11 @@ func init() {
 	// purchasereturn.DefaultReturnAmountDue holds the default value on creation for the return_amount_due field.
 	purchasereturn.DefaultReturnAmountDue = purchasereturnDescReturnAmountDue.Default.(float64)
 	// purchasereturnDescDateReturned is the schema descriptor for date_returned field.
-	purchasereturnDescDateReturned := purchasereturnFields[12].Descriptor()
+	purchasereturnDescDateReturned := purchasereturnFields[16].Descriptor()
 	// purchasereturn.DefaultDateReturned holds the default value on creation for the date_returned field.
 	purchasereturn.DefaultDateReturned = purchasereturnDescDateReturned.Default.(func() time.Time)
 	// purchasereturnDescUpdatedAt is the schema descriptor for updated_at field.
-	purchasereturnDescUpdatedAt := purchasereturnFields[13].Descriptor()
+	purchasereturnDescUpdatedAt := purchasereturnFields[17].Descriptor()
 	// purchasereturn.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	purchasereturn.DefaultUpdatedAt = purchasereturnDescUpdatedAt.Default.(func() time.Time)
 	// purchasereturn.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -1606,8 +1606,16 @@ func init() {
 	purchasereturnlineDescSubTotal := purchasereturnlineFields[6].Descriptor()
 	// purchasereturnline.DefaultSubTotal holds the default value on creation for the sub_total field.
 	purchasereturnline.DefaultSubTotal = purchasereturnlineDescSubTotal.Default.(float64)
+	// purchasereturnlineDescReceivedBackQty is the schema descriptor for received_back_qty field.
+	purchasereturnlineDescReceivedBackQty := purchasereturnlineFields[7].Descriptor()
+	// purchasereturnline.DefaultReceivedBackQty holds the default value on creation for the received_back_qty field.
+	purchasereturnline.DefaultReceivedBackQty = purchasereturnlineDescReceivedBackQty.Default.(float64)
+	// purchasereturnlineDescWrittenOffQty is the schema descriptor for written_off_qty field.
+	purchasereturnlineDescWrittenOffQty := purchasereturnlineFields[8].Descriptor()
+	// purchasereturnline.DefaultWrittenOffQty holds the default value on creation for the written_off_qty field.
+	purchasereturnline.DefaultWrittenOffQty = purchasereturnlineDescWrittenOffQty.Default.(float64)
 	// purchasereturnlineDescCreatedAt is the schema descriptor for created_at field.
-	purchasereturnlineDescCreatedAt := purchasereturnlineFields[7].Descriptor()
+	purchasereturnlineDescCreatedAt := purchasereturnlineFields[9].Descriptor()
 	// purchasereturnline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	purchasereturnline.DefaultCreatedAt = purchasereturnlineDescCreatedAt.Default.(func() time.Time)
 	// purchasereturnlineDescID is the schema descriptor for id field.

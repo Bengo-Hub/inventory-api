@@ -27,6 +27,14 @@ func (PurchaseReturn) Fields() []ent.Field {
 		field.Float("return_amount").Default(0),
 		field.Float("return_amount_due").Default(0),
 		field.Enum("payment_status").Values("pending", "due", "partial", "paid").Default("pending"),
+		field.Enum("destination").Values("supplier", "service").Default("supplier").
+			Comment("Where the goods go. supplier = classic return to the supplier (credited by treasury). service = sent to a repair provider, service or care centre and expected back; no credit note, no eTIMS movement"),
+		field.Enum("service_status").Values("out", "partial", "returned", "written_off").Optional().Nillable().
+			Comment("Repair lifecycle of a destination=service return. Nil for supplier returns and for a service return not yet approved. out = at the provider, partial = some units back, returned = all back, written_off = nothing more is coming back"),
+		field.Time("expected_back_date").Optional().Nillable().
+			Comment("Calendar day (00:00 UTC) the provider is expected to return the goods; drives the overdue figure"),
+		field.JSON("metadata", map[string]any{}).Optional().
+			Comment("Service returns: service_provider, service_contact, fault, receive notes. Free text lives here to avoid schema churn"),
 		field.Time("date_returned").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}
@@ -41,6 +49,8 @@ func (PurchaseReturn) Indexes() []ent.Index {
 		index.Fields("tenant_id", "purchase_order_id"),
 		index.Fields("tenant_id", "payment_status"),
 		index.Fields("tenant_id", "warehouse_id"),
+		// Service tab and overdue figure: filter by destination + status, order by expected date.
+		index.Fields("tenant_id", "destination", "service_status", "expected_back_date"),
 		// Unique (not just indexed): enforces "one auto return per GRN" at the DB level, closing
 		// the race in autoCreateReturnForRejected's Exist()-then-Create() check. Postgres unique
 		// indexes treat every NULL as distinct, so manual returns (goods_receipt_id unset) are

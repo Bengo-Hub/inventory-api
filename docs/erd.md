@@ -236,7 +236,7 @@ Tenant B (SuperMart) — use_case: retail
 > Verified present in code 2026-06-07 (add to diagrams): `supplier` (payment_terms, payment_terms_days,
 > credit_limit, payment_method_type[mpesa|mpesa_b2b|bank_transfer|cash|cheque] — but NOT
 > opening/advance balance, which is treasury AP `vendor_balance`), `purchaseorder`/`purchaseorderline`,
-> `goodsreceipt`/`goodsreceiptline`, `purchasereturn`/`purchasereturnline`, `requisition`/`requisitionline`,
+> `goodsreceipt`/`goodsreceiptline`, `purchasereturn`/`purchasereturnline` (since 2026-10-21 also repair orders: `destination` supplier|service, `service_status` out|partial|returned|written_off, `expected_back_date`, `metadata` for provider/contact/fault, and per line `received_back_qty`/`written_off_qty`), `requisition`/`requisitionline`,
 > `rfq`/`rfqline`/`rfqaward`, `supplierresponse`, `supplierperformance`, `stocktransfer`/line,
 > `stockadjustment`, `productionbatch`, `rawmaterialusage`, `qualitycheck`, `recipe`/`recipeingredient`
 > (with **`waste_percent`**), `item.yield_pct`, `pricingtier`/`itempricing`, `assetcategory`/`asset`/

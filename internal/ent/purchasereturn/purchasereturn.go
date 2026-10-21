@@ -38,6 +38,14 @@ const (
 	FieldReturnAmountDue = "return_amount_due"
 	// FieldPaymentStatus holds the string denoting the payment_status field in the database.
 	FieldPaymentStatus = "payment_status"
+	// FieldDestination holds the string denoting the destination field in the database.
+	FieldDestination = "destination"
+	// FieldServiceStatus holds the string denoting the service_status field in the database.
+	FieldServiceStatus = "service_status"
+	// FieldExpectedBackDate holds the string denoting the expected_back_date field in the database.
+	FieldExpectedBackDate = "expected_back_date"
+	// FieldMetadata holds the string denoting the metadata field in the database.
+	FieldMetadata = "metadata"
 	// FieldDateReturned holds the string denoting the date_returned field in the database.
 	FieldDateReturned = "date_returned"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -69,6 +77,10 @@ var Columns = []string{
 	FieldReturnAmount,
 	FieldReturnAmountDue,
 	FieldPaymentStatus,
+	FieldDestination,
+	FieldServiceStatus,
+	FieldExpectedBackDate,
+	FieldMetadata,
 	FieldDateReturned,
 	FieldUpdatedAt,
 }
@@ -123,6 +135,57 @@ func PaymentStatusValidator(ps PaymentStatus) error {
 		return nil
 	default:
 		return fmt.Errorf("purchasereturn: invalid enum value for payment_status field: %q", ps)
+	}
+}
+
+// Destination defines the type for the "destination" enum field.
+type Destination string
+
+// DestinationSupplier is the default value of the Destination enum.
+const DefaultDestination = DestinationSupplier
+
+// Destination values.
+const (
+	DestinationSupplier Destination = "supplier"
+	DestinationService  Destination = "service"
+)
+
+func (d Destination) String() string {
+	return string(d)
+}
+
+// DestinationValidator is a validator for the "destination" field enum values. It is called by the builders before save.
+func DestinationValidator(d Destination) error {
+	switch d {
+	case DestinationSupplier, DestinationService:
+		return nil
+	default:
+		return fmt.Errorf("purchasereturn: invalid enum value for destination field: %q", d)
+	}
+}
+
+// ServiceStatus defines the type for the "service_status" enum field.
+type ServiceStatus string
+
+// ServiceStatus values.
+const (
+	ServiceStatusOut        ServiceStatus = "out"
+	ServiceStatusPartial    ServiceStatus = "partial"
+	ServiceStatusReturned   ServiceStatus = "returned"
+	ServiceStatusWrittenOff ServiceStatus = "written_off"
+)
+
+func (ss ServiceStatus) String() string {
+	return string(ss)
+}
+
+// ServiceStatusValidator is a validator for the "service_status" field enum values. It is called by the builders before save.
+func ServiceStatusValidator(ss ServiceStatus) error {
+	switch ss {
+	case ServiceStatusOut, ServiceStatusPartial, ServiceStatusReturned, ServiceStatusWrittenOff:
+		return nil
+	default:
+		return fmt.Errorf("purchasereturn: invalid enum value for service_status field: %q", ss)
 	}
 }
 
@@ -187,6 +250,21 @@ func ByReturnAmountDue(opts ...sql.OrderTermOption) OrderOption {
 // ByPaymentStatus orders the results by the payment_status field.
 func ByPaymentStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPaymentStatus, opts...).ToFunc()
+}
+
+// ByDestination orders the results by the destination field.
+func ByDestination(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDestination, opts...).ToFunc()
+}
+
+// ByServiceStatus orders the results by the service_status field.
+func ByServiceStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldServiceStatus, opts...).ToFunc()
+}
+
+// ByExpectedBackDate orders the results by the expected_back_date field.
+func ByExpectedBackDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpectedBackDate, opts...).ToFunc()
 }
 
 // ByDateReturned orders the results by the date_returned field.

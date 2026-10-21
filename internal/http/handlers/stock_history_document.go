@@ -141,6 +141,8 @@ func (h *InventoryHandler) GenerateStockHistoryDocument(w http.ResponseWriter, r
 			{"Total Sold", qty(res.Summary.TotalSold)},
 			{"Total Sell Returns", qty(res.Summary.TotalSellReturns)},
 			{"Total Purchase Returns", qty(res.Summary.TotalPurchaseReturns)},
+			{"Sent for Repair", qty(res.Summary.SentForRepair)},
+			{"Returned from Repair", qty(res.Summary.ReturnedFromRepair)},
 			{"Transfers In", qty(res.Summary.TransfersIn)},
 			{"Transfers Out", qty(res.Summary.TransfersOut)},
 			{"Net Adjustments", qty(res.Summary.TotalAdjusted)},

@@ -169,39 +169,40 @@ func (h *AnalyticsHandler) TopItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Repair send-outs and returns are not stock movement of the item (the same units leave and
+	// come back), so they are excluded from "most moved".
 	adjQuery := h.orm.StockAdjustment.Query().
 		Where(
 			entstockadjustment.TenantID(tenantID),
 			entstockadjustment.AdjustedAtGTE(since),
+			entstockadjustment.ReasonNotIn(entstockadjustment.ReasonServiceOut, entstockadjustment.ReasonServiceIn),
 		)
 	if warehouseIDs != nil {
 		adjQuery = adjQuery.Where(entstockadjustment.WarehouseIDIn(warehouseIDs...))
 	}
-	adjs, err := adjQuery.All(r.Context())
-	if err != nil {
+	// Summed in SQL (one row per item) instead of loading every adjustment into memory.
+	var grouped []struct {
+		ItemID uuid.UUID `json:"item_id"`
+		Moved  float64   `json:"moved"`
+	}
+	if err := adjQuery.GroupBy(entstockadjustment.FieldItemID).
+		Aggregate(func(s *entsql.Selector) string {
+			return entsql.As("COALESCE(SUM(ABS("+s.C(entstockadjustment.FieldQuantityChange)+")), 0)", "moved")
+		}).
+		Scan(r.Context(), &grouped); err != nil {
 		h.log.Error("analytics: top items query failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to fetch adjustments")
 		return
 	}
 
-	// Aggregate by item_id
 	type agg struct {
 		itemID uuid.UUID
 		moved  float64
 	}
-	totals := map[uuid.UUID]float64{}
-	for _, a := range adjs {
-		change := a.QuantityChange
-		if change < 0 {
-			change = -change
-		}
-		totals[a.ItemID] += change
-	}
-
 	// Sort descending
-	aggList := make([]agg, 0, len(totals))
-	for id, moved := range totals {
-		aggList = append(aggList, agg{itemID: id, moved: moved})
+	aggList := make([]agg, 0, len(grouped))
+	for _, g := range grouped {
+		aggList = append(aggList, agg{itemID: g.ItemID, moved: g.Moved})
 	}
 	sort.Slice(aggList, func(i, j int) bool { return aggList[i].moved > aggList[j].moved })
 	if len(aggList) > limit {
@@ -269,18 +270,24 @@ func (h *AnalyticsHandler) StockTrends(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Repair send-outs and returns cancel out and would only add noise to the daily net figure.
 	trendQuery := h.orm.StockAdjustment.Query().
 		Where(
 			entstockadjustment.TenantID(tenantID),
 			entstockadjustment.AdjustedAtGTE(since),
+			entstockadjustment.ReasonNotIn(entstockadjustment.ReasonServiceOut, entstockadjustment.ReasonServiceIn),
 		)
 	if warehouseIDs != nil {
 		trendQuery = trendQuery.Where(entstockadjustment.WarehouseIDIn(warehouseIDs...))
 	}
-	adjs, err := trendQuery.
-		Order(ent.Asc(entstockadjustment.FieldAdjustedAt)).
-		All(r.Context())
-	if err != nil {
+	// Only the two columns the buckets need, not whole adjustment rows.
+	var adjs []struct {
+		AdjustedAt     time.Time `json:"adjusted_at"`
+		QuantityChange float64   `json:"quantity_change"`
+	}
+	if err := trendQuery.
+		Select(entstockadjustment.FieldAdjustedAt, entstockadjustment.FieldQuantityChange).
+		Scan(r.Context(), &adjs); err != nil {
 		h.log.Error("analytics: stock trends query failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to fetch trends")
 		return

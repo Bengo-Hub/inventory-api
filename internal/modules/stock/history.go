@@ -85,6 +85,10 @@ type StockHistorySummary struct {
 	TotalSold            float64 `json:"total_sold"`
 	TotalPurchaseReturns float64 `json:"total_purchase_returns"`
 	TransfersOut         float64 `json:"transfers_out"`
+	// Units sent to a repair provider and units received back repaired. Neither is an adjustment
+	// or a supplier return; the difference is what is still out for repair.
+	SentForRepair      float64 `json:"sent_for_repair"`
+	ReturnedFromRepair float64 `json:"returned_from_repair"`
 	// Net of miscellaneous adjustments (damage, shrinkage, found, corrections…).
 	TotalAdjusted float64 `json:"total_adjusted"`
 	CurrentStock  float64 `json:"current_stock"`
@@ -152,6 +156,10 @@ func classifyAdjustment(reason string, change float64) (mvType, label string) {
 		return "adjustment", "Unhidden — Stock Restored"
 	case "purchase_return":
 		return "purchase_return", "Purchase Return"
+	case "service_out":
+		return "service_out", "Sent for Repair"
+	case "service_in":
+		return "service_in", "Returned from Repair"
 	case "return":
 		// Positive = customer/sell return coming back in; negative = stock
 		// leaving for a supplier/purchase return.
@@ -161,6 +169,13 @@ func classifyAdjustment(reason string, change float64) (mvType, label string) {
 		return "purchase_return", "Purchase Return"
 	}
 	return "adjustment", "Adjustment (" + reason + ")"
+}
+
+// isReturnLinkedReason reports whether an adjustment's reference is a purchase-return number
+// (supplier return or repair order), so the ledger can resolve its document and counterparty.
+func isReturnLinkedReason(r stockadjustment.Reason) bool {
+	return r == stockadjustment.ReasonPurchaseReturn ||
+		r == stockadjustment.ReasonServiceOut || r == stockadjustment.ReasonServiceIn
 }
 
 // applyToSummary folds one movement into the aggregate cards. Pure for tests.
@@ -176,6 +191,10 @@ func applyToSummary(sum *StockHistorySummary, mvType string, change float64) {
 		sum.TotalSellReturns += change
 	case "purchase_return":
 		sum.TotalPurchaseReturns += -change
+	case "service_out":
+		sum.SentForRepair += -change
+	case "service_in":
+		sum.ReturnedFromRepair += change
 	case "transfer_in":
 		sum.TransfersIn += change
 	case "transfer_out":
@@ -322,7 +341,7 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		after := a.QuantityAfter
 		actor := a.AdjustedBy
 		wid := a.WarehouseID
-		if a.Reason == stockadjustment.ReasonPurchaseReturn && a.Reference != "" {
+		if isReturnLinkedReason(a.Reason) && a.Reference != "" {
 			returnRowsByNumber[a.Reference] = append(returnRowsByNumber[a.Reference], len(rows))
 		}
 		row := MovementRow{
@@ -376,7 +395,7 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		}
 		supplierNames := map[uuid.UUID]string{}
 		if len(supplierIDs) > 0 {
-			if sups, sErr := s.client.Supplier.Query().Where(entsupplier.IDIn(supplierIDs...)).All(ctx); sErr == nil {
+			if sups, sErr := s.client.Supplier.Query().Where(entsupplier.TenantID(tenantID), entsupplier.IDIn(supplierIDs...)).All(ctx); sErr == nil {
 				for _, sp := range sups {
 					supplierNames[sp.ID] = sp.Name
 				}
@@ -722,7 +741,7 @@ func (s *Service) resolvePurchaseReturnRefs(ctx context.Context, tenantID uuid.U
 	}
 	supplierNames := map[uuid.UUID]string{}
 	if len(supplierIDs) > 0 {
-		if sups, sErr := s.client.Supplier.Query().Where(entsupplier.IDIn(supplierIDs...)).All(ctx); sErr == nil {
+		if sups, sErr := s.client.Supplier.Query().Where(entsupplier.TenantID(tenantID), entsupplier.IDIn(supplierIDs...)).All(ctx); sErr == nil {
 			for _, sp := range sups {
 				supplierNames[sp.ID] = sp.Name
 			}
@@ -732,6 +751,12 @@ func (s *Service) resolvePurchaseReturnRefs(ctx context.Context, tenantID uuid.U
 		supplier := ""
 		if pr.SupplierID != nil {
 			supplier = supplierNames[*pr.SupplierID]
+		}
+		// A service return has no supplier: its counterparty is the repair provider.
+		if pr.Destination == entpurchasereturn.DestinationService {
+			if p, ok := pr.Metadata["service_provider"].(string); ok && p != "" {
+				supplier = p
+			}
 		}
 		idxs := append(append([]int{}, byNumber[pr.ReturnNumber]...), byID[pr.ID]...)
 		for _, i := range idxs {

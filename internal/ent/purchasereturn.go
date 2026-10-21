@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -40,6 +41,14 @@ type PurchaseReturn struct {
 	ReturnAmountDue float64 `json:"return_amount_due,omitempty"`
 	// PaymentStatus holds the value of the "payment_status" field.
 	PaymentStatus purchasereturn.PaymentStatus `json:"payment_status,omitempty"`
+	// Where the goods go. supplier = classic return to the supplier (credited by treasury). service = sent to a repair provider, service or care centre and expected back; no credit note, no eTIMS movement
+	Destination purchasereturn.Destination `json:"destination,omitempty"`
+	// Repair lifecycle of a destination=service return. Nil for supplier returns and for a service return not yet approved. out = at the provider, partial = some units back, returned = all back, written_off = nothing more is coming back
+	ServiceStatus *purchasereturn.ServiceStatus `json:"service_status,omitempty"`
+	// Calendar day (00:00 UTC) the provider is expected to return the goods; drives the overdue figure
+	ExpectedBackDate *time.Time `json:"expected_back_date,omitempty"`
+	// Service returns: service_provider, service_contact, fault, receive notes. Free text lives here to avoid schema churn
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// DateReturned holds the value of the "date_returned" field.
 	DateReturned time.Time `json:"date_returned,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -75,11 +84,13 @@ func (*PurchaseReturn) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case purchasereturn.FieldPurchaseOrderID, purchasereturn.FieldGoodsReceiptID, purchasereturn.FieldSupplierID, purchasereturn.FieldWarehouseID, purchasereturn.FieldAddedBy:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case purchasereturn.FieldMetadata:
+			values[i] = new([]byte)
 		case purchasereturn.FieldReturnAmount, purchasereturn.FieldReturnAmountDue:
 			values[i] = new(sql.NullFloat64)
-		case purchasereturn.FieldReturnNumber, purchasereturn.FieldReason, purchasereturn.FieldPaymentStatus:
+		case purchasereturn.FieldReturnNumber, purchasereturn.FieldReason, purchasereturn.FieldPaymentStatus, purchasereturn.FieldDestination, purchasereturn.FieldServiceStatus:
 			values[i] = new(sql.NullString)
-		case purchasereturn.FieldDateReturned, purchasereturn.FieldUpdatedAt:
+		case purchasereturn.FieldExpectedBackDate, purchasereturn.FieldDateReturned, purchasereturn.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case purchasereturn.FieldID, purchasereturn.FieldTenantID:
 			values[i] = new(uuid.UUID)
@@ -174,6 +185,34 @@ func (_m *PurchaseReturn) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field payment_status", values[i])
 			} else if value.Valid {
 				_m.PaymentStatus = purchasereturn.PaymentStatus(value.String)
+			}
+		case purchasereturn.FieldDestination:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field destination", values[i])
+			} else if value.Valid {
+				_m.Destination = purchasereturn.Destination(value.String)
+			}
+		case purchasereturn.FieldServiceStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field service_status", values[i])
+			} else if value.Valid {
+				_m.ServiceStatus = new(purchasereturn.ServiceStatus)
+				*_m.ServiceStatus = purchasereturn.ServiceStatus(value.String)
+			}
+		case purchasereturn.FieldExpectedBackDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expected_back_date", values[i])
+			} else if value.Valid {
+				_m.ExpectedBackDate = new(time.Time)
+				*_m.ExpectedBackDate = value.Time
+			}
+		case purchasereturn.FieldMetadata:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field metadata", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Metadata); err != nil {
+					return fmt.Errorf("unmarshal field metadata: %w", err)
+				}
 			}
 		case purchasereturn.FieldDateReturned:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -270,6 +309,22 @@ func (_m *PurchaseReturn) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("payment_status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PaymentStatus))
+	builder.WriteString(", ")
+	builder.WriteString("destination=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Destination))
+	builder.WriteString(", ")
+	if v := _m.ServiceStatus; v != nil {
+		builder.WriteString("service_status=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ExpectedBackDate; v != nil {
+		builder.WriteString("expected_back_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("metadata=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
 	builder.WriteString(", ")
 	builder.WriteString("date_returned=")
 	builder.WriteString(_m.DateReturned.Format(time.ANSIC))

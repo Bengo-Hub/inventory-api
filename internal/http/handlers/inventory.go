@@ -1646,6 +1646,10 @@ func (h *InventoryHandler) AdjustStock(w http.ResponseWriter, r *http.Request) {
 	if req.Reason == "" {
 		req.Reason = "adjustment"
 	}
+	if rerr := repairReasonRejection(req.Reason); rerr != nil {
+		writeError(w, rerr.status, rerr.code, rerr.msg)
+		return
+	}
 	if _, err := stock.ResolveAdjustmentDate(req.AdjustmentDate, time.Now()); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_ADJUSTMENT_DATE", err.Error())
 		return
@@ -1740,6 +1744,10 @@ func (h *InventoryHandler) BulkAdjustStock(w http.ResponseWriter, r *http.Reques
 	}
 	if req.Reason == "" {
 		writeError(w, http.StatusBadRequest, "MISSING_REASON", "reason is required")
+		return
+	}
+	if rerr := repairReasonRejection(req.Reason); rerr != nil {
+		writeError(w, rerr.status, rerr.code, rerr.msg)
 		return
 	}
 	var whID uuid.UUID
@@ -2263,6 +2271,10 @@ func (h *InventoryHandler) CreateAdjustment(w http.ResponseWriter, r *http.Reque
 	}
 	if req.Reason == "" {
 		req.Reason = "other"
+	}
+	if rerr := repairReasonRejection(req.Reason); rerr != nil {
+		writeError(w, rerr.status, rerr.code, rerr.msg)
+		return
 	}
 	if _, err := stock.ResolveAdjustmentDate(req.AdjustmentDate, time.Now()); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_ADJUSTMENT_DATE", err.Error())

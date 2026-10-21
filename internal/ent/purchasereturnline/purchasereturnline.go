@@ -27,6 +27,10 @@ const (
 	FieldQuantity = "quantity"
 	// FieldSubTotal holds the string denoting the sub_total field in the database.
 	FieldSubTotal = "sub_total"
+	// FieldReceivedBackQty holds the string denoting the received_back_qty field in the database.
+	FieldReceivedBackQty = "received_back_qty"
+	// FieldWrittenOffQty holds the string denoting the written_off_qty field in the database.
+	FieldWrittenOffQty = "written_off_qty"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgePurchaseReturn holds the string denoting the purchase_return edge name in mutations.
@@ -51,6 +55,8 @@ var Columns = []string{
 	FieldLotID,
 	FieldQuantity,
 	FieldSubTotal,
+	FieldReceivedBackQty,
+	FieldWrittenOffQty,
 	FieldCreatedAt,
 }
 
@@ -69,6 +75,10 @@ var (
 	DefaultQuantity float64
 	// DefaultSubTotal holds the default value on creation for the "sub_total" field.
 	DefaultSubTotal float64
+	// DefaultReceivedBackQty holds the default value on creation for the "received_back_qty" field.
+	DefaultReceivedBackQty float64
+	// DefaultWrittenOffQty holds the default value on creation for the "written_off_qty" field.
+	DefaultWrittenOffQty float64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -111,6 +121,16 @@ func ByQuantity(opts ...sql.OrderTermOption) OrderOption {
 // BySubTotal orders the results by the sub_total field.
 func BySubTotal(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubTotal, opts...).ToFunc()
+}
+
+// ByReceivedBackQty orders the results by the received_back_qty field.
+func ByReceivedBackQty(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReceivedBackQty, opts...).ToFunc()
+}
+
+// ByWrittenOffQty orders the results by the written_off_qty field.
+func ByWrittenOffQty(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWrittenOffQty, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

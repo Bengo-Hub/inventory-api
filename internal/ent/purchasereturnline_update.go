@@ -133,6 +133,48 @@ func (_u *PurchaseReturnLineUpdate) AddSubTotal(v float64) *PurchaseReturnLineUp
 	return _u
 }
 
+// SetReceivedBackQty sets the "received_back_qty" field.
+func (_u *PurchaseReturnLineUpdate) SetReceivedBackQty(v float64) *PurchaseReturnLineUpdate {
+	_u.mutation.ResetReceivedBackQty()
+	_u.mutation.SetReceivedBackQty(v)
+	return _u
+}
+
+// SetNillableReceivedBackQty sets the "received_back_qty" field if the given value is not nil.
+func (_u *PurchaseReturnLineUpdate) SetNillableReceivedBackQty(v *float64) *PurchaseReturnLineUpdate {
+	if v != nil {
+		_u.SetReceivedBackQty(*v)
+	}
+	return _u
+}
+
+// AddReceivedBackQty adds value to the "received_back_qty" field.
+func (_u *PurchaseReturnLineUpdate) AddReceivedBackQty(v float64) *PurchaseReturnLineUpdate {
+	_u.mutation.AddReceivedBackQty(v)
+	return _u
+}
+
+// SetWrittenOffQty sets the "written_off_qty" field.
+func (_u *PurchaseReturnLineUpdate) SetWrittenOffQty(v float64) *PurchaseReturnLineUpdate {
+	_u.mutation.ResetWrittenOffQty()
+	_u.mutation.SetWrittenOffQty(v)
+	return _u
+}
+
+// SetNillableWrittenOffQty sets the "written_off_qty" field if the given value is not nil.
+func (_u *PurchaseReturnLineUpdate) SetNillableWrittenOffQty(v *float64) *PurchaseReturnLineUpdate {
+	if v != nil {
+		_u.SetWrittenOffQty(*v)
+	}
+	return _u
+}
+
+// AddWrittenOffQty adds value to the "written_off_qty" field.
+func (_u *PurchaseReturnLineUpdate) AddWrittenOffQty(v float64) *PurchaseReturnLineUpdate {
+	_u.mutation.AddWrittenOffQty(v)
+	return _u
+}
+
 // SetPurchaseReturn sets the "purchase_return" edge to the PurchaseReturn entity.
 func (_u *PurchaseReturnLineUpdate) SetPurchaseReturn(v *PurchaseReturn) *PurchaseReturnLineUpdate {
 	return _u.SetPurchaseReturnID(v.ID)
@@ -219,6 +261,18 @@ func (_u *PurchaseReturnLineUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if value, ok := _u.mutation.AddedSubTotal(); ok {
 		_spec.AddField(purchasereturnline.FieldSubTotal, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ReceivedBackQty(); ok {
+		_spec.SetField(purchasereturnline.FieldReceivedBackQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedReceivedBackQty(); ok {
+		_spec.AddField(purchasereturnline.FieldReceivedBackQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.WrittenOffQty(); ok {
+		_spec.SetField(purchasereturnline.FieldWrittenOffQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWrittenOffQty(); ok {
+		_spec.AddField(purchasereturnline.FieldWrittenOffQty, field.TypeFloat64, value)
 	}
 	if _u.mutation.PurchaseReturnCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -373,6 +427,48 @@ func (_u *PurchaseReturnLineUpdateOne) AddSubTotal(v float64) *PurchaseReturnLin
 	return _u
 }
 
+// SetReceivedBackQty sets the "received_back_qty" field.
+func (_u *PurchaseReturnLineUpdateOne) SetReceivedBackQty(v float64) *PurchaseReturnLineUpdateOne {
+	_u.mutation.ResetReceivedBackQty()
+	_u.mutation.SetReceivedBackQty(v)
+	return _u
+}
+
+// SetNillableReceivedBackQty sets the "received_back_qty" field if the given value is not nil.
+func (_u *PurchaseReturnLineUpdateOne) SetNillableReceivedBackQty(v *float64) *PurchaseReturnLineUpdateOne {
+	if v != nil {
+		_u.SetReceivedBackQty(*v)
+	}
+	return _u
+}
+
+// AddReceivedBackQty adds value to the "received_back_qty" field.
+func (_u *PurchaseReturnLineUpdateOne) AddReceivedBackQty(v float64) *PurchaseReturnLineUpdateOne {
+	_u.mutation.AddReceivedBackQty(v)
+	return _u
+}
+
+// SetWrittenOffQty sets the "written_off_qty" field.
+func (_u *PurchaseReturnLineUpdateOne) SetWrittenOffQty(v float64) *PurchaseReturnLineUpdateOne {
+	_u.mutation.ResetWrittenOffQty()
+	_u.mutation.SetWrittenOffQty(v)
+	return _u
+}
+
+// SetNillableWrittenOffQty sets the "written_off_qty" field if the given value is not nil.
+func (_u *PurchaseReturnLineUpdateOne) SetNillableWrittenOffQty(v *float64) *PurchaseReturnLineUpdateOne {
+	if v != nil {
+		_u.SetWrittenOffQty(*v)
+	}
+	return _u
+}
+
+// AddWrittenOffQty adds value to the "written_off_qty" field.
+func (_u *PurchaseReturnLineUpdateOne) AddWrittenOffQty(v float64) *PurchaseReturnLineUpdateOne {
+	_u.mutation.AddWrittenOffQty(v)
+	return _u
+}
+
 // SetPurchaseReturn sets the "purchase_return" edge to the PurchaseReturn entity.
 func (_u *PurchaseReturnLineUpdateOne) SetPurchaseReturn(v *PurchaseReturn) *PurchaseReturnLineUpdateOne {
 	return _u.SetPurchaseReturnID(v.ID)
@@ -489,6 +585,18 @@ func (_u *PurchaseReturnLineUpdateOne) sqlSave(ctx context.Context) (_node *Purc
 	}
 	if value, ok := _u.mutation.AddedSubTotal(); ok {
 		_spec.AddField(purchasereturnline.FieldSubTotal, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ReceivedBackQty(); ok {
+		_spec.SetField(purchasereturnline.FieldReceivedBackQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedReceivedBackQty(); ok {
+		_spec.AddField(purchasereturnline.FieldReceivedBackQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.WrittenOffQty(); ok {
+		_spec.SetField(purchasereturnline.FieldWrittenOffQty, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWrittenOffQty(); ok {
+		_spec.AddField(purchasereturnline.FieldWrittenOffQty, field.TypeFloat64, value)
 	}
 	if _u.mutation.PurchaseReturnCleared() {
 		edge := &sqlgraph.EdgeSpec{

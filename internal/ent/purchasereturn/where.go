@@ -106,6 +106,11 @@ func ReturnAmountDue(v float64) predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldEQ(FieldReturnAmountDue, v))
 }
 
+// ExpectedBackDate applies equality check predicate on the "expected_back_date" field. It's identical to ExpectedBackDateEQ.
+func ExpectedBackDate(v time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldExpectedBackDate, v))
+}
+
 // DateReturned applies equality check predicate on the "date_returned" field. It's identical to DateReturnedEQ.
 func DateReturned(v time.Time) predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldEQ(FieldDateReturned, v))
@@ -654,6 +659,116 @@ func PaymentStatusIn(vs ...PaymentStatus) predicate.PurchaseReturn {
 // PaymentStatusNotIn applies the NotIn predicate on the "payment_status" field.
 func PaymentStatusNotIn(vs ...PaymentStatus) predicate.PurchaseReturn {
 	return predicate.PurchaseReturn(sql.FieldNotIn(FieldPaymentStatus, vs...))
+}
+
+// DestinationEQ applies the EQ predicate on the "destination" field.
+func DestinationEQ(v Destination) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldDestination, v))
+}
+
+// DestinationNEQ applies the NEQ predicate on the "destination" field.
+func DestinationNEQ(v Destination) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNEQ(FieldDestination, v))
+}
+
+// DestinationIn applies the In predicate on the "destination" field.
+func DestinationIn(vs ...Destination) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIn(FieldDestination, vs...))
+}
+
+// DestinationNotIn applies the NotIn predicate on the "destination" field.
+func DestinationNotIn(vs ...Destination) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotIn(FieldDestination, vs...))
+}
+
+// ServiceStatusEQ applies the EQ predicate on the "service_status" field.
+func ServiceStatusEQ(v ServiceStatus) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldServiceStatus, v))
+}
+
+// ServiceStatusNEQ applies the NEQ predicate on the "service_status" field.
+func ServiceStatusNEQ(v ServiceStatus) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNEQ(FieldServiceStatus, v))
+}
+
+// ServiceStatusIn applies the In predicate on the "service_status" field.
+func ServiceStatusIn(vs ...ServiceStatus) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIn(FieldServiceStatus, vs...))
+}
+
+// ServiceStatusNotIn applies the NotIn predicate on the "service_status" field.
+func ServiceStatusNotIn(vs ...ServiceStatus) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotIn(FieldServiceStatus, vs...))
+}
+
+// ServiceStatusIsNil applies the IsNil predicate on the "service_status" field.
+func ServiceStatusIsNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIsNull(FieldServiceStatus))
+}
+
+// ServiceStatusNotNil applies the NotNil predicate on the "service_status" field.
+func ServiceStatusNotNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotNull(FieldServiceStatus))
+}
+
+// ExpectedBackDateEQ applies the EQ predicate on the "expected_back_date" field.
+func ExpectedBackDateEQ(v time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldEQ(FieldExpectedBackDate, v))
+}
+
+// ExpectedBackDateNEQ applies the NEQ predicate on the "expected_back_date" field.
+func ExpectedBackDateNEQ(v time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNEQ(FieldExpectedBackDate, v))
+}
+
+// ExpectedBackDateIn applies the In predicate on the "expected_back_date" field.
+func ExpectedBackDateIn(vs ...time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIn(FieldExpectedBackDate, vs...))
+}
+
+// ExpectedBackDateNotIn applies the NotIn predicate on the "expected_back_date" field.
+func ExpectedBackDateNotIn(vs ...time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotIn(FieldExpectedBackDate, vs...))
+}
+
+// ExpectedBackDateGT applies the GT predicate on the "expected_back_date" field.
+func ExpectedBackDateGT(v time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldGT(FieldExpectedBackDate, v))
+}
+
+// ExpectedBackDateGTE applies the GTE predicate on the "expected_back_date" field.
+func ExpectedBackDateGTE(v time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldGTE(FieldExpectedBackDate, v))
+}
+
+// ExpectedBackDateLT applies the LT predicate on the "expected_back_date" field.
+func ExpectedBackDateLT(v time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldLT(FieldExpectedBackDate, v))
+}
+
+// ExpectedBackDateLTE applies the LTE predicate on the "expected_back_date" field.
+func ExpectedBackDateLTE(v time.Time) predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldLTE(FieldExpectedBackDate, v))
+}
+
+// ExpectedBackDateIsNil applies the IsNil predicate on the "expected_back_date" field.
+func ExpectedBackDateIsNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIsNull(FieldExpectedBackDate))
+}
+
+// ExpectedBackDateNotNil applies the NotNil predicate on the "expected_back_date" field.
+func ExpectedBackDateNotNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotNull(FieldExpectedBackDate))
+}
+
+// MetadataIsNil applies the IsNil predicate on the "metadata" field.
+func MetadataIsNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldIsNull(FieldMetadata))
+}
+
+// MetadataNotNil applies the NotNil predicate on the "metadata" field.
+func MetadataNotNil() predicate.PurchaseReturn {
+	return predicate.PurchaseReturn(sql.FieldNotNull(FieldMetadata))
 }
 
 // DateReturnedEQ applies the EQ predicate on the "date_returned" field.

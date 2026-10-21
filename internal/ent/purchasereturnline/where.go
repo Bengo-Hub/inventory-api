@@ -86,6 +86,16 @@ func SubTotal(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldSubTotal, v))
 }
 
+// ReceivedBackQty applies equality check predicate on the "received_back_qty" field. It's identical to ReceivedBackQtyEQ.
+func ReceivedBackQty(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldReceivedBackQty, v))
+}
+
+// WrittenOffQty applies equality check predicate on the "written_off_qty" field. It's identical to WrittenOffQtyEQ.
+func WrittenOffQty(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldWrittenOffQty, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldCreatedAt, v))
@@ -319,6 +329,86 @@ func SubTotalLT(v float64) predicate.PurchaseReturnLine {
 // SubTotalLTE applies the LTE predicate on the "sub_total" field.
 func SubTotalLTE(v float64) predicate.PurchaseReturnLine {
 	return predicate.PurchaseReturnLine(sql.FieldLTE(FieldSubTotal, v))
+}
+
+// ReceivedBackQtyEQ applies the EQ predicate on the "received_back_qty" field.
+func ReceivedBackQtyEQ(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldReceivedBackQty, v))
+}
+
+// ReceivedBackQtyNEQ applies the NEQ predicate on the "received_back_qty" field.
+func ReceivedBackQtyNEQ(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldNEQ(FieldReceivedBackQty, v))
+}
+
+// ReceivedBackQtyIn applies the In predicate on the "received_back_qty" field.
+func ReceivedBackQtyIn(vs ...float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldIn(FieldReceivedBackQty, vs...))
+}
+
+// ReceivedBackQtyNotIn applies the NotIn predicate on the "received_back_qty" field.
+func ReceivedBackQtyNotIn(vs ...float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldNotIn(FieldReceivedBackQty, vs...))
+}
+
+// ReceivedBackQtyGT applies the GT predicate on the "received_back_qty" field.
+func ReceivedBackQtyGT(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldGT(FieldReceivedBackQty, v))
+}
+
+// ReceivedBackQtyGTE applies the GTE predicate on the "received_back_qty" field.
+func ReceivedBackQtyGTE(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldGTE(FieldReceivedBackQty, v))
+}
+
+// ReceivedBackQtyLT applies the LT predicate on the "received_back_qty" field.
+func ReceivedBackQtyLT(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldLT(FieldReceivedBackQty, v))
+}
+
+// ReceivedBackQtyLTE applies the LTE predicate on the "received_back_qty" field.
+func ReceivedBackQtyLTE(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldLTE(FieldReceivedBackQty, v))
+}
+
+// WrittenOffQtyEQ applies the EQ predicate on the "written_off_qty" field.
+func WrittenOffQtyEQ(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldEQ(FieldWrittenOffQty, v))
+}
+
+// WrittenOffQtyNEQ applies the NEQ predicate on the "written_off_qty" field.
+func WrittenOffQtyNEQ(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldNEQ(FieldWrittenOffQty, v))
+}
+
+// WrittenOffQtyIn applies the In predicate on the "written_off_qty" field.
+func WrittenOffQtyIn(vs ...float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldIn(FieldWrittenOffQty, vs...))
+}
+
+// WrittenOffQtyNotIn applies the NotIn predicate on the "written_off_qty" field.
+func WrittenOffQtyNotIn(vs ...float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldNotIn(FieldWrittenOffQty, vs...))
+}
+
+// WrittenOffQtyGT applies the GT predicate on the "written_off_qty" field.
+func WrittenOffQtyGT(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldGT(FieldWrittenOffQty, v))
+}
+
+// WrittenOffQtyGTE applies the GTE predicate on the "written_off_qty" field.
+func WrittenOffQtyGTE(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldGTE(FieldWrittenOffQty, v))
+}
+
+// WrittenOffQtyLT applies the LT predicate on the "written_off_qty" field.
+func WrittenOffQtyLT(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldLT(FieldWrittenOffQty, v))
+}
+
+// WrittenOffQtyLTE applies the LTE predicate on the "written_off_qty" field.
+func WrittenOffQtyLTE(v float64) predicate.PurchaseReturnLine {
+	return predicate.PurchaseReturnLine(sql.FieldLTE(FieldWrittenOffQty, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

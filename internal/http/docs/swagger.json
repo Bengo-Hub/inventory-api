@@ -2803,7 +2803,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Comma-separated movement types to include (opening_stock,purchase,sale,sell_return,purchase_return,transfer_in,transfer_out,adjustment)",
+                        "description": "Comma-separated movement types to include (opening_stock,purchase,sale,sell_return,purchase_return,service_out,service_in,transfer_in,transfer_out,adjustment)",
                         "name": "type",
                         "in": "query"
                     }
@@ -4452,6 +4452,60 @@
                 }
             }
         },
+        "/{tenant}/inventory/purchase-returns/service-summary": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Open repair orders, units and cost value still away, overdue orders and the busiest providers. Honours outlet_id / warehouse_id and ?today=YYYY-MM-DD (the caller's calendar day, for overdue).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Items currently out for repair",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by outlet (any of its warehouses)",
+                        "name": "outlet_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by the warehouse the goods left from",
+                        "name": "warehouse_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Caller's local day, YYYY-MM-DD",
+                        "name": "today",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.serviceSummary"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/purchase-returns/{returnID}": {
             "get": {
                 "security": [
@@ -4585,7 +4639,7 @@
                 "tags": [
                     "Procurement"
                 ],
-                "summary": "Generate a branded purchase return (debit note) PDF",
+                "summary": "Generate a branded purchase return (debit note) or service order PDF",
                 "parameters": [
                     {
                         "type": "string",
@@ -4613,6 +4667,88 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/purchase-returns/{returnID}/receive": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "description": "Restocks the returned units (and restores their cost layer) and writes off the units that could not be repaired. Only for destination=service orders that are out for repair.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Receive repaired goods back from a service provider",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Purchase return ID",
+                        "name": "returnID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Quantities received back per line",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.serviceReceivePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.purchaseReturnDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -7323,6 +7459,16 @@
                 "date_returned_day": {
                     "type": "string"
                 },
+                "destination": {
+                    "description": "Destination is \"supplier\" or \"service\" (sent for repair). The service fields below are only\nset on a service order; ServiceProvider/Contact/Fault come from the order's metadata.",
+                    "type": "string"
+                },
+                "expected_back_date": {
+                    "type": "string"
+                },
+                "fault": {
+                    "type": "string"
+                },
                 "goods_receipt_id": {
                     "type": "string"
                 },
@@ -7344,6 +7490,9 @@
                 "outlet_id": {
                     "type": "string"
                 },
+                "outstanding_quantity": {
+                    "type": "number"
+                },
                 "payment_status": {
                     "type": "string"
                 },
@@ -7357,6 +7506,15 @@
                     "type": "number"
                 },
                 "return_number": {
+                    "type": "string"
+                },
+                "service_contact": {
+                    "type": "string"
+                },
+                "service_provider": {
+                    "type": "string"
+                },
+                "service_status": {
                     "type": "string"
                 },
                 "stock_warnings": {
@@ -7399,7 +7557,14 @@
                 "lot_id": {
                     "type": "string"
                 },
+                "outstanding_qty": {
+                    "type": "number"
+                },
                 "quantity": {
+                    "type": "number"
+                },
+                "received_back_qty": {
+                    "description": "Repair orders only: units already back in stock, units written off as unrepairable, and\nunits still at the provider.",
                     "type": "number"
                 },
                 "sku": {
@@ -7409,6 +7574,9 @@
                     "type": "number"
                 },
                 "unit_cost": {
+                    "type": "number"
+                },
+                "written_off_qty": {
                     "type": "number"
                 }
             }
@@ -7438,6 +7606,16 @@
                     "description": "DateReturned accepts \"YYYY-MM-DD\" (stored as that calendar day) or RFC3339; when omitted\nthe return defaults to now.",
                     "type": "string"
                 },
+                "destination": {
+                    "description": "Destination is \"supplier\" (default: goods go back to the supplier and are credited) or\n\"service\" (goods go to a repair provider, service or care centre and are expected back).",
+                    "type": "string"
+                },
+                "expected_back_date": {
+                    "type": "string"
+                },
+                "fault": {
+                    "type": "string"
+                },
                 "lines": {
                     "type": "array",
                     "items": {
@@ -7448,6 +7626,13 @@
                     "type": "string"
                 },
                 "reason": {
+                    "type": "string"
+                },
+                "service_contact": {
+                    "type": "string"
+                },
+                "service_provider": {
+                    "description": "Service-only fields. The provider is free text (a technician, a care centre); it lives in\nthe return's metadata, not on the supplier ledger, so nothing reaches accounts payable.",
                     "type": "string"
                 },
                 "supplier_id": {
@@ -7745,6 +7930,85 @@
                 },
                 "start_date": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.serviceProviderStat": {
+            "type": "object",
+            "properties": {
+                "orders": {
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "units": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.serviceReceiveLine": {
+            "type": "object",
+            "properties": {
+                "line_id": {
+                    "type": "string"
+                },
+                "returned_qty": {
+                    "type": "number"
+                },
+                "written_off_qty": {
+                    "type": "number"
+                }
+            }
+        },
+        "handlers.serviceReceivePayload": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "Date backdates the movement (\"YYYY-MM-DD\"); blank means now. Never a future date.",
+                    "type": "string"
+                },
+                "lines": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.serviceReceiveLine"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "warehouse_id": {
+                    "description": "WarehouseID is where the repaired goods are put back; blank means the location they left from.",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.serviceSummary": {
+            "type": "object",
+            "properties": {
+                "cost_outstanding": {
+                    "type": "number"
+                },
+                "open_orders": {
+                    "type": "integer"
+                },
+                "overdue_orders": {
+                    "type": "integer"
+                },
+                "overdue_units": {
+                    "type": "number"
+                },
+                "providers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.serviceProviderStat"
+                    }
+                },
+                "truncated": {
+                    "type": "boolean"
+                },
+                "units_outstanding": {
+                    "type": "number"
                 }
             }
         },
@@ -8764,6 +9028,13 @@
                     "type": "number"
                 },
                 "opening_stock": {
+                    "type": "number"
+                },
+                "returned_from_repair": {
+                    "type": "number"
+                },
+                "sent_for_repair": {
+                    "description": "Units sent to a repair provider and units received back repaired. Neither is an adjustment\nor a supplier return; the difference is what is still out for repair.",
                     "type": "number"
                 },
                 "total_adjusted": {

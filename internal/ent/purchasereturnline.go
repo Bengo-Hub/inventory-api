@@ -29,8 +29,12 @@ type PurchaseReturnLine struct {
 	LotID *uuid.UUID `json:"lot_id,omitempty"`
 	// Quantity returned in the item's stock unit; fractional for weighed/measured items, same as GoodsReceiptLine quantities
 	Quantity float64 `json:"quantity,omitempty"`
-	// SubTotal holds the value of the "sub_total" field.
+	// Supplier returns: the credit value. Service returns: cost value snapshot at send (informational, never a credit)
 	SubTotal float64 `json:"sub_total,omitempty"`
+	// Service returns: units already received back from repair and restocked
+	ReceivedBackQty float64 `json:"received_back_qty,omitempty"`
+	// Service returns: units the provider could not repair and that will not come back
+	WrittenOffQty float64 `json:"written_off_qty,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -66,7 +70,7 @@ func (*PurchaseReturnLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case purchasereturnline.FieldLotID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case purchasereturnline.FieldQuantity, purchasereturnline.FieldSubTotal:
+		case purchasereturnline.FieldQuantity, purchasereturnline.FieldSubTotal, purchasereturnline.FieldReceivedBackQty, purchasereturnline.FieldWrittenOffQty:
 			values[i] = new(sql.NullFloat64)
 		case purchasereturnline.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -129,6 +133,18 @@ func (_m *PurchaseReturnLine) assignValues(columns []string, values []any) error
 				return fmt.Errorf("unexpected type %T for field sub_total", values[i])
 			} else if value.Valid {
 				_m.SubTotal = value.Float64
+			}
+		case purchasereturnline.FieldReceivedBackQty:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field received_back_qty", values[i])
+			} else if value.Valid {
+				_m.ReceivedBackQty = value.Float64
+			}
+		case purchasereturnline.FieldWrittenOffQty:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field written_off_qty", values[i])
+			} else if value.Valid {
+				_m.WrittenOffQty = value.Float64
 			}
 		case purchasereturnline.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -196,6 +212,12 @@ func (_m *PurchaseReturnLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sub_total=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SubTotal))
+	builder.WriteString(", ")
+	builder.WriteString("received_back_qty=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReceivedBackQty))
+	builder.WriteString(", ")
+	builder.WriteString("written_off_qty=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WrittenOffQty))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

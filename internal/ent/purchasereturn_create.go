@@ -171,6 +171,54 @@ func (_c *PurchaseReturnCreate) SetNillablePaymentStatus(v *purchasereturn.Payme
 	return _c
 }
 
+// SetDestination sets the "destination" field.
+func (_c *PurchaseReturnCreate) SetDestination(v purchasereturn.Destination) *PurchaseReturnCreate {
+	_c.mutation.SetDestination(v)
+	return _c
+}
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (_c *PurchaseReturnCreate) SetNillableDestination(v *purchasereturn.Destination) *PurchaseReturnCreate {
+	if v != nil {
+		_c.SetDestination(*v)
+	}
+	return _c
+}
+
+// SetServiceStatus sets the "service_status" field.
+func (_c *PurchaseReturnCreate) SetServiceStatus(v purchasereturn.ServiceStatus) *PurchaseReturnCreate {
+	_c.mutation.SetServiceStatus(v)
+	return _c
+}
+
+// SetNillableServiceStatus sets the "service_status" field if the given value is not nil.
+func (_c *PurchaseReturnCreate) SetNillableServiceStatus(v *purchasereturn.ServiceStatus) *PurchaseReturnCreate {
+	if v != nil {
+		_c.SetServiceStatus(*v)
+	}
+	return _c
+}
+
+// SetExpectedBackDate sets the "expected_back_date" field.
+func (_c *PurchaseReturnCreate) SetExpectedBackDate(v time.Time) *PurchaseReturnCreate {
+	_c.mutation.SetExpectedBackDate(v)
+	return _c
+}
+
+// SetNillableExpectedBackDate sets the "expected_back_date" field if the given value is not nil.
+func (_c *PurchaseReturnCreate) SetNillableExpectedBackDate(v *time.Time) *PurchaseReturnCreate {
+	if v != nil {
+		_c.SetExpectedBackDate(*v)
+	}
+	return _c
+}
+
+// SetMetadata sets the "metadata" field.
+func (_c *PurchaseReturnCreate) SetMetadata(v map[string]interface{}) *PurchaseReturnCreate {
+	_c.mutation.SetMetadata(v)
+	return _c
+}
+
 // SetDateReturned sets the "date_returned" field.
 func (_c *PurchaseReturnCreate) SetDateReturned(v time.Time) *PurchaseReturnCreate {
 	_c.mutation.SetDateReturned(v)
@@ -275,6 +323,10 @@ func (_c *PurchaseReturnCreate) defaults() {
 		v := purchasereturn.DefaultPaymentStatus
 		_c.mutation.SetPaymentStatus(v)
 	}
+	if _, ok := _c.mutation.Destination(); !ok {
+		v := purchasereturn.DefaultDestination
+		_c.mutation.SetDestination(v)
+	}
 	if _, ok := _c.mutation.DateReturned(); !ok {
 		v := purchasereturn.DefaultDateReturned()
 		_c.mutation.SetDateReturned(v)
@@ -306,6 +358,19 @@ func (_c *PurchaseReturnCreate) check() error {
 	if v, ok := _c.mutation.PaymentStatus(); ok {
 		if err := purchasereturn.PaymentStatusValidator(v); err != nil {
 			return &ValidationError{Name: "payment_status", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.payment_status": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Destination(); !ok {
+		return &ValidationError{Name: "destination", err: errors.New(`ent: missing required field "PurchaseReturn.destination"`)}
+	}
+	if v, ok := _c.mutation.Destination(); ok {
+		if err := purchasereturn.DestinationValidator(v); err != nil {
+			return &ValidationError{Name: "destination", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.destination": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ServiceStatus(); ok {
+		if err := purchasereturn.ServiceStatusValidator(v); err != nil {
+			return &ValidationError{Name: "service_status", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.service_status": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.DateReturned(); !ok {
@@ -393,6 +458,22 @@ func (_c *PurchaseReturnCreate) createSpec() (*PurchaseReturn, *sqlgraph.CreateS
 	if value, ok := _c.mutation.PaymentStatus(); ok {
 		_spec.SetField(purchasereturn.FieldPaymentStatus, field.TypeEnum, value)
 		_node.PaymentStatus = value
+	}
+	if value, ok := _c.mutation.Destination(); ok {
+		_spec.SetField(purchasereturn.FieldDestination, field.TypeEnum, value)
+		_node.Destination = value
+	}
+	if value, ok := _c.mutation.ServiceStatus(); ok {
+		_spec.SetField(purchasereturn.FieldServiceStatus, field.TypeEnum, value)
+		_node.ServiceStatus = &value
+	}
+	if value, ok := _c.mutation.ExpectedBackDate(); ok {
+		_spec.SetField(purchasereturn.FieldExpectedBackDate, field.TypeTime, value)
+		_node.ExpectedBackDate = &value
+	}
+	if value, ok := _c.mutation.Metadata(); ok {
+		_spec.SetField(purchasereturn.FieldMetadata, field.TypeJSON, value)
+		_node.Metadata = value
 	}
 	if value, ok := _c.mutation.DateReturned(); ok {
 		_spec.SetField(purchasereturn.FieldDateReturned, field.TypeTime, value)
@@ -653,6 +734,72 @@ func (u *PurchaseReturnUpsert) SetPaymentStatus(v purchasereturn.PaymentStatus) 
 // UpdatePaymentStatus sets the "payment_status" field to the value that was provided on create.
 func (u *PurchaseReturnUpsert) UpdatePaymentStatus() *PurchaseReturnUpsert {
 	u.SetExcluded(purchasereturn.FieldPaymentStatus)
+	return u
+}
+
+// SetDestination sets the "destination" field.
+func (u *PurchaseReturnUpsert) SetDestination(v purchasereturn.Destination) *PurchaseReturnUpsert {
+	u.Set(purchasereturn.FieldDestination, v)
+	return u
+}
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *PurchaseReturnUpsert) UpdateDestination() *PurchaseReturnUpsert {
+	u.SetExcluded(purchasereturn.FieldDestination)
+	return u
+}
+
+// SetServiceStatus sets the "service_status" field.
+func (u *PurchaseReturnUpsert) SetServiceStatus(v purchasereturn.ServiceStatus) *PurchaseReturnUpsert {
+	u.Set(purchasereturn.FieldServiceStatus, v)
+	return u
+}
+
+// UpdateServiceStatus sets the "service_status" field to the value that was provided on create.
+func (u *PurchaseReturnUpsert) UpdateServiceStatus() *PurchaseReturnUpsert {
+	u.SetExcluded(purchasereturn.FieldServiceStatus)
+	return u
+}
+
+// ClearServiceStatus clears the value of the "service_status" field.
+func (u *PurchaseReturnUpsert) ClearServiceStatus() *PurchaseReturnUpsert {
+	u.SetNull(purchasereturn.FieldServiceStatus)
+	return u
+}
+
+// SetExpectedBackDate sets the "expected_back_date" field.
+func (u *PurchaseReturnUpsert) SetExpectedBackDate(v time.Time) *PurchaseReturnUpsert {
+	u.Set(purchasereturn.FieldExpectedBackDate, v)
+	return u
+}
+
+// UpdateExpectedBackDate sets the "expected_back_date" field to the value that was provided on create.
+func (u *PurchaseReturnUpsert) UpdateExpectedBackDate() *PurchaseReturnUpsert {
+	u.SetExcluded(purchasereturn.FieldExpectedBackDate)
+	return u
+}
+
+// ClearExpectedBackDate clears the value of the "expected_back_date" field.
+func (u *PurchaseReturnUpsert) ClearExpectedBackDate() *PurchaseReturnUpsert {
+	u.SetNull(purchasereturn.FieldExpectedBackDate)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *PurchaseReturnUpsert) SetMetadata(v map[string]interface{}) *PurchaseReturnUpsert {
+	u.Set(purchasereturn.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *PurchaseReturnUpsert) UpdateMetadata() *PurchaseReturnUpsert {
+	u.SetExcluded(purchasereturn.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *PurchaseReturnUpsert) ClearMetadata() *PurchaseReturnUpsert {
+	u.SetNull(purchasereturn.FieldMetadata)
 	return u
 }
 
@@ -933,6 +1080,83 @@ func (u *PurchaseReturnUpsertOne) SetPaymentStatus(v purchasereturn.PaymentStatu
 func (u *PurchaseReturnUpsertOne) UpdatePaymentStatus() *PurchaseReturnUpsertOne {
 	return u.Update(func(s *PurchaseReturnUpsert) {
 		s.UpdatePaymentStatus()
+	})
+}
+
+// SetDestination sets the "destination" field.
+func (u *PurchaseReturnUpsertOne) SetDestination(v purchasereturn.Destination) *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetDestination(v)
+	})
+}
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertOne) UpdateDestination() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateDestination()
+	})
+}
+
+// SetServiceStatus sets the "service_status" field.
+func (u *PurchaseReturnUpsertOne) SetServiceStatus(v purchasereturn.ServiceStatus) *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetServiceStatus(v)
+	})
+}
+
+// UpdateServiceStatus sets the "service_status" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertOne) UpdateServiceStatus() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateServiceStatus()
+	})
+}
+
+// ClearServiceStatus clears the value of the "service_status" field.
+func (u *PurchaseReturnUpsertOne) ClearServiceStatus() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearServiceStatus()
+	})
+}
+
+// SetExpectedBackDate sets the "expected_back_date" field.
+func (u *PurchaseReturnUpsertOne) SetExpectedBackDate(v time.Time) *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetExpectedBackDate(v)
+	})
+}
+
+// UpdateExpectedBackDate sets the "expected_back_date" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertOne) UpdateExpectedBackDate() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateExpectedBackDate()
+	})
+}
+
+// ClearExpectedBackDate clears the value of the "expected_back_date" field.
+func (u *PurchaseReturnUpsertOne) ClearExpectedBackDate() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearExpectedBackDate()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *PurchaseReturnUpsertOne) SetMetadata(v map[string]interface{}) *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertOne) UpdateMetadata() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *PurchaseReturnUpsertOne) ClearMetadata() *PurchaseReturnUpsertOne {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearMetadata()
 	})
 }
 
@@ -1382,6 +1606,83 @@ func (u *PurchaseReturnUpsertBulk) SetPaymentStatus(v purchasereturn.PaymentStat
 func (u *PurchaseReturnUpsertBulk) UpdatePaymentStatus() *PurchaseReturnUpsertBulk {
 	return u.Update(func(s *PurchaseReturnUpsert) {
 		s.UpdatePaymentStatus()
+	})
+}
+
+// SetDestination sets the "destination" field.
+func (u *PurchaseReturnUpsertBulk) SetDestination(v purchasereturn.Destination) *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetDestination(v)
+	})
+}
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertBulk) UpdateDestination() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateDestination()
+	})
+}
+
+// SetServiceStatus sets the "service_status" field.
+func (u *PurchaseReturnUpsertBulk) SetServiceStatus(v purchasereturn.ServiceStatus) *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetServiceStatus(v)
+	})
+}
+
+// UpdateServiceStatus sets the "service_status" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertBulk) UpdateServiceStatus() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateServiceStatus()
+	})
+}
+
+// ClearServiceStatus clears the value of the "service_status" field.
+func (u *PurchaseReturnUpsertBulk) ClearServiceStatus() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearServiceStatus()
+	})
+}
+
+// SetExpectedBackDate sets the "expected_back_date" field.
+func (u *PurchaseReturnUpsertBulk) SetExpectedBackDate(v time.Time) *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetExpectedBackDate(v)
+	})
+}
+
+// UpdateExpectedBackDate sets the "expected_back_date" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertBulk) UpdateExpectedBackDate() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateExpectedBackDate()
+	})
+}
+
+// ClearExpectedBackDate clears the value of the "expected_back_date" field.
+func (u *PurchaseReturnUpsertBulk) ClearExpectedBackDate() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearExpectedBackDate()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *PurchaseReturnUpsertBulk) SetMetadata(v map[string]interface{}) *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *PurchaseReturnUpsertBulk) UpdateMetadata() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *PurchaseReturnUpsertBulk) ClearMetadata() *PurchaseReturnUpsertBulk {
+	return u.Update(func(s *PurchaseReturnUpsert) {
+		s.ClearMetadata()
 	})
 }
 

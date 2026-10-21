@@ -6,6 +6,16 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
+### Added (2026-10-21 - Service / repair destination for purchase returns)
+- **Repair orders:** a purchase return can now have `destination=service`, for in-stock items sent to a technician, service centre or care centre and expected back. The provider is free text in `purchase_returns.metadata`. Approving takes the items out as `service_out`; `POST /inventory/purchase-returns/{id}/receive` puts repaired units back as `service_in` with a restored cost layer and writes off unrepairable units as `damaged`. Statuses: `out`, `partial`, `returned`, `written_off`. No supplier credit note and no eTIMS movement is raised for a repair. Atlas migration `20261021132441_purchase_return_service_destination.sql`.
+- `GET /inventory/purchase-returns/service-summary` (units and cost away, overdue, top providers); list filters `destination`, `service_status`, `overdue`. Stock history shows "Sent for Repair" and "Returned from Repair". Printable Service / Repair Order document.
+- Events `inventory.service_order.created|sent|returned`. treasury-api skips the `service_out` and `service_in` reasons in its eTIMS stock handler.
+
+### Fixed (2026-10-21 - purchase return audit)
+- Approving a purchase return is all or nothing: a failed line reverses the lines already taken out and undoes the approval (409 `STOCK_OUT_FAILED`) instead of leaving a half approved return.
+- `AdjustStock` no longer leaks a database transaction when asked to adjust a SERVICE item.
+- Returns list: outlet and warehouse filter is a subselect (was an unbounded id list) and count errors are reported; PDF reads lots in one query; supplier lookups are tenant scoped; analytics top-items and stock-trends aggregate in SQL and leave repair movements out.
+
 ### Fixed (2026-09-05 — Add Product duplicate-SKU crash)
 - **`GenerateSKU` was count-based, not max-based:** the next auto-generated SKU sequence number was derived from `COUNT(items with this prefix)`, which silently collides with an existing item's SKU the moment any item in the sequence has ever been hard-deleted (count drops below the true max in use). Found live on boi-enterprises' Add Product, surfacing a raw `ent: constraint failed: ERROR: duplicate key value violates unique constraint "item_tenant_id_sku"` straight to the UI. Now derived from the **max existing numeric suffix** instead.
 - **`CreateItem` now retries on a SKU collision** (bounded, 5 attempts) when the SKU was auto-generated, closing the remaining true-concurrency window (two requests landing on the same next number at once) instead of failing outright.

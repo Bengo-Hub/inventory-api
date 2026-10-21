@@ -85,6 +85,34 @@ func (_c *PurchaseReturnLineCreate) SetNillableSubTotal(v *float64) *PurchaseRet
 	return _c
 }
 
+// SetReceivedBackQty sets the "received_back_qty" field.
+func (_c *PurchaseReturnLineCreate) SetReceivedBackQty(v float64) *PurchaseReturnLineCreate {
+	_c.mutation.SetReceivedBackQty(v)
+	return _c
+}
+
+// SetNillableReceivedBackQty sets the "received_back_qty" field if the given value is not nil.
+func (_c *PurchaseReturnLineCreate) SetNillableReceivedBackQty(v *float64) *PurchaseReturnLineCreate {
+	if v != nil {
+		_c.SetReceivedBackQty(*v)
+	}
+	return _c
+}
+
+// SetWrittenOffQty sets the "written_off_qty" field.
+func (_c *PurchaseReturnLineCreate) SetWrittenOffQty(v float64) *PurchaseReturnLineCreate {
+	_c.mutation.SetWrittenOffQty(v)
+	return _c
+}
+
+// SetNillableWrittenOffQty sets the "written_off_qty" field if the given value is not nil.
+func (_c *PurchaseReturnLineCreate) SetNillableWrittenOffQty(v *float64) *PurchaseReturnLineCreate {
+	if v != nil {
+		_c.SetWrittenOffQty(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *PurchaseReturnLineCreate) SetCreatedAt(v time.Time) *PurchaseReturnLineCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -161,6 +189,14 @@ func (_c *PurchaseReturnLineCreate) defaults() {
 		v := purchasereturnline.DefaultSubTotal
 		_c.mutation.SetSubTotal(v)
 	}
+	if _, ok := _c.mutation.ReceivedBackQty(); !ok {
+		v := purchasereturnline.DefaultReceivedBackQty
+		_c.mutation.SetReceivedBackQty(v)
+	}
+	if _, ok := _c.mutation.WrittenOffQty(); !ok {
+		v := purchasereturnline.DefaultWrittenOffQty
+		_c.mutation.SetWrittenOffQty(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := purchasereturnline.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -187,6 +223,12 @@ func (_c *PurchaseReturnLineCreate) check() error {
 	}
 	if _, ok := _c.mutation.SubTotal(); !ok {
 		return &ValidationError{Name: "sub_total", err: errors.New(`ent: missing required field "PurchaseReturnLine.sub_total"`)}
+	}
+	if _, ok := _c.mutation.ReceivedBackQty(); !ok {
+		return &ValidationError{Name: "received_back_qty", err: errors.New(`ent: missing required field "PurchaseReturnLine.received_back_qty"`)}
+	}
+	if _, ok := _c.mutation.WrittenOffQty(); !ok {
+		return &ValidationError{Name: "written_off_qty", err: errors.New(`ent: missing required field "PurchaseReturnLine.written_off_qty"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "PurchaseReturnLine.created_at"`)}
@@ -249,6 +291,14 @@ func (_c *PurchaseReturnLineCreate) createSpec() (*PurchaseReturnLine, *sqlgraph
 	if value, ok := _c.mutation.SubTotal(); ok {
 		_spec.SetField(purchasereturnline.FieldSubTotal, field.TypeFloat64, value)
 		_node.SubTotal = value
+	}
+	if value, ok := _c.mutation.ReceivedBackQty(); ok {
+		_spec.SetField(purchasereturnline.FieldReceivedBackQty, field.TypeFloat64, value)
+		_node.ReceivedBackQty = value
+	}
+	if value, ok := _c.mutation.WrittenOffQty(); ok {
+		_spec.SetField(purchasereturnline.FieldWrittenOffQty, field.TypeFloat64, value)
+		_node.WrittenOffQty = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(purchasereturnline.FieldCreatedAt, field.TypeTime, value)
@@ -413,6 +463,42 @@ func (u *PurchaseReturnLineUpsert) AddSubTotal(v float64) *PurchaseReturnLineUps
 	return u
 }
 
+// SetReceivedBackQty sets the "received_back_qty" field.
+func (u *PurchaseReturnLineUpsert) SetReceivedBackQty(v float64) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldReceivedBackQty, v)
+	return u
+}
+
+// UpdateReceivedBackQty sets the "received_back_qty" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdateReceivedBackQty() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldReceivedBackQty)
+	return u
+}
+
+// AddReceivedBackQty adds v to the "received_back_qty" field.
+func (u *PurchaseReturnLineUpsert) AddReceivedBackQty(v float64) *PurchaseReturnLineUpsert {
+	u.Add(purchasereturnline.FieldReceivedBackQty, v)
+	return u
+}
+
+// SetWrittenOffQty sets the "written_off_qty" field.
+func (u *PurchaseReturnLineUpsert) SetWrittenOffQty(v float64) *PurchaseReturnLineUpsert {
+	u.Set(purchasereturnline.FieldWrittenOffQty, v)
+	return u
+}
+
+// UpdateWrittenOffQty sets the "written_off_qty" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsert) UpdateWrittenOffQty() *PurchaseReturnLineUpsert {
+	u.SetExcluded(purchasereturnline.FieldWrittenOffQty)
+	return u
+}
+
+// AddWrittenOffQty adds v to the "written_off_qty" field.
+func (u *PurchaseReturnLineUpsert) AddWrittenOffQty(v float64) *PurchaseReturnLineUpsert {
+	u.Add(purchasereturnline.FieldWrittenOffQty, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -566,6 +652,48 @@ func (u *PurchaseReturnLineUpsertOne) AddSubTotal(v float64) *PurchaseReturnLine
 func (u *PurchaseReturnLineUpsertOne) UpdateSubTotal() *PurchaseReturnLineUpsertOne {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.UpdateSubTotal()
+	})
+}
+
+// SetReceivedBackQty sets the "received_back_qty" field.
+func (u *PurchaseReturnLineUpsertOne) SetReceivedBackQty(v float64) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetReceivedBackQty(v)
+	})
+}
+
+// AddReceivedBackQty adds v to the "received_back_qty" field.
+func (u *PurchaseReturnLineUpsertOne) AddReceivedBackQty(v float64) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddReceivedBackQty(v)
+	})
+}
+
+// UpdateReceivedBackQty sets the "received_back_qty" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdateReceivedBackQty() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateReceivedBackQty()
+	})
+}
+
+// SetWrittenOffQty sets the "written_off_qty" field.
+func (u *PurchaseReturnLineUpsertOne) SetWrittenOffQty(v float64) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetWrittenOffQty(v)
+	})
+}
+
+// AddWrittenOffQty adds v to the "written_off_qty" field.
+func (u *PurchaseReturnLineUpsertOne) AddWrittenOffQty(v float64) *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddWrittenOffQty(v)
+	})
+}
+
+// UpdateWrittenOffQty sets the "written_off_qty" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertOne) UpdateWrittenOffQty() *PurchaseReturnLineUpsertOne {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateWrittenOffQty()
 	})
 }
 
@@ -889,6 +1017,48 @@ func (u *PurchaseReturnLineUpsertBulk) AddSubTotal(v float64) *PurchaseReturnLin
 func (u *PurchaseReturnLineUpsertBulk) UpdateSubTotal() *PurchaseReturnLineUpsertBulk {
 	return u.Update(func(s *PurchaseReturnLineUpsert) {
 		s.UpdateSubTotal()
+	})
+}
+
+// SetReceivedBackQty sets the "received_back_qty" field.
+func (u *PurchaseReturnLineUpsertBulk) SetReceivedBackQty(v float64) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetReceivedBackQty(v)
+	})
+}
+
+// AddReceivedBackQty adds v to the "received_back_qty" field.
+func (u *PurchaseReturnLineUpsertBulk) AddReceivedBackQty(v float64) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddReceivedBackQty(v)
+	})
+}
+
+// UpdateReceivedBackQty sets the "received_back_qty" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdateReceivedBackQty() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateReceivedBackQty()
+	})
+}
+
+// SetWrittenOffQty sets the "written_off_qty" field.
+func (u *PurchaseReturnLineUpsertBulk) SetWrittenOffQty(v float64) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.SetWrittenOffQty(v)
+	})
+}
+
+// AddWrittenOffQty adds v to the "written_off_qty" field.
+func (u *PurchaseReturnLineUpsertBulk) AddWrittenOffQty(v float64) *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.AddWrittenOffQty(v)
+	})
+}
+
+// UpdateWrittenOffQty sets the "written_off_qty" field to the value that was provided on create.
+func (u *PurchaseReturnLineUpsertBulk) UpdateWrittenOffQty() *PurchaseReturnLineUpsertBulk {
+	return u.Update(func(s *PurchaseReturnLineUpsert) {
+		s.UpdateWrittenOffQty()
 	})
 }
 

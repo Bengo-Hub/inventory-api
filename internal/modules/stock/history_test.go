@@ -23,6 +23,8 @@ func TestClassifyAdjustment(t *testing.T) {
 		{"return", -2, "purchase_return"},   // negative: back to supplier
 		{"return", 0, "sell_return"},        // zero treated as inbound (no stock effect)
 		{"purchase_return", -3, "purchase_return"}, // approved supplier return (dedicated reason)
+		{"service_out", -2, "service_out"}, // sent to a repair provider: neither a sale nor an adjustment
+		{"service_in", 2, "service_in"},    // received back repaired
 		{"damaged", -1, "adjustment"},
 		{"expired", -4, "adjustment"},
 		{"shrinkage", -2, "adjustment"},
@@ -60,6 +62,8 @@ func TestApplyToSummary(t *testing.T) {
 	applyToSummary(&s, "transfer_out", -7) // stored negative
 	applyToSummary(&s, "adjustment", -3)
 	applyToSummary(&s, "adjustment", 1)
+	applyToSummary(&s, "service_out", -4) // stored negative
+	applyToSummary(&s, "service_in", 3)
 
 	if s.OpeningStock != 270 {
 		t.Errorf("OpeningStock = %v, want 270", s.OpeningStock)
@@ -83,7 +87,13 @@ func TestApplyToSummary(t *testing.T) {
 		t.Errorf("TransfersOut = %v, want 7 (reported positive)", s.TransfersOut)
 	}
 	if s.TotalAdjusted != -2 {
-		t.Errorf("TotalAdjusted = %v, want -2 (net)", s.TotalAdjusted)
+		t.Errorf("TotalAdjusted = %v, want -2 (net): repair movements must not leak into adjustments", s.TotalAdjusted)
+	}
+	if s.SentForRepair != 4 || s.ReturnedFromRepair != 3 {
+		t.Errorf("repair cards = sent %v returned %v, want 4 and 3 (both reported positive)", s.SentForRepair, s.ReturnedFromRepair)
+	}
+	if s.TotalPurchaseReturns != 8 {
+		t.Errorf("a repair send-out must not count as a purchase return: %v", s.TotalPurchaseReturns)
 	}
 	// Unknown type must be a no-op, not a panic or misfile.
 	before := s

@@ -70,6 +70,8 @@ publishes that subject. Add a consumer again only when ordering ships returns.)
 - `inventory.reservation.confirmed` - Reservation created
 - `inventory.reservation.released` - Reservation released
 - `inventory.stock.consumed` - Consumption recorded
+- `inventory.purchase_return.created` / `inventory.purchase_return.approved` - Goods returned to a supplier. `approved` makes treasury raise the vendor credit note and the eTIMS return-to-supplier movement (stockIO 12), so it is published only for `destination=supplier`.
+- `inventory.service_order.created` / `.sent` / `.returned` - Goods sent for repair (a purchase return with `destination=service`), approved and sent out, and received back from the provider. These events carry no credit; treasury has no subscriber for them on purpose. The stock movements behind them use the adjustment reasons `service_out` and `service_in`, which treasury's eTIMS `stock.updated` handler skips and which are never GL-posted. Units that cannot be repaired are written off through a normal `damaged` adjustment, which is the only part that reaches the books.
 
 ### POS Service
 

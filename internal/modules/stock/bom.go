@@ -97,7 +97,11 @@ func glPostableReason(r stockadjustment.Reason) bool {
 		// A purchase return is valued in treasury by the return's own vendor credit note
 		// (Dr Accounts Payable / Cr Inventory); a stock.adjusted posting too would credit
 		// Inventory twice for the same goods.
-		stockadjustment.ReasonPurchaseReturn:
+		stockadjustment.ReasonPurchaseReturn,
+		// Goods lent to a repair provider and received back stay the tenant's own stock: no value
+		// enters or leaves the business, so there is nothing to post (written-off units go
+		// through a separate "damaged" adjustment, which does post the wastage).
+		stockadjustment.ReasonServiceOut, stockadjustment.ReasonServiceIn:
 		return false
 	}
 	return true

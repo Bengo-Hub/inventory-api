@@ -110,3 +110,31 @@ How it works now:
 - **List / Get**: the DTO carries `supplier_name`, `warehouse_name`, `outlet_id`, `date_returned_day`, `item_count`, `total_quantity`, `items_summary` and the full `lines` (item name, SKU, qty, unit cost, sub-total). Filters: `supplier_id`, `warehouse_id`, `outlet_id` (also matches older returns that only carry their goods receipt's warehouse), `search` (return number). The PDF shows the location.
 - **Legacy rows**: returns approved before this fix wrote `ConsumptionLine` rows with reason `purchase_return`. The stock ledger reclassifies them at read time (Purchase Return, real return number and supplier) and the ingredient utilization report excludes them. Their `item_consumption_daily` rollups still include them (not rewritten).
 - Schema: `purchase_returns.warehouse_id` (new, indexed with tenant), `purchase_return_lines.quantity` widened to double precision, `stock_adjustments.reason` gained `purchase_return` (migration `20260925120000_purchase_return_warehouse_and_decimal_qty.sql`).
+
+## Service / repair destination (2026-10-21)
+
+Tenants sometimes send in-stock devices (swollen battery, a fault that develops in stock) to a trusted technician, service centre or care centre instead of the supplier. The goods leave stock but stay the tenant's and are expected back repaired. A purchase return now has a `destination`: `supplier` (the classic return, credited by treasury) or `service` (a repair order).
+
+Decisions: the provider is free text in `purchase_returns.metadata` (`service_provider`, `service_contact`, `fault`), so no supplier or accounts payable record is involved. Items away leave on-hand and valuation and are reported separately (`GET /inventory/purchase-returns/service-summary`). Cost is kept so it can be restored on return.
+
+Flow:
+
+- **Create** (`POST /inventory/purchase-returns` with `destination=service`): `service_provider` is required, `service_contact`, `fault` and `expected_back_date` are optional. Supplier and PO are ignored, `return_amount_due` is 0, and a line left at zero is valued at the item cost price. This is the cost snapshot used on return.
+- **Approve** (same endpoint and approval module as a supplier return): each line leaves stock as a `service_out` adjustment and `service_status` becomes `out`. The event is `inventory.service_order.sent`. `inventory.purchase_return.approved` is NOT published, so treasury raises no vendor credit note and no eTIMS return movement.
+- **Receive back** (`POST /inventory/purchase-returns/{id}/receive`): per line `returned_qty` and `written_off_qty`, never more than is outstanding (guarded per line on the values read, so a double submit or two people at once get 409). Everything settled re-enters stock as `service_in` with a new cost layer at the snapshot cost (`AdjustStockRequest.CostLayerUnitCost`); the unrepairable part is then written off as `damaged`, which is the only step that reaches the GL (wastage at the layer cost) and the eTIMS adjustment-out. `service_status` moves `out`, `partial`, then `returned` or `written_off`. Event: `inventory.service_order.returned`.
+- **List filters**: `destination`, `service_status` (comma separated), `overdue=true` with `today=YYYY-MM-DD` (the caller's local day). **Summary**: open orders, units and cost away, overdue orders and units, top providers, capped at 2000 open orders (`truncated`).
+- **Reserved reasons**: `service_out` and `service_in` are rejected on the manual adjust, legacy adjust and bulk adjust endpoints (`RESERVED_REASON`). `glPostableReason` excludes both. Treasury's `EtimsStockSubscriber.handle` skips both (`skipStockUpdatedReason`). Analytics top-items and stock-trends exclude them from movement.
+- **Stock history**: rows read "Sent for Repair" and "Returned from Repair" with the order number and the provider as counterparty; the summary has `sent_for_repair` and `returned_from_repair`.
+- **Documents**: the PDF, CSV and XLSX of a service order is a "Service / Repair Order" (provider, fault, expected day, cost value) with no debit note wording or credit status.
+
+Audit fixes made in the same change:
+
+- Approving a return is all or nothing. If any line cannot be taken out of stock, the lines already taken out are reversed (`runStockMoves`, `inverseMove`) and the approval claim is undone (409 `STOCK_OUT_FAILED`). Before, the return stayed approved with only some items out and only a warning.
+- `AdjustStock` leaked its transaction when asked to adjust a SERVICE-type item (the deferred rollback keyed on an error variable that was never set). It now rolls back.
+- The list's outlet and warehouse filter used an unbounded list of goods receipt ids; it is now a subselect, and a failing count is reported instead of ignored.
+- The PDF looked up each line's lot one by one; lots are read in one query. Supplier lookups in the PDF, approval and stock history are now scoped to the tenant.
+- Analytics top-items sums movement in SQL (one row per item) and stock-trends reads only the two columns it needs, instead of loading every adjustment.
+
+Schema (migration `20261021132441_purchase_return_service_destination.sql`, all columns nullable or with SQL defaults, so existing rows are supplier returns): `purchase_returns.destination`, `service_status`, `expected_back_date`, `metadata`, index `(tenant_id, destination, service_status, expected_back_date)`; `purchase_return_lines.received_back_qty`, `written_off_qty`; `stock_adjustments.reason` gained `service_out` and `service_in` (plain varchar, no CHECK).
+
+Not done on purpose: lot-targeted repair (the send-out draws cost layers in the tenant's costing order, as any other stock-out), and a notification for overdue orders (the Returns page shows them; a notifications template can subscribe to `inventory.service_order.sent` later).

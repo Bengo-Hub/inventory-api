@@ -17,7 +17,7 @@ import (
 
 	"github.com/Bengo-Hub/pagination"
 	"github.com/bengobox/inventory-service/internal/ent"
-	entgr "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
+	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpr "github.com/bengobox/inventory-service/internal/ent/purchasereturn"
 	entprline "github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
@@ -50,6 +50,16 @@ type purchaseReturnPayload struct {
 	// the return defaults to now.
 	DateReturned *string                     `json:"date_returned"`
 	Lines        []purchaseReturnLinePayload `json:"lines"`
+
+	// Destination is "supplier" (default: goods go back to the supplier and are credited) or
+	// "service" (goods go to a repair provider, service or care centre and are expected back).
+	Destination string `json:"destination"`
+	// Service-only fields. The provider is free text (a technician, a care centre); it lives in
+	// the return's metadata, not on the supplier ledger, so nothing reaches accounts payable.
+	ServiceProvider  string  `json:"service_provider"`
+	ServiceContact   string  `json:"service_contact"`
+	Fault            string  `json:"fault"`
+	ExpectedBackDate *string `json:"expected_back_date"`
 }
 
 // parseFlexibleDate accepts a plain "YYYY-MM-DD" (as sent by an <input type="date">) or a full
@@ -74,6 +84,9 @@ func (h *InventoryExtrasHandler) registerPurchaseReturnRoutes(r chi.Router, perm
 	r.Get("/inventory/purchase-returns/{returnID}/pdf", h.GeneratePurchaseReturnPDF)
 	r.With(perm(add)).Post("/inventory/purchase-returns", h.CreatePurchaseReturn)
 	r.With(perm(change)).Post("/inventory/purchase-returns/{returnID}/approve", h.ApprovePurchaseReturn)
+	// Repair destination: open-order figures and receiving the goods back.
+	r.Get("/inventory/purchase-returns/service-summary", h.ServiceReturnSummary)
+	r.With(perm(change)).Post("/inventory/purchase-returns/{returnID}/receive", h.ReceiveServiceReturn)
 }
 
 // ListPurchaseReturns handles GET /inventory/purchase-returns.
@@ -106,33 +119,27 @@ func (h *InventoryExtrasHandler) ListPurchaseReturns(w http.ResponseWriter, r *h
 	if id, e := uuid.Parse(qp.Get("supplier_id")); e == nil {
 		q = q.Where(entpr.SupplierID(id))
 	}
-	var whIDs []uuid.UUID
-	if id, e := uuid.Parse(qp.Get("warehouse_id")); e == nil {
-		whIDs = []uuid.UUID{id}
-	} else if oid, oe := uuid.Parse(qp.Get("outlet_id")); oe == nil {
-		whIDs, _ = h.orm.Warehouse.Query().
-			Where(entwarehouse.TenantID(tenantID), entwarehouse.OutletIDEQ(oid)).IDs(r.Context())
-		if whIDs == nil {
-			whIDs = []uuid.UUID{}
-		}
+	if pred := h.returnLocationPredicate(r.Context(), tenantID, qp); pred != nil {
+		q = q.Where(pred)
 	}
-	if whIDs != nil {
-		// A return raised before warehouse capture carries only its goods receipt's warehouse
-		// (the same fallback the DTO and approval use), so match those too.
-		grnIDs, _ := h.orm.GoodsReceipt.Query().
-			Where(entgr.TenantID(tenantID), entgr.WarehouseIDIn(whIDs...)).IDs(r.Context())
-		q = q.Where(entpr.Or(
-			entpr.WarehouseIDIn(whIDs...),
-			entpr.And(entpr.WarehouseIDIsNil(), entpr.GoodsReceiptIDIn(grnIDs...)),
-		))
+	preds, perr := returnKindPredicates(qp, resolveToday(qp.Get("today"), time.Now()))
+	if perr != nil {
+		writeError(w, perr.status, perr.code, perr.msg)
+		return
 	}
+	q = q.Where(preds...)
 	if s := strings.TrimSpace(qp.Get("search")); s != "" {
 		q = q.Where(entpr.ReturnNumberContainsFold(s))
 	}
 	if from, to, ok := parseCreatedAtRange(r); ok {
 		q = q.Where(entpr.DateReturnedGTE(from), entpr.DateReturnedLTE(to))
 	}
-	total, _ := q.Clone().Count(r.Context())
+	total, cerr := q.Clone().Count(r.Context())
+	if cerr != nil {
+		h.log.Error("count purchase returns failed", zap.Error(cerr))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list purchase returns")
+		return
+	}
 	rows, err := q.Order(ent.Desc(entpr.FieldDateReturned), ent.Desc(entpr.FieldReturnNumber)).
 		Limit(p.Limit).Offset(p.Offset).All(r.Context())
 	if err != nil {
@@ -229,6 +236,25 @@ func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *
 		return
 	}
 
+	destination := entpr.DestinationSupplier
+	var svc *serviceInput
+	switch strings.ToLower(strings.TrimSpace(req.Destination)) {
+	case "", string(entpr.DestinationSupplier):
+	case string(entpr.DestinationService):
+		destination = entpr.DestinationService
+		var serr *returnError
+		if svc, serr = parseServiceInput(req); serr != nil {
+			writeError(w, serr.status, serr.code, serr.msg)
+			return
+		}
+		// A repair order is valued at cost (what the units are worth while they are away), never
+		// at a supplier credit amount: fill any line the client left at zero from the item cost.
+		lines = h.fillServiceLineCosts(ctx, tenantID, lines)
+	default:
+		writeError(w, http.StatusBadRequest, "INVALID_DESTINATION", "destination must be supplier or service")
+		return
+	}
+
 	warehouseID := uuid.Nil
 	if req.WarehouseID != nil && *req.WarehouseID != uuid.Nil {
 		if ok, _ := h.orm.Warehouse.Query().
@@ -271,12 +297,20 @@ func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *
 	}
 	create := tx.PurchaseReturn.Create().
 		SetTenantID(tenantID).SetReturnNumber(num).SetReason(strings.TrimSpace(req.Reason)).
-		SetReturnAmount(total).SetReturnAmountDue(total)
-	if req.PurchaseOrderID != nil {
-		create = create.SetPurchaseOrderID(*req.PurchaseOrderID)
-	}
-	if req.SupplierID != nil && *req.SupplierID != uuid.Nil {
-		create = create.SetSupplierID(*req.SupplierID)
+		SetReturnAmount(total).SetReturnAmountDue(total).SetDestination(destination)
+	if svc != nil {
+		// Nothing is owed by or to anyone for a repair: no supplier, no PO, no amount due.
+		create = create.SetReturnAmountDue(0).SetMetadata(svc.metadata())
+		if svc.Expected != nil {
+			create = create.SetExpectedBackDate(*svc.Expected)
+		}
+	} else {
+		if req.PurchaseOrderID != nil {
+			create = create.SetPurchaseOrderID(*req.PurchaseOrderID)
+		}
+		if req.SupplierID != nil && *req.SupplierID != uuid.Nil {
+			create = create.SetSupplierID(*req.SupplierID)
+		}
 	}
 	if warehouseID != uuid.Nil {
 		create = create.SetWarehouseID(warehouseID)
@@ -312,8 +346,12 @@ func (h *InventoryExtrasHandler) CreatePurchaseReturn(w http.ResponseWriter, r *
 		writeError(w, http.StatusInternalServerError, "CREATE_FAILED", "Failed to create purchase return")
 		return
 	}
-	h.publishOutbox(ctx, tenantID, "purchase_return", pr.ID, "inventory.purchase_return.created", map[string]any{
-		"id": pr.ID, "return_number": pr.ReturnNumber, "return_amount": total,
+	createdEvent := "inventory.purchase_return.created"
+	if svc != nil {
+		createdEvent = "inventory.service_order.created"
+	}
+	h.publishOutbox(ctx, tenantID, "purchase_return", pr.ID, createdEvent, map[string]any{
+		"id": pr.ID, "return_number": pr.ReturnNumber, "return_amount": total, "destination": string(destination),
 	})
 	writeJSON(w, http.StatusCreated, h.purchaseReturnsToDTOs(ctx, tenantID, []*ent.PurchaseReturn{pr})[0])
 }
@@ -400,6 +438,9 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 	claim := h.orm.PurchaseReturn.Update().
 		Where(entpr.ID(pr.ID), entpr.TenantID(tenantID), entpr.PaymentStatusNEQ(entpr.PaymentStatusPaid)).
 		SetPaymentStatus(entpr.PaymentStatusPaid)
+	if pr.Destination == entpr.DestinationService {
+		claim = claim.SetServiceStatus(entpr.ServiceStatusOut)
+	}
 	if pr.WarehouseID == nil {
 		claim = claim.SetWarehouseID(warehouseID)
 	}
@@ -416,22 +457,38 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 		return
 	}
 
+	isService := updated.Destination == entpr.DestinationService
 	supplierName := ""
-	if updated.SupplierID != nil {
-		if sup, serr := h.orm.Supplier.Get(ctx, *updated.SupplierID); serr == nil {
+	if updated.SupplierID != nil && !isService {
+		if sup, serr := h.orm.Supplier.Query().
+			Where(entsupplier.TenantID(tenantID), entsupplier.ID(*updated.SupplierID)).Only(ctx); serr == nil {
 			supplierName = sup.Name
 		}
 	}
+	provider := serviceProviderOf(updated.Metadata)
+	outReason := entstockadj.ReasonPurchaseReturn
 	notes := "Returned to supplier"
-	if supplierName != "" {
-		notes += " " + supplierName
-	}
-	if updated.Reason != "" {
-		notes += ": " + updated.Reason
+	if isService {
+		outReason = entstockadj.ReasonServiceOut
+		notes = "Sent for repair"
+		if provider != "" {
+			notes += " to " + provider
+		}
+		if fault, _ := updated.Metadata["fault"].(string); fault != "" {
+			notes += ": " + fault
+		}
+	} else {
+		if supplierName != "" {
+			notes += " " + supplierName
+		}
+		if updated.Reason != "" {
+			notes += ": " + updated.Reason
+		}
 	}
 	actor := actorFromRequest(r)
 	items := make([]map[string]any, 0, len(lines))
 	stockWarnings := make([]string, 0)
+	moves := make([]stockMove, 0, len(lines))
 	for _, l := range lines {
 		info := itemsByID[l.ItemID]
 		// unit price = line subtotal / qty (the price the goods were received at) so treasury
@@ -447,24 +504,71 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 		if h.stockSvc == nil {
 			continue
 		}
-		if _, serr := h.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
+		moves = append(moves, stockMove{UnitCost: unitPrice, Req: stock.AdjustStockRequest{
 			SKU:         info.sku,
 			Adjustment:  -l.Quantity,
-			Reason:      string(entstockadj.ReasonPurchaseReturn),
+			Reason:      string(outReason),
 			Reference:   updated.ReturnNumber,
 			Notes:       notes,
 			AdjustedBy:  actor,
 			WarehouseID: warehouseID,
-		}); serr != nil {
+		}})
+	}
+	// All-or-nothing: if any item cannot be taken out, the ones already out are put back and the
+	// approval is undone, so a return is never "approved" with only part of its goods gone.
+	if h.stockSvc != nil {
+		failed, merr, uerr := runStockMoves(ctx, tenantID, moves, h.stockSvc.AdjustStock)
+		if merr != nil {
+			name := itemsByID[lines[failed].ItemID].name
 			h.log.Error("purchase return: stock-out failed",
-				zap.String("return_number", updated.ReturnNumber), zap.String("sku", info.sku), zap.Error(serr))
-			stockWarnings = append(stockWarnings, fmt.Sprintf("%s: %v", info.name, serr))
+				zap.String("return_number", updated.ReturnNumber), zap.String("sku", moves[failed].Req.SKU),
+				zap.NamedError("stock_error", merr), zap.NamedError("reverse_error", uerr))
+			if uerr != nil {
+				writeError(w, http.StatusInternalServerError, "STOCK_OUT_PARTIAL",
+					fmt.Sprintf("%s could not be taken out of stock and earlier items could not be put back automatically. Check this return in the stock history before retrying.", name))
+				return
+			}
+			if _, rerr := h.orm.PurchaseReturn.Update().
+				Where(entpr.ID(updated.ID), entpr.TenantID(tenantID)).
+				SetPaymentStatus(entpr.PaymentStatusPending).ClearServiceStatus().Save(ctx); rerr != nil {
+				h.log.Error("purchase return: could not undo the approval claim", zap.Error(rerr))
+			}
+			writeError(w, http.StatusConflict, "STOCK_OUT_FAILED",
+				fmt.Sprintf("%s could not be taken out of stock. Nothing was changed.", name))
+			return
 		}
 	}
 
 	outletID := ""
 	if wh, werr := h.orm.Warehouse.Get(ctx, warehouseID); werr == nil && wh.OutletID != nil {
 		outletID = wh.OutletID.String()
+	}
+	if isService {
+		// A repair order is NOT a supplier return: it publishes its own event so treasury raises
+		// no vendor credit note and no eTIMS return-to-supplier movement for goods still ours.
+		sent := map[string]any{
+			"tenant_id":        tenantID,
+			"id":               updated.ID,
+			"return_number":    updated.ReturnNumber,
+			"destination":      string(updated.Destination),
+			"service_provider": provider,
+			"fault":            updated.Metadata["fault"],
+			"cost_value":       updated.ReturnAmount,
+			"date_returned":    updated.DateReturned.UTC().Format("2006-01-02"),
+			"warehouse_id":     warehouseID.String(),
+			"outlet_id":        outletID,
+			"items":            items,
+		}
+		if updated.ExpectedBackDate != nil {
+			sent["expected_back_date"] = updated.ExpectedBackDate.UTC().Format("2006-01-02")
+		}
+		if actor != uuid.Nil {
+			sent["approved_by"] = actor.String()
+		}
+		h.publishOutbox(ctx, tenantID, "purchase_return", updated.ID, "inventory.service_order.sent", sent)
+		dto := h.purchaseReturnsToDTOs(ctx, tenantID, []*ent.PurchaseReturn{updated})[0]
+		writeJSON(w, http.StatusOK, dto)
+		return
 	}
 	// Enriched payload so treasury can raise an itemised vendor CREDIT NOTE dated on the return
 	// day that nets the supplier payable, on the right outlet and eTIMS branch.

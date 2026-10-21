@@ -207,6 +207,11 @@ type AdjustStockRequest struct {
 	// client passes a stable UUID on the first (blocked) attempt and again on the
 	// retry after a manager approves.
 	ApprovalIntentID *uuid.UUID `json:"approval_intent_id,omitempty"`
+	// CostLayerUnitCost, when positive on an UPWARD adjustment, records the units as a new cost
+	// layer at that unit cost. Used when repaired goods come back (service_in): the send-out drew
+	// down the item's layers, so without this the returning units would carry no cost of their
+	// own. Set by the handler, never read from a request body.
+	CostLayerUnitCost float64 `json:"-"`
 }
 
 // AdjustStockResponse represents the result of a stock adjustment.
@@ -304,7 +309,10 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	// balance row that then depletes like normal stock is a live-observed bug (a co-working-space
 	// SERVICE item at urban-loft had actually decremented 100->89 as if every booking sold a unit).
 	if itm.Type == item.TypeSERVICE {
-		return nil, fmt.Errorf("stock: %q is a SERVICE item (capacity/booking, not stock) and cannot be stock-adjusted", req.SKU)
+		// Assign the function-scoped err: the deferred rollback keys on it, and returning a fresh
+		// error without it left this transaction (and its connection) open.
+		err = fmt.Errorf("stock: %q is a SERVICE item (capacity/booking, not stock) and cannot be stock-adjusted", req.SKU)
+		return nil, err
 	}
 	// Menu recipe items never hold stock of their own: their stock is their ingredients'. Only
 	// manufactured finished goods (a RECIPE item whose active recipe is a production BOM, kind
@@ -461,6 +469,23 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	adj, err := adjBuilder.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("stock: create adjustment record: %w", err)
+	}
+
+	// Units coming back from repair re-enter as their own cost layer (same table the goods receipt
+	// and the opening-balance backfill use), so a later sale values them at what they cost, not at
+	// whatever layer happens to be oldest.
+	if qtyChange > 0 && req.CostLayerUnitCost > 0 {
+		if _, lerr := tx.InventoryLot.Create().
+			SetTenantID(tenantID).SetItemID(itm.ID).SetWarehouseID(whID).
+			SetLotNumber("SVC-" + adj.ID.String()).
+			SetQuantity(qtyChange).SetStatus("active").SetIsCostLayer(true).
+			SetCostPrice(req.CostLayerUnitCost).
+			SetReceivedAt(adjustedAt).
+			SetSupplierReference(req.Reference).
+			Save(ctx); lerr != nil {
+			err = fmt.Errorf("stock: record cost layer for sku=%s: %w", req.SKU, lerr)
+			return nil, err
+		}
 	}
 
 	// Publish stock updated event

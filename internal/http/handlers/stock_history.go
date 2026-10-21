@@ -26,7 +26,7 @@ import (
 //	@Param        warehouse_id  query     string  false  "Scope to one warehouse"
 //	@Param        date_from     query     string  false  "RFC3339 or YYYY-MM-DD lower bound"
 //	@Param        date_to       query     string  false  "RFC3339 or YYYY-MM-DD upper bound"
-//	@Param        type          query     string  false  "Comma-separated movement types to include (opening_stock,purchase,sale,sell_return,purchase_return,transfer_in,transfer_out,adjustment)"
+//	@Param        type          query     string  false  "Comma-separated movement types to include (opening_stock,purchase,sale,sell_return,purchase_return,service_out,service_in,transfer_in,transfer_out,adjustment)"
 //	@Success      200           {object}  stock.StockHistoryResult
 //	@Failure      404           {object}  map[string]string
 //	@Router       /{tenant}/inventory/items/{sku}/stock-history [get]

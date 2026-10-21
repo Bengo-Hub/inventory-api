@@ -11,6 +11,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	entgr "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	entpr "github.com/bengobox/inventory-service/internal/ent/purchasereturn"
 	entprline "github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
 	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -27,6 +28,11 @@ type purchaseReturnLineDTO struct {
 	Quantity float64    `json:"quantity"`
 	UnitCost float64    `json:"unit_cost"`
 	SubTotal float64    `json:"sub_total"`
+	// Repair orders only: units already back in stock, units written off as unrepairable, and
+	// units still at the provider.
+	ReceivedBackQty float64 `json:"received_back_qty"`
+	WrittenOffQty   float64 `json:"written_off_qty"`
+	OutstandingQty  float64 `json:"outstanding_qty"`
 }
 
 type purchaseReturnDTO struct {
@@ -44,6 +50,15 @@ type purchaseReturnDTO struct {
 	Reason        string     `json:"reason"`
 	ReturnAmount  float64    `json:"return_amount"`
 	PaymentStatus string     `json:"payment_status"`
+	// Destination is "supplier" or "service" (sent for repair). The service fields below are only
+	// set on a service order; ServiceProvider/Contact/Fault come from the order's metadata.
+	Destination         string  `json:"destination"`
+	ServiceStatus       *string `json:"service_status,omitempty"`
+	ServiceProvider     string  `json:"service_provider,omitempty"`
+	ServiceContact      string  `json:"service_contact,omitempty"`
+	Fault               string  `json:"fault,omitempty"`
+	ExpectedBackDate    *string `json:"expected_back_date,omitempty"`
+	OutstandingQuantity float64 `json:"outstanding_quantity"`
 	// DateReturned is the calendar day the goods went back (stored at 00:00 UTC for a
 	// date-only entry). DateReturnedDay is that day as YYYY-MM-DD so clients can render it
 	// without timezone conversion shifting it to the previous day.
@@ -61,14 +76,29 @@ type purchaseReturnDTO struct {
 }
 
 func purchaseReturnToDTO(pr *ent.PurchaseReturn) purchaseReturnDTO {
-	return purchaseReturnDTO{
+	dto := purchaseReturnDTO{
 		ID: pr.ID, ReturnNumber: pr.ReturnNumber, PurchaseOrderID: pr.PurchaseOrderID,
 		GoodsReceiptID: pr.GoodsReceiptID, SupplierID: pr.SupplierID, WarehouseID: pr.WarehouseID,
 		Reason: pr.Reason, ReturnAmount: pr.ReturnAmount,
 		PaymentStatus: string(pr.PaymentStatus), DateReturned: pr.DateReturned,
 		DateReturnedDay: pr.DateReturned.UTC().Format("2006-01-02"), AddedBy: pr.AddedBy,
-		Lines: []purchaseReturnLineDTO{},
+		Destination: string(pr.Destination),
+		Lines:       []purchaseReturnLineDTO{},
 	}
+	if pr.ServiceStatus != nil {
+		st := string(*pr.ServiceStatus)
+		dto.ServiceStatus = &st
+	}
+	if pr.ExpectedBackDate != nil {
+		day := pr.ExpectedBackDate.UTC().Format("2006-01-02")
+		dto.ExpectedBackDate = &day
+	}
+	if pr.Destination == entpr.DestinationService {
+		dto.ServiceProvider = serviceProviderOf(pr.Metadata)
+		dto.ServiceContact, _ = pr.Metadata["service_contact"].(string)
+		dto.Fault, _ = pr.Metadata["fault"].(string)
+	}
+	return dto
 }
 
 // purchaseReturnsToDTOs builds enriched DTOs for a page of returns in a fixed number of batched
@@ -177,6 +207,8 @@ func (h *InventoryExtrasHandler) purchaseReturnsToDTOs(ctx context.Context, tena
 		linesByReturn[l.PurchaseReturnID] = append(linesByReturn[l.PurchaseReturnID], purchaseReturnLineDTO{
 			ID: l.ID, ItemID: l.ItemID, ItemName: ifEmptyStr(info.name, "Unknown item"), Sku: info.sku,
 			LotID: l.LotID, Quantity: l.Quantity, UnitCost: unitCost, SubTotal: l.SubTotal,
+			ReceivedBackQty: l.ReceivedBackQty, WrittenOffQty: l.WrittenOffQty,
+			OutstandingQty: serviceLineState{Quantity: l.Quantity, Received: l.ReceivedBackQty, WrittenOff: l.WrittenOffQty}.outstanding(),
 		})
 	}
 
@@ -200,6 +232,9 @@ func (h *InventoryExtrasHandler) purchaseReturnsToDTOs(ctx context.Context, tena
 		names := make([]string, 0, len(out[i].Lines))
 		for _, l := range out[i].Lines {
 			out[i].TotalQuantity = roundDecimal(out[i].TotalQuantity + l.Quantity)
+			if pr.Destination == entpr.DestinationService {
+				out[i].OutstandingQuantity = roundDecimal(out[i].OutstandingQuantity + l.OutstandingQty)
+			}
 			names = append(names, fmt.Sprintf("%s x%s", l.ItemName, formatQty(l.Quantity)))
 		}
 		out[i].ItemsSummary = summarizeNames(names, 3)

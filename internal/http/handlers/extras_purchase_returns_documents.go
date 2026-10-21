@@ -11,16 +11,18 @@ import (
 	entgr "github.com/bengobox/inventory-service/internal/ent/goodsreceipt"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
+	entpr "github.com/bengobox/inventory-service/internal/ent/purchasereturn"
 	entprline "github.com/bengobox/inventory-service/internal/ent/purchasereturnline"
 	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
-// GeneratePurchaseReturnPDF renders a branded supplier purchase-return (debit note) PDF
+// GeneratePurchaseReturnPDF renders a branded supplier purchase-return (debit note) PDF, or a
+// service / repair order for destination=service
 // (GET /inventory/purchase-returns/{returnID}/pdf). Reuses the return's already-minted
 // return_number (issued at creation via documents.DocTypePurchaseReturn).
 //
-//	@Summary      Generate a branded purchase return (debit note) PDF
+//	@Summary      Generate a branded purchase return (debit note) or service order PDF
 //	@Tags         Procurement
 //	@Produce      application/pdf
 //	@Param        returnID  path      string  true  "Purchase return ID"
@@ -65,10 +67,28 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 	supplierName := ""
 	var supplierAddr []string
 	if pr.SupplierID != nil {
-		if sup, e := h.orm.Supplier.Query().Where(entsupplier.ID(*pr.SupplierID)).Only(ctx); e == nil {
+		if sup, e := h.orm.Supplier.Query().Where(entsupplier.TenantID(tenantID), entsupplier.ID(*pr.SupplierID)).Only(ctx); e == nil {
 			supplierName = sup.Name
 			if sup.Address != "" {
 				supplierAddr = strings.Split(sup.Address, "\n")
+			}
+		}
+	}
+
+	// One query for every lot number on the return, not one per line.
+	lotIDs := make([]uuid.UUID, 0, len(lines))
+	for _, l := range lines {
+		if l.LotID != nil {
+			lotIDs = append(lotIDs, *l.LotID)
+		}
+	}
+	lotNumbers := map[uuid.UUID]string{}
+	if len(lotIDs) > 0 {
+		if lots, e := h.orm.InventoryLot.Query().
+			Where(entlot.TenantID(tenantID), entlot.IDIn(uniqueUUIDs(lotIDs)...)).
+			Select(entlot.FieldID, entlot.FieldLotNumber).All(ctx); e == nil {
+			for _, lot := range lots {
+				lotNumbers[lot.ID] = lot.LotNumber
 			}
 		}
 	}
@@ -77,10 +97,8 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 	items := make([]documents.PurchaseReturnDocLine, 0, len(lines))
 	for _, l := range lines {
 		sub := h.itemSKU(ctx, tenantID, l.ItemID, skuCache)
-		if l.LotID != nil {
-			if lot, e := h.orm.InventoryLot.Query().Where(entlot.ID(*l.LotID)).Only(ctx); e == nil && lot.LotNumber != "" {
-				sub = joinDetail(sub, "Lot "+lot.LotNumber)
-			}
+		if l.LotID != nil && lotNumbers[*l.LotID] != "" {
+			sub = joinDetail(sub, "Lot "+lotNumbers[*l.LotID])
 		}
 		line := documents.PurchaseReturnDocLine{
 			Desc:    ifEmptyStr(h.itemName(ctx, tenantID, l.ItemID, itemCache), l.ItemID.String()),
@@ -111,6 +129,19 @@ func (h *InventoryExtrasHandler) GeneratePurchaseReturnPDF(w http.ResponseWriter
 		Items:               items,
 		ReturnAmount:        formatMoney(pr.ReturnAmount),
 		PreparedBy:          h.resolveUserLabel(ctx, tenantID, pr.AddedBy, ""),
+	}
+	if pr.Destination == entpr.DestinationService {
+		// A repair order claims no credit: drop the supplier and credit status, show the provider.
+		doc.Service = true
+		doc.PaymentStatus = ""
+		doc.SupplierName, doc.SupplierAddr = "", nil
+		doc.ServiceProvider = serviceProviderOf(pr.Metadata)
+		doc.ServiceContact, _ = pr.Metadata["service_contact"].(string)
+		doc.Fault, _ = pr.Metadata["fault"].(string)
+		if pr.ExpectedBackDate != nil {
+			doc.ExpectedBack = pr.ExpectedBackDate.UTC().Format("02 January 2006")
+		}
+		doc.ServiceStatus = serviceStatusLabel(pr.ServiceStatus)
 	}
 	// Only surface an outstanding-credit row when some of the claim is genuinely unsettled.
 	if pr.ReturnAmountDue > 0.0049 {

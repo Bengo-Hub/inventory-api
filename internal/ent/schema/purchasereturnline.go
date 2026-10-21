@@ -24,7 +24,9 @@ func (PurchaseReturnLine) Fields() []ent.Field {
 			Nillable().
 			Comment("FK to InventoryLot for lot-tracked items — lets an RTV target a specific expiring batch (pharmacy DAWA use-case)"),
 		field.Float("quantity").Default(1).Comment("Quantity returned in the item's stock unit; fractional for weighed/measured items, same as GoodsReceiptLine quantities"),
-		field.Float("sub_total").Default(0),
+		field.Float("sub_total").Default(0).Comment("Supplier returns: the credit value. Service returns: cost value snapshot at send (informational, never a credit)"),
+		field.Float("received_back_qty").Default(0).Comment("Service returns: units already received back from repair and restocked"),
+		field.Float("written_off_qty").Default(0).Comment("Service returns: units the provider could not repair and that will not come back"),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}
 }

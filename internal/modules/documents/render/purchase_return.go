@@ -35,6 +35,18 @@ type PurchaseReturnDoc struct {
 	Notes      []string
 	PreparedBy string
 	ApprovedBy string
+
+	// Service switches the document to a service / repair order: goods handed to a repair
+	// provider that remain ours and are expected back. No supplier credit is claimed, so the
+	// supplier, credit status and debit-note wording are replaced.
+	Service         bool
+	ServiceProvider string
+	ServiceContact  string
+	Fault           string
+	// ExpectedBack is the pre-formatted date the provider is expected to return the goods.
+	ExpectedBack string
+	// ServiceStatus is the human label of the repair state (Out for repair, Partly back, ...).
+	ServiceStatus string
 }
 
 // PurchaseReturnDocLine is a single returned line.
@@ -68,6 +80,9 @@ func RenderPurchaseReturnCSV(doc *PurchaseReturnDoc) ([]byte, error) {
 // purchaseReturnSimpleDoc maps a PurchaseReturnDoc into the shared simpleDoc pipeline — the one
 // definition of this document's shape shared by every export format (PDF/XLSX/CSV above).
 func purchaseReturnSimpleDoc(doc *PurchaseReturnDoc) simpleDoc {
+	if doc.Service {
+		return serviceOrderSimpleDoc(doc)
+	}
 	cur := currencyCode(doc.Currency)
 	amountTitle := "AMOUNT"
 	if cur != "" {

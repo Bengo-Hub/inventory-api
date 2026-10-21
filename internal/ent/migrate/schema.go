@@ -2342,6 +2342,10 @@ var (
 		{Name: "return_amount", Type: field.TypeFloat64, Default: 0},
 		{Name: "return_amount_due", Type: field.TypeFloat64, Default: 0},
 		{Name: "payment_status", Type: field.TypeEnum, Enums: []string{"pending", "due", "partial", "paid"}, Default: "pending"},
+		{Name: "destination", Type: field.TypeEnum, Enums: []string{"supplier", "service"}, Default: "supplier"},
+		{Name: "service_status", Type: field.TypeEnum, Nullable: true, Enums: []string{"out", "partial", "returned", "written_off"}},
+		{Name: "expected_back_date", Type: field.TypeTime, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "date_returned", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -2367,6 +2371,11 @@ var (
 				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[6]},
 			},
 			{
+				Name:    "purchasereturn_tenant_id_destination_service_status_expected_back_date",
+				Unique:  false,
+				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[12], PurchaseReturnsColumns[13], PurchaseReturnsColumns[14]},
+			},
+			{
 				Name:    "purchasereturn_tenant_id_goods_receipt_id",
 				Unique:  true,
 				Columns: []*schema.Column{PurchaseReturnsColumns[1], PurchaseReturnsColumns[4]},
@@ -2381,6 +2390,8 @@ var (
 		{Name: "lot_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "quantity", Type: field.TypeFloat64, Default: 1},
 		{Name: "sub_total", Type: field.TypeFloat64, Default: 0},
+		{Name: "received_back_qty", Type: field.TypeFloat64, Default: 0},
+		{Name: "written_off_qty", Type: field.TypeFloat64, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "purchase_return_id", Type: field.TypeUUID},
 	}
@@ -2392,7 +2403,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_return_lines_purchase_returns_lines",
-				Columns:    []*schema.Column{PurchaseReturnLinesColumns[7]},
+				Columns:    []*schema.Column{PurchaseReturnLinesColumns[9]},
 				RefColumns: []*schema.Column{PurchaseReturnsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2401,7 +2412,7 @@ var (
 			{
 				Name:    "purchasereturnline_tenant_id_purchase_return_id",
 				Unique:  false,
-				Columns: []*schema.Column{PurchaseReturnLinesColumns[1], PurchaseReturnLinesColumns[7]},
+				Columns: []*schema.Column{PurchaseReturnLinesColumns[1], PurchaseReturnLinesColumns[9]},
 			},
 			{
 				Name:    "purchasereturnline_item_id",
@@ -3010,7 +3021,7 @@ var (
 		{Name: "quantity_before", Type: field.TypeFloat64},
 		{Name: "quantity_change", Type: field.TypeFloat64},
 		{Name: "quantity_after", Type: field.TypeFloat64},
-		{Name: "reason", Type: field.TypeEnum, Enums: []string{"damaged", "expired", "shrinkage", "found", "correction", "transfer_in", "transfer_out", "return", "initial_count", "opening_balance", "count_variance", "internal_consumption", "location_move", "location_hidden", "location_unhidden", "purchase_return", "other"}},
+		{Name: "reason", Type: field.TypeEnum, Enums: []string{"damaged", "expired", "shrinkage", "found", "correction", "transfer_in", "transfer_out", "return", "initial_count", "opening_balance", "count_variance", "internal_consumption", "location_move", "location_hidden", "location_unhidden", "purchase_return", "service_out", "service_in", "other"}},
 		{Name: "reference", Type: field.TypeString, Nullable: true},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "adjusted_by", Type: field.TypeUUID},

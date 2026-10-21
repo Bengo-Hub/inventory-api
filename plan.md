@@ -114,7 +114,7 @@
 **Inventory-Specific Features**:
 - Purchase orders, quotes, requisitions
 - Auto-replenishment rules (min/max, EOQ, safety stock)
-- Vendor returns
+- Vendor returns, and repair/service orders for items that come back (see `docs/sprints/sprint-erp-procurement-manufacturing.md`, section "Service / repair destination")
 - Drop-ship workflows
 
 **Entities Owned**:

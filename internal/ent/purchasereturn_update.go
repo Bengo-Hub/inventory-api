@@ -240,6 +240,72 @@ func (_u *PurchaseReturnUpdate) SetNillablePaymentStatus(v *purchasereturn.Payme
 	return _u
 }
 
+// SetDestination sets the "destination" field.
+func (_u *PurchaseReturnUpdate) SetDestination(v purchasereturn.Destination) *PurchaseReturnUpdate {
+	_u.mutation.SetDestination(v)
+	return _u
+}
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (_u *PurchaseReturnUpdate) SetNillableDestination(v *purchasereturn.Destination) *PurchaseReturnUpdate {
+	if v != nil {
+		_u.SetDestination(*v)
+	}
+	return _u
+}
+
+// SetServiceStatus sets the "service_status" field.
+func (_u *PurchaseReturnUpdate) SetServiceStatus(v purchasereturn.ServiceStatus) *PurchaseReturnUpdate {
+	_u.mutation.SetServiceStatus(v)
+	return _u
+}
+
+// SetNillableServiceStatus sets the "service_status" field if the given value is not nil.
+func (_u *PurchaseReturnUpdate) SetNillableServiceStatus(v *purchasereturn.ServiceStatus) *PurchaseReturnUpdate {
+	if v != nil {
+		_u.SetServiceStatus(*v)
+	}
+	return _u
+}
+
+// ClearServiceStatus clears the value of the "service_status" field.
+func (_u *PurchaseReturnUpdate) ClearServiceStatus() *PurchaseReturnUpdate {
+	_u.mutation.ClearServiceStatus()
+	return _u
+}
+
+// SetExpectedBackDate sets the "expected_back_date" field.
+func (_u *PurchaseReturnUpdate) SetExpectedBackDate(v time.Time) *PurchaseReturnUpdate {
+	_u.mutation.SetExpectedBackDate(v)
+	return _u
+}
+
+// SetNillableExpectedBackDate sets the "expected_back_date" field if the given value is not nil.
+func (_u *PurchaseReturnUpdate) SetNillableExpectedBackDate(v *time.Time) *PurchaseReturnUpdate {
+	if v != nil {
+		_u.SetExpectedBackDate(*v)
+	}
+	return _u
+}
+
+// ClearExpectedBackDate clears the value of the "expected_back_date" field.
+func (_u *PurchaseReturnUpdate) ClearExpectedBackDate() *PurchaseReturnUpdate {
+	_u.mutation.ClearExpectedBackDate()
+	return _u
+}
+
+// SetMetadata sets the "metadata" field.
+func (_u *PurchaseReturnUpdate) SetMetadata(v map[string]interface{}) *PurchaseReturnUpdate {
+	_u.mutation.SetMetadata(v)
+	return _u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (_u *PurchaseReturnUpdate) ClearMetadata() *PurchaseReturnUpdate {
+	_u.mutation.ClearMetadata()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PurchaseReturnUpdate) SetUpdatedAt(v time.Time) *PurchaseReturnUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -330,6 +396,16 @@ func (_u *PurchaseReturnUpdate) check() error {
 			return &ValidationError{Name: "payment_status", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.payment_status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Destination(); ok {
+		if err := purchasereturn.DestinationValidator(v); err != nil {
+			return &ValidationError{Name: "destination", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.destination": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ServiceStatus(); ok {
+		if err := purchasereturn.ServiceStatusValidator(v); err != nil {
+			return &ValidationError{Name: "service_status", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.service_status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -404,6 +480,27 @@ func (_u *PurchaseReturnUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.PaymentStatus(); ok {
 		_spec.SetField(purchasereturn.FieldPaymentStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Destination(); ok {
+		_spec.SetField(purchasereturn.FieldDestination, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ServiceStatus(); ok {
+		_spec.SetField(purchasereturn.FieldServiceStatus, field.TypeEnum, value)
+	}
+	if _u.mutation.ServiceStatusCleared() {
+		_spec.ClearField(purchasereturn.FieldServiceStatus, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.ExpectedBackDate(); ok {
+		_spec.SetField(purchasereturn.FieldExpectedBackDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpectedBackDateCleared() {
+		_spec.ClearField(purchasereturn.FieldExpectedBackDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Metadata(); ok {
+		_spec.SetField(purchasereturn.FieldMetadata, field.TypeJSON, value)
+	}
+	if _u.mutation.MetadataCleared() {
+		_spec.ClearField(purchasereturn.FieldMetadata, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(purchasereturn.FieldUpdatedAt, field.TypeTime, value)
@@ -683,6 +780,72 @@ func (_u *PurchaseReturnUpdateOne) SetNillablePaymentStatus(v *purchasereturn.Pa
 	return _u
 }
 
+// SetDestination sets the "destination" field.
+func (_u *PurchaseReturnUpdateOne) SetDestination(v purchasereturn.Destination) *PurchaseReturnUpdateOne {
+	_u.mutation.SetDestination(v)
+	return _u
+}
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (_u *PurchaseReturnUpdateOne) SetNillableDestination(v *purchasereturn.Destination) *PurchaseReturnUpdateOne {
+	if v != nil {
+		_u.SetDestination(*v)
+	}
+	return _u
+}
+
+// SetServiceStatus sets the "service_status" field.
+func (_u *PurchaseReturnUpdateOne) SetServiceStatus(v purchasereturn.ServiceStatus) *PurchaseReturnUpdateOne {
+	_u.mutation.SetServiceStatus(v)
+	return _u
+}
+
+// SetNillableServiceStatus sets the "service_status" field if the given value is not nil.
+func (_u *PurchaseReturnUpdateOne) SetNillableServiceStatus(v *purchasereturn.ServiceStatus) *PurchaseReturnUpdateOne {
+	if v != nil {
+		_u.SetServiceStatus(*v)
+	}
+	return _u
+}
+
+// ClearServiceStatus clears the value of the "service_status" field.
+func (_u *PurchaseReturnUpdateOne) ClearServiceStatus() *PurchaseReturnUpdateOne {
+	_u.mutation.ClearServiceStatus()
+	return _u
+}
+
+// SetExpectedBackDate sets the "expected_back_date" field.
+func (_u *PurchaseReturnUpdateOne) SetExpectedBackDate(v time.Time) *PurchaseReturnUpdateOne {
+	_u.mutation.SetExpectedBackDate(v)
+	return _u
+}
+
+// SetNillableExpectedBackDate sets the "expected_back_date" field if the given value is not nil.
+func (_u *PurchaseReturnUpdateOne) SetNillableExpectedBackDate(v *time.Time) *PurchaseReturnUpdateOne {
+	if v != nil {
+		_u.SetExpectedBackDate(*v)
+	}
+	return _u
+}
+
+// ClearExpectedBackDate clears the value of the "expected_back_date" field.
+func (_u *PurchaseReturnUpdateOne) ClearExpectedBackDate() *PurchaseReturnUpdateOne {
+	_u.mutation.ClearExpectedBackDate()
+	return _u
+}
+
+// SetMetadata sets the "metadata" field.
+func (_u *PurchaseReturnUpdateOne) SetMetadata(v map[string]interface{}) *PurchaseReturnUpdateOne {
+	_u.mutation.SetMetadata(v)
+	return _u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (_u *PurchaseReturnUpdateOne) ClearMetadata() *PurchaseReturnUpdateOne {
+	_u.mutation.ClearMetadata()
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *PurchaseReturnUpdateOne) SetUpdatedAt(v time.Time) *PurchaseReturnUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -786,6 +949,16 @@ func (_u *PurchaseReturnUpdateOne) check() error {
 			return &ValidationError{Name: "payment_status", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.payment_status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Destination(); ok {
+		if err := purchasereturn.DestinationValidator(v); err != nil {
+			return &ValidationError{Name: "destination", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.destination": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ServiceStatus(); ok {
+		if err := purchasereturn.ServiceStatusValidator(v); err != nil {
+			return &ValidationError{Name: "service_status", err: fmt.Errorf(`ent: validator failed for field "PurchaseReturn.service_status": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -877,6 +1050,27 @@ func (_u *PurchaseReturnUpdateOne) sqlSave(ctx context.Context) (_node *Purchase
 	}
 	if value, ok := _u.mutation.PaymentStatus(); ok {
 		_spec.SetField(purchasereturn.FieldPaymentStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Destination(); ok {
+		_spec.SetField(purchasereturn.FieldDestination, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ServiceStatus(); ok {
+		_spec.SetField(purchasereturn.FieldServiceStatus, field.TypeEnum, value)
+	}
+	if _u.mutation.ServiceStatusCleared() {
+		_spec.ClearField(purchasereturn.FieldServiceStatus, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.ExpectedBackDate(); ok {
+		_spec.SetField(purchasereturn.FieldExpectedBackDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpectedBackDateCleared() {
+		_spec.ClearField(purchasereturn.FieldExpectedBackDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Metadata(); ok {
+		_spec.SetField(purchasereturn.FieldMetadata, field.TypeJSON, value)
+	}
+	if _u.mutation.MetadataCleared() {
+		_spec.ClearField(purchasereturn.FieldMetadata, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(purchasereturn.FieldUpdatedAt, field.TypeTime, value)

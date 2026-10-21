@@ -5,7 +5,42 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 )
+
+// A repair send-out and its return are the tenant's own goods leaving and coming back: neither
+// may reach the GL through inventory.stock.adjusted (the unrepairable units are written off by a
+// separate damaged adjustment, which does post). Supplier returns and transfers stay excluded and
+// real adjustments stay postable.
+func TestGlPostableReason_ServiceReasons(t *testing.T) {
+	notPostable := []stockadjustment.Reason{
+		stockadjustment.ReasonServiceOut, stockadjustment.ReasonServiceIn,
+		stockadjustment.ReasonPurchaseReturn, stockadjustment.ReasonTransferIn,
+		stockadjustment.ReasonTransferOut, stockadjustment.ReasonReturn,
+	}
+	for _, r := range notPostable {
+		if glPostableReason(r) {
+			t.Errorf("%s must not be GL-postable", r)
+		}
+	}
+	postable := []stockadjustment.Reason{
+		stockadjustment.ReasonDamaged, stockadjustment.ReasonExpired, stockadjustment.ReasonShrinkage,
+		stockadjustment.ReasonFound, stockadjustment.ReasonCorrection, stockadjustment.ReasonOther,
+		stockadjustment.ReasonOpeningBalance, stockadjustment.ReasonCountVariance,
+	}
+	for _, r := range postable {
+		if !glPostableReason(r) {
+			t.Errorf("%s must stay GL-postable", r)
+		}
+	}
+	if expenseBearingReason(stockadjustment.ReasonServiceOut) || expenseBearingReason(stockadjustment.ReasonServiceIn) {
+		t.Error("a repair movement is never an expense")
+	}
+	if !isReturnLinkedReason(stockadjustment.ReasonServiceOut) || !isReturnLinkedReason(stockadjustment.ReasonServiceIn) ||
+		!isReturnLinkedReason(stockadjustment.ReasonPurchaseReturn) || isReturnLinkedReason(stockadjustment.ReasonDamaged) {
+		t.Error("only purchase_return and the repair pair link a ledger row to a return document")
+	}
+}
 
 // TestEventShortfall_NewOversellFromPositiveOnHand covers the ordinary case: on_hand was
 // positive before this event, and the event needed more than was available.
