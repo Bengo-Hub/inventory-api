@@ -71,6 +71,41 @@ func itemIDFilter(ctx context.Context) *uuid.UUID {
 	return nil
 }
 
+// skuFilterKey restricts ListItems to a set of SKUs (?skus=A,B,C), so a caller holding SKUs
+// from another service (POS best sellers, for example) gets them in one call with the
+// normal list enrichment instead of one request per SKU.
+type skuFilterKey struct{}
+
+// MaxSKUFilter bounds the ?skus= list so one request stays a small IN query.
+const MaxSKUFilter = 100
+
+// WithSKUFilter returns a context that restricts ListItems to these SKUs (blank and repeated
+// values dropped, at most MaxSKUFilter kept).
+func WithSKUFilter(ctx context.Context, skus []string) context.Context {
+	seen := make(map[string]bool, len(skus))
+	clean := make([]string, 0, len(skus))
+	for _, s := range skus {
+		s = strings.TrimSpace(s)
+		if s == "" || seen[s] {
+			continue
+		}
+		seen[s] = true
+		clean = append(clean, s)
+		if len(clean) == MaxSKUFilter {
+			break
+		}
+	}
+	if len(clean) == 0 {
+		return ctx
+	}
+	return context.WithValue(ctx, skuFilterKey{}, clean)
+}
+
+func skuFilter(ctx context.Context) []string {
+	v, _ := ctx.Value(skuFilterKey{}).([]string)
+	return v
+}
+
 // WithIncludeNonBillable returns a context that instructs ListItems to OR non-billable
 // items into the type filter.
 func WithIncludeNonBillable(ctx context.Context) context.Context {
@@ -1575,6 +1610,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		// list row.
 		if id := itemIDFilter(ctx); id != nil {
 			q = q.Where(item.ID(*id))
+		}
+		if skus := skuFilter(ctx); len(skus) > 0 {
+			q = q.Where(item.SkuIn(skus...))
 		}
 		switch statusFilter {
 		case "eol":

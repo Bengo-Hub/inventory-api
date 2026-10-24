@@ -1257,6 +1257,10 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 			ctx = items.WithItemIDFilter(ctx, itemID)
 		}
 	}
+	// ?skus=A,B,C restricts the list to those SKUs (at most items.MaxSKUFilter).
+	if skus := r.URL.Query().Get("skus"); skus != "" {
+		ctx = items.WithSKUFilter(ctx, strings.Split(skus, ","))
+	}
 
 	// ?brand_id=<uuid> / ?model=<text> — catalog filter bar (Brand/Model comboboxes),
 	// same shape as category_id above; carried via ctx (not a new positional param) like
