@@ -305,6 +305,18 @@ see `devops-k8s/docs/object-storage.md`), public bucket, served from `https://me
   (`/media/icons/*.svg`) and the demo menu pictures the seeds use (`/media/images/outlets/menu/*`,
   shipped since 2026-10-17; before that the seeded demo items pointed at files that were never
   deployed and showed broken images).
+- A change of an item's primary picture (first upload, set primary, deleting the primary) updates
+  `items.image_url` and writes `item.updated` in the same transaction, so the POS catalogue cache,
+  terminals and the storefront refresh the picture (2026-10-27; before, gallery changes sent no event).
+- Bulk images (2026-10-27): `POST /{tenant}/inventory/items/images/match` takes up to 100 file names
+  and suggests an item for each: a file named after a SKU or barcode first, then an exact name, then
+  the most similar names through the `item_name` trigram index, with alternatives. It reads only and
+  needs `items.change`. The inventory-ui "Upload images" dialog compresses the photos in the browser,
+  shows the pairs for review, then sends each file through the normal gallery upload, so plan gates,
+  re-encoding and storage rules stay in one place.
+- Imports keep pictures: a CSV or XLSX re-import updates existing items with the whole row, and rows
+  carry no image, so the import now sends each item's current image back (`keepImageOnImport`).
+  Before 2026-10-27 a re-import erased every image uploaded since.
 - Existing files: `inventory-relink-media` (report) and `inventory-relink-media --apply` inside the pod
   move every file a row still references by an old `/media/...` path or `MEDIA_URL_BASE/media/...` URL to
   its tenant's key, update the row and publish `item.updated` for items. Unreferenced files are not

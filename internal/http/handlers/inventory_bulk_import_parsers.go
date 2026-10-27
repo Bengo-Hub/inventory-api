@@ -94,6 +94,7 @@ func (h *InventoryHandler) parseXLSXItems(
 	unitMap map[string]uuid.UUID,
 	brandMap map[string]uuid.UUID,
 	skuToID map[string]uuid.UUID,
+	skuToImage map[string]string,
 	useCase string,
 ) importResult {
 	colMap := xlsxColMap(rows)
@@ -129,6 +130,7 @@ func (h *InventoryHandler) parseXLSXItems(
 		dto := buildItemDTOFromRow(col, nil, catMap, unitMap, brandMap)
 
 		if existingID, ok := skuToID[sku]; ok {
+			keepImageOnImport(&dto, skuToImage[sku])
 			if _, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); err != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, err.Error()))

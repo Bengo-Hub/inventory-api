@@ -160,10 +160,7 @@ func (s *Service) AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, 
 
 	// Keep the legacy image_url in sync with the primary asset for backward compatibility.
 	if makePrimary {
-		if _, uerr := tx.Item.UpdateOneID(itm.ID).
-			Where(item.TenantID(tenantID)).
-			SetImageURL(key).Save(ctx); uerr != nil {
-			err = fmt.Errorf("items: sync image_url: %w", uerr)
+		if err = s.syncPrimaryImage(ctx, tx, tenantID, itm.ID, key); err != nil {
 			return nil, err
 		}
 	}
@@ -234,10 +231,7 @@ func (s *Service) UpdateItemImage(ctx context.Context, tenantID, itemID, imageID
 	}
 
 	if makePrimary {
-		if _, uerr := tx.Item.UpdateOneID(itm.ID).
-			Where(item.TenantID(tenantID)).
-			SetImageURL(updated.URL).Save(ctx); uerr != nil {
-			err = fmt.Errorf("items: sync image_url: %w", uerr)
+		if err = s.syncPrimaryImage(ctx, tx, tenantID, itm.ID, updated.URL); err != nil {
 			return nil, err
 		}
 	}
@@ -297,10 +291,7 @@ func (s *Service) DeleteItemImage(ctx context.Context, tenantID, itemID, imageID
 			}
 			newPrimaryURL = next.URL
 		}
-		if _, uerr := tx.Item.UpdateOneID(itm.ID).
-			Where(item.TenantID(tenantID)).
-			SetImageURL(newPrimaryURL).Save(ctx); uerr != nil {
-			err = fmt.Errorf("items: sync image_url: %w", uerr)
+		if err = s.syncPrimaryImage(ctx, tx, tenantID, itm.ID, newPrimaryURL); err != nil {
 			return err
 		}
 	}
@@ -310,6 +301,19 @@ func (s *Service) DeleteItemImage(ctx context.Context, tenantID, itemID, imageID
 	}
 	s.dropImage(ctx, tenantID, asset.URL)
 	return nil
+}
+
+// syncPrimaryImage points the item's image_url mirror at the primary image key (empty clears it)
+// and writes item.updated to the outbox in the same transaction, like relinkItemImage, so the POS
+// catalogue cache, terminals and the storefront pick up the new picture.
+func (s *Service) syncPrimaryImage(ctx context.Context, tx *ent.Tx, tenantID, itemID uuid.UUID, key string) error {
+	updated, err := tx.Item.UpdateOneID(itemID).
+		Where(item.TenantID(tenantID)).
+		SetImageURL(key).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("items: sync image_url: %w", err)
+	}
+	return s.emitItemUpdatedEvent(ctx, tx, tenantID, updated)
 }
 
 // dropImage deletes a stored image once nothing references it any more: only this service's own

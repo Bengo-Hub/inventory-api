@@ -195,6 +195,14 @@ func (m *mockItemsSvc) DeleteItemImage(ctx context.Context, tenantID, itemID, im
 	return nil
 }
 
+func (m *mockItemsSvc) MatchItemImages(ctx context.Context, tenantID uuid.UUID, fileNames []string) ([]items.ImageMatchResult, error) {
+	out := make([]items.ImageMatchResult, len(fileNames))
+	for i, f := range fileNames {
+		out[i] = items.ImageMatchResult{FileName: f, Kind: items.ImageMatchNone, Alternatives: []items.ImageMatchCandidate{}}
+	}
+	return out, nil
+}
+
 type mockStockSvc struct {
 	createReservationFn      func(ctx context.Context, tenantID uuid.UUID, req stock.ReservationRequest) (*stock.ReservationResponse, error)
 	getReservationFn         func(ctx context.Context, tenantID, reservationID uuid.UUID) (*stock.ReservationResponse, error)

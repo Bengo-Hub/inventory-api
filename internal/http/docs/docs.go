@@ -2728,6 +2728,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/items/images/match": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Items"
+                ],
+                "summary": "Match image file names to items",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "File names",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.matchItemImagesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/items.ImageMatchResult"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/items/menu-item": {
             "post": {
                 "consumes": [
@@ -7260,6 +7313,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.matchItemImagesRequest": {
+            "type": "object",
+            "properties": {
+                "file_names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "handlers.materialVarianceDTO": {
             "type": "object",
             "properties": {
@@ -8124,6 +8188,52 @@ const docTemplate = `{
                 },
                 "reason": {
                     "type": "string"
+                }
+            }
+        },
+        "items.ImageMatchCandidate": {
+            "type": "object",
+            "properties": {
+                "has_image": {
+                    "type": "boolean"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "items.ImageMatchResult": {
+            "type": "object",
+            "properties": {
+                "alternatives": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/items.ImageMatchCandidate"
+                    }
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "match": {
+                    "$ref": "#/definitions/items.ImageMatchCandidate"
                 }
             }
         },

@@ -685,6 +685,13 @@ definitions:
         example: ok
         type: string
     type: object
+  handlers.matchItemImagesRequest:
+    properties:
+      file_names:
+        items:
+          type: string
+        type: array
+    type: object
   handlers.materialVarianceDTO:
     properties:
       actual:
@@ -1300,6 +1307,36 @@ definitions:
         type: string
       reason:
         type: string
+    type: object
+  items.ImageMatchCandidate:
+    properties:
+      has_image:
+        type: boolean
+      image_url:
+        type: string
+      is_active:
+        type: boolean
+      item_id:
+        type: string
+      name:
+        type: string
+      score:
+        type: number
+      sku:
+        type: string
+    type: object
+  items.ImageMatchResult:
+    properties:
+      alternatives:
+        items:
+          $ref: '#/definitions/items.ImageMatchCandidate'
+        type: array
+      file_name:
+        type: string
+      kind:
+        type: string
+      match:
+        $ref: '#/definitions/items.ImageMatchCandidate'
     type: object
   items.ItemDTO:
     properties:
@@ -3815,6 +3852,41 @@ paths:
       summary: Products export document (PDF/CSV)
       tags:
       - Reports
+  /{tenant}/inventory/items/images/match:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: File names
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.matchItemImagesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/items.ImageMatchResult'
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Match image file names to items
+      tags:
+      - Items
   /{tenant}/inventory/items/menu-item:
     post:
       consumes:

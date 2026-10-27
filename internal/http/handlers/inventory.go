@@ -70,6 +70,7 @@ type ItemsServicer interface {
 	AddItemImage(ctx context.Context, tenantID, itemID uuid.UUID, up *objectstore.Upload, setPrimary bool) (*items.ItemImageDTO, error)
 	UpdateItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID, in items.UpdateItemImageInput) (*items.ItemImageDTO, error)
 	DeleteItemImage(ctx context.Context, tenantID, itemID, imageID uuid.UUID) error
+	MatchItemImages(ctx context.Context, tenantID uuid.UUID, fileNames []string) ([]items.ImageMatchResult, error)
 }
 
 // StockServicer defines the contract for stock reservation and consumption operations.
@@ -271,6 +272,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Item images (multi-image gallery via ItemAsset). List is open (read); mutations
 		// require items.change. Upload additionally enforces the multi-image feature + per-item
 		// image cap inside the handler (returns 403/402 on lock/overage).
+		inv.With(perm(rbac.PermItemsChange)).Post("/items/images/match", h.MatchItemImages)
 		inv.Get("/items/{itemID}/images", h.ListItemImages)
 		inv.With(perm(rbac.PermItemsChange)).Post("/items/{itemID}/images", h.UploadItemImage)
 		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{itemID}/images/{imageID}", h.UpdateItemImage)
@@ -2677,6 +2679,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID
 	}
+	skuToImage := imagesBySKU(existingItems)
 
 	var result importResult
 	rows, _ := reader.ReadAll()
@@ -2708,6 +2711,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if existingID, exists := skuToID[sku]; exists {
+			keepImageOnImport(&dto, skuToImage[sku])
 			if _, updateErr := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); updateErr != nil {
 				result.Failed++
 				result.Errors = append(result.Errors, "sku="+sku+": "+updateErr.Error())

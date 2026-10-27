@@ -171,6 +171,49 @@ func (h *InventoryHandler) DeleteItemImage(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
+// matchItemImagesRequest is the body of POST /{tenant}/inventory/items/images/match.
+type matchItemImagesRequest struct {
+	FileNames []string `json:"file_names"`
+}
+
+// MatchItemImages handles POST /{tenant}/inventory/items/images/match.
+// Suggests the item for each file name of a bulk image upload (by SKU, barcode, then similar
+// name) so the person can review the pairs before the files go up one by one through
+// UploadItemImage. At most items.MaxImageMatchNames names per request.
+//
+// @Summary      Match image file names to items
+// @Tags         Items
+// @Accept       json
+// @Produce      json
+// @Param        tenant  path  string                  true  "Tenant ID"
+// @Param        body    body  matchItemImagesRequest  true  "File names"
+// @Success      200  {object}  map[string][]items.ImageMatchResult
+// @Failure      400  {object}  map[string]any
+// @Router       /{tenant}/inventory/items/images/match [post]
+func (h *InventoryHandler) MatchItemImages(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	var req matchItemImagesRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 256<<10)).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	if len(req.FileNames) == 0 || len(req.FileNames) > items.MaxImageMatchNames {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Send between 1 and 100 file names")
+		return
+	}
+	matches, err := h.itemsSvc.MatchItemImages(r.Context(), tenantID, req.FileNames)
+	if err != nil {
+		h.log.Error("match item images failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to match images")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"matches": matches})
+}
+
 // parseBoolForm parses a permissive boolean form value ("1", "true", "yes", "on").
 func parseBoolForm(v string) bool {
 	switch strings.ToLower(strings.TrimSpace(v)) {

@@ -106,6 +106,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 	for _, it := range existingItems {
 		skuToID[it.SKU] = it.ID
 	}
+	skuToImage := imagesBySKU(existingItems)
 
 	rows, _ := reader.ReadAll()
 	var res importResult
@@ -123,6 +124,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 		}
 		dto := buildItemDTOFromRow(col, row, catMap, unitMap, brandMap)
 		if existingID, ok := skuToID[sku]; ok {
+			keepImageOnImport(&dto, skuToImage[sku])
 			if _, uErr := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); uErr != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, "sku="+sku+": "+uErr.Error())
@@ -175,7 +177,7 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 
 	// ── Sheet 1: Items ────────────────────────────────────────────────────────
 	if rows, sheetErr := xl.GetRows("Items"); sheetErr == nil && len(rows) > 1 {
-		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, brandMap, skuToID, importUseCase)
+		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, brandMap, skuToID, imagesBySKU(existingItems), importUseCase)
 	}
 
 	// ── Sheet 2: RecipeIngredients ────────────────────────────────────────────
@@ -403,6 +405,26 @@ func sanitizeImportedDescription(s string) string {
 		return ""
 	}
 	return strings.TrimSpace(s)
+}
+
+// imagesBySKU maps each existing item's SKU to its current image link, so a re-import can keep it.
+func imagesBySKU(existing []items.ItemDTO) map[string]string {
+	out := make(map[string]string, len(existing))
+	for _, it := range existing {
+		if it.ImageURL != "" {
+			out[it.SKU] = it.ImageURL
+		}
+	}
+	return out
+}
+
+// keepImageOnImport stops an import row from erasing an item's picture. UpdateItem replaces the
+// whole item, and import rows carry no image, so without this every re-import of a sheet would
+// clear images uploaded since. UpdateItem stores the link back as the same key.
+func keepImageOnImport(dto *items.ItemDTO, current string) {
+	if dto.ImageURL == "" {
+		dto.ImageURL = current
+	}
 }
 
 // buildItemDTOFromRow constructs an ItemDTO from a generic column accessor.
