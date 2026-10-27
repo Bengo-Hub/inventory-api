@@ -104,8 +104,12 @@ func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenant
 		"quantity_change": qtyAfter - qtyBefore,
 		"quantity_after":  qtyAfter,
 		"reason":          reason,
-		"on_hand":         onHand,
-		"available":       available,
+		// One id per movement, written into the outbox payload so redeliveries carry the same id.
+		// Treasury keys its KRA stock ledger on it; without it two identical movements (same
+		// item, quantity and reason) collapsed into one.
+		"adjustment_id": uuid.NewString(),
+		"on_hand":       onHand,
+		"available":     available,
 	})
 	if bal != nil {
 		// checkAndPublishLowStock is the authoritative down-direction dispatcher: on a
