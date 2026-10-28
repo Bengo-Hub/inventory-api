@@ -134,6 +134,14 @@ func (m *mockItemsSvc) ListItemVariants(ctx context.Context, tenantID, itemID uu
 	return []items.VariantDTO{}, nil
 }
 
+func (m *mockItemsSvc) SaveVariants(ctx context.Context, tenantID, parentID uuid.UUID, in items.SaveVariantsInput) ([]items.VariantDTO, error) {
+	return []items.VariantDTO{}, nil
+}
+
+func (m *mockItemsSvc) RefreshVariantAxes(ctx context.Context, tenantID uuid.UUID, parentIDs []uuid.UUID) error {
+	return nil
+}
+
 func (m *mockItemsSvc) ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error) {
 	return []items.ItemDTO{}, 0, nil
 }

@@ -56,6 +56,8 @@ type ItemsServicer interface {
 	SetTaxCodeBySKU(ctx context.Context, tenantID uuid.UUID, sku, code string) (*items.ItemDTO, bool, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, warehouseID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
+	SaveVariants(ctx context.Context, tenantID, parentID uuid.UUID, in items.SaveVariantsInput) ([]items.VariantDTO, error)
+	RefreshVariantAxes(ctx context.Context, tenantID uuid.UUID, parentIDs []uuid.UUID) error
 	ListEventItems(ctx context.Context, tenantID uuid.UUID, limit, offset int) ([]items.ItemDTO, int, error)
 	ListCategories(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID, hasItems, sellableOnly bool) ([]items.CategoryDTO, error)
@@ -265,6 +267,8 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.With(perm(rbac.PermItemsDelete)).Post("/items/{sku}/eol", h.MarkItemEOL)
 		inv.With(perm(rbac.PermItemsDelete)).Post("/items/{sku}/eol/restore", h.RestoreItemEOL)
 		inv.Get("/items/{itemId}/variants", h.ListItemVariants)
+		// Variant matrix (size x colour ...): creates/updates/deactivates the variant child items.
+		inv.With(perm(rbac.PermVariantsChange)).Put("/items/{itemId}/variants", h.SaveItemVariants)
 
 		// Barcode + label printing (single-item PNG read + bulk label-print job).
 		h.registerBarcodeRoutes(inv, perm)
@@ -1282,6 +1286,11 @@ func (h *InventoryHandler) ListItems(w http.ResponseWriter, r *http.Request) {
 			ctx = items.WithIncludeVariants(ctx)
 		}
 	}
+	// ?include_children=1 keeps variant child items as their own rows even with
+	// include=variants (which otherwise shows them only inside the parent's variants[]).
+	if v := r.URL.Query().Get("include_children"); v == "1" || strings.EqualFold(v, "true") {
+		ctx = items.WithIncludeVariantChildren(ctx)
+	}
 	// ?include_non_billable=1 widens the type filter to also return non-billable items
 	// (free accompaniments / supplies) — used by the POS catalog proxy.
 	if v := r.URL.Query().Get("include_non_billable"); v == "1" || strings.EqualFold(v, "true") {
@@ -1367,8 +1376,18 @@ func (h *InventoryHandler) ListEventItems(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, pagination.NewResponse(results, total, p))
 }
 
-// ListItemVariants handles GET /v1/{tenant}/inventory/items/{itemId}/variants —
-// returns the active product variations for an item so retail/POS can sell variations.
+// ListItemVariants handles GET /v1/{tenant}/inventory/items/{itemId}/variants. It returns the
+// item's active variant child items, or its legacy ItemVariant rows when it has no children.
+//
+//	@Summary  List an item's variants
+//	@Tags     Items
+//	@Produce  json
+//	@Param    tenant  path  string  true  "Tenant slug or id"
+//	@Param    itemId  path  string  true  "Parent item id"
+//	@Success  200  {array}  items.VariantDTO
+//	@Failure  404  {object}  map[string]any
+//	@Security bearerAuth
+//	@Router   /{tenant}/inventory/items/{itemId}/variants [get]
 func (h *InventoryHandler) ListItemVariants(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -1384,11 +1403,69 @@ func (h *InventoryHandler) ListItemVariants(w http.ResponseWriter, r *http.Reque
 
 	variants, err := h.itemsSvc.ListItemVariants(r.Context(), tenantID, itemID)
 	if err != nil {
+		if errors.Is(err, items.ErrVariantParentNotFound) {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+			return
+		}
 		h.log.Error("list item variants failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list item variants")
 		return
 	}
 
+	writeJSON(w, http.StatusOK, variants)
+}
+
+// SaveItemVariants handles PUT /v1/{tenant}/inventory/items/{itemId}/variants. The body is the
+// whole variant matrix: rows matched by attributes update their child item, new rows create one
+// (copying the parent's category, unit, brand, tax and eTIMS codes), and children missing from
+// the body are deactivated. Returns every child, active and inactive.
+//
+//	@Summary  Save an item's variant matrix
+//	@Tags     Items
+//	@Accept   json
+//	@Produce  json
+//	@Param    tenant  path  string                   true  "Tenant slug or id"
+//	@Param    itemId  path  string                   true  "Parent item id"
+//	@Param    body    body  items.SaveVariantsInput  true  "Axes and rows"
+//	@Success  200  {array}  items.VariantDTO
+//	@Failure  400  {object}  map[string]any
+//	@Failure  404  {object}  map[string]any
+//	@Failure  409  {object}  map[string]any
+//	@Security bearerAuth
+//	@Router   /{tenant}/inventory/items/{itemId}/variants [put]
+func (h *InventoryHandler) SaveItemVariants(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	itemID, err := uuid.Parse(chi.URLParam(r, "itemId"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ITEM_ID", "Invalid item ID")
+		return
+	}
+	var req items.SaveVariantsInput
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	variants, err := h.itemsSvc.SaveVariants(r.Context(), tenantID, itemID, req)
+	if err != nil {
+		var inErr *items.VariantInputError
+		var dupErr *items.DuplicateSKUError
+		switch {
+		case errors.Is(err, items.ErrVariantParentNotFound):
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+		case errors.As(err, &inErr):
+			writeError(w, http.StatusBadRequest, "INVALID_VARIANTS", inErr.Msg)
+		case errors.As(err, &dupErr):
+			writeError(w, http.StatusConflict, "DUPLICATE_SKU", dupErr.Error())
+		default:
+			h.log.Error("save item variants failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to save variants")
+		}
+		return
+	}
 	writeJSON(w, http.StatusOK, variants)
 }
 

@@ -518,6 +518,11 @@ type ItemDTO struct {
 	// (inline for single-item reads, or for the list when ?include=variants is requested).
 	HasVariants bool         `json:"has_variants"`
 	Variants    []VariantDTO `json:"variants,omitempty"`
+	// VariantOf/VariantAttributes are read-only mirrors of metadata.variant_of and
+	// metadata.variant_attributes, set when this item is a variant child (see variant_children.go).
+	// Ignored on create and update; write them through metadata or PUT /items/{id}/variants.
+	VariantOf         string            `json:"variant_of,omitempty"`
+	VariantAttributes map[string]string `json:"variant_attributes,omitempty"`
 	// Images surfaces the item's IMAGE assets (multi-image gallery). Populated when the
 	// `assets` edge is eager-loaded; primary first. ImageURL above remains the primary
 	// image URL for backward compatibility with single-image clients.
@@ -607,8 +612,10 @@ type ItemDTO struct {
 	ModifierGroups []ItemModifierGroup `json:"modifier_groups,omitempty"`
 }
 
-// VariantDTO is the catalog-facing projection of an ItemVariant. Surfaced on the item
-// so POS/ordering catalog proxies can offer variations for sale.
+// VariantDTO is the catalog-facing projection of a variant, surfaced on the item so POS and
+// ordering catalog proxies can offer variations for sale. For a variant child item, ID is the
+// child item's own id and Price its effective selling price; for a legacy ItemVariant row, ID is
+// the ItemVariant id. OnHand/Available/ImageURL are only filled for child items.
 type VariantDTO struct {
 	ID         uuid.UUID         `json:"id"`
 	SKU        string            `json:"sku"`
@@ -617,6 +624,9 @@ type VariantDTO struct {
 	Attributes map[string]string `json:"attributes,omitempty"`
 	Barcode    string            `json:"barcode,omitempty"`
 	IsActive   bool              `json:"is_active"`
+	ImageURL   string            `json:"image_url,omitempty"`
+	OnHand     *float64          `json:"on_hand,omitempty"`
+	Available  *float64          `json:"available,omitempty"`
 }
 
 // ItemModifierOption is the catalog-facing projection of a ModifierOption.
@@ -690,6 +700,10 @@ type StockAvailability struct {
 	ReorderQuantity     int        `json:"reorder_quantity"`
 	PreferredSupplierID *uuid.UUID `json:"preferred_supplier_id,omitempty"`
 	UpdatedAt           string     `json:"updated_at"`
+	// Set when the SKU belongs to a variant child item: the parent item id and the
+	// child's attributes (e.g. {"size":"M","colour":"Red"}).
+	VariantOf         string            `json:"variant_of,omitempty"`
+	VariantAttributes map[string]string `json:"variant_attributes,omitempty"`
 }
 
 // Service handles item-related business logic.
@@ -799,11 +813,21 @@ func (s *Service) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, 
 	}
 
 	// BOM explosion: if item type is RECIPE, compute available portions from ingredients
+	var avail *StockAvailability
 	if itm.Type == item.TypeRECIPE {
-		return s.getRecipeAvailability(ctx, tenantID, itm)
+		avail, err = s.getRecipeAvailability(ctx, tenantID, itm)
+	} else {
+		avail, err = s.getDirectAvailability(ctx, tenantID, itm)
 	}
-
-	return s.getDirectAvailability(ctx, tenantID, itm)
+	if err != nil || avail == nil {
+		return avail, err
+	}
+	// A variant child resolves like any item; say which product it belongs to.
+	if parentID, ok := VariantOfFromMetadata(itm.Metadata); ok {
+		avail.VariantOf = parentID.String()
+		avail.VariantAttributes = VariantAttributesFromMetadata(itm.Metadata)
+	}
+	return avail, nil
 }
 
 // getDirectAvailability returns availability for a non-recipe item directly from InventoryBalance.
@@ -1316,6 +1340,10 @@ func (s *Service) mapToDTO(i *ent.Item) *ItemDTO {
 		}
 		dto.HasVariants = len(dto.Variants) > 0
 	}
+	if parentID, ok := VariantOfFromMetadata(i.Metadata); ok {
+		dto.VariantOf = parentID.String()
+		dto.VariantAttributes = VariantAttributesFromMetadata(i.Metadata)
+	}
 	// Surface the multi-image gallery when the assets edge has been eager-loaded. Only IMAGE
 	// assets are exposed; primary first, then by display_order. When no explicit image_url is
 	// set on the item, fall back to the primary asset URL so legacy single-image reads still work.
@@ -1594,6 +1622,15 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		balanceScopeWarehouseIDs = map[uuid.UUID]struct{}{*warehouseID: {}}
 	}
 
+	// Variant child items are hidden only from the catalog style listing: include=variants
+	// (which every storefront and POS catalog proxy sends, and which shows the children inside
+	// their parent's variants[]) without include_children=1. Explicit lookups (?id=, ?skus=,
+	// ?search=) always reach children, so a scanned child barcode or SKU still resolves, and
+	// back-office stock pages, receipts, counts and the bulk import never ask for
+	// include=variants, so they keep listing every child as its own row.
+	hideVariantChildren := includeVariants(ctx) && !includeVariantChildren(ctx) &&
+		itemIDFilter(ctx) == nil && len(skuFilter(ctx)) == 0 && search == ""
+
 	buildQuery := func() *ent.ItemQuery {
 		// The heavy, potentially-many-row catalog fetch this function exists for — routed to a
 		// read replica when configured (see rc()), EXCEPT the single-item detail fetch below:
@@ -1718,6 +1755,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 				item.NonBillable(true),
 				item.HasBalances(),
 			))
+		}
+		if hideVariantChildren {
+			q = q.Where(item.Not(variantOfPredicate()))
 		}
 		return q
 	}
@@ -1872,6 +1912,11 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		// Enrich with effective selling price + tax split for POS/ordering proxies.
 		s.enrichPrices(innerCtx, tenantID, cfg, dtos)
 		s.enrichModifierGroups(innerCtx, dtos)
+		if includeVariants(innerCtx) {
+			// One batched lookup for every parent on the page (variant child items); parents
+			// without children keep the legacy ItemVariant rows loaded by applyEagerLoads.
+			s.attachChildVariants(innerCtx, tenantID, dtos, cfg, balanceScopeWarehouseIDs)
+		}
 		return dtos, nil
 	}
 
@@ -1903,7 +1948,7 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		countKey := sharedcache.Key("inv", "items-count", tenantID.String(),
 			typeFilter, statusFilter, useCase, notForSaleFilter(ctx),
 			categoryKey, unitKey, outletKey, brandKey, modelFilter(ctx), search, strings.Join(tagsFilter, ","),
-			fmt.Sprintf("recipe=%v,nonbill=%v,strict=%v", recipeInputScope(ctx), includeNonBillable(ctx), strictOutletPred != nil),
+			fmt.Sprintf("recipe=%v,nonbill=%v,strict=%v,hidechildren=%v", recipeInputScope(ctx), includeNonBillable(ctx), strictOutletPred != nil, hideVariantChildren),
 		)
 		total, err = sharedcache.GetOrSet(ctx, s.cache, countKey, outletScopeCacheTTL, func(ctx context.Context) (int, error) {
 			return buildQuery().Count(ctx)
@@ -1982,18 +2027,26 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	return dtos, total, nil
 }
 
-// ListItemVariants returns the active product variations for a single item.
-// Surfaces the existing ItemVariant edge so retail/POS can sell variations.
+// ListItemVariants returns the active product variations for a single item: its variant child
+// items (see variant_children.go) in axis order, or, when it has none, the legacy ItemVariant rows.
 func (s *Service) ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]VariantDTO, error) {
 	// Ensure the item belongs to the tenant before exposing its variants.
-	exists, err := s.client.Item.Query().
+	parent, err := s.client.Item.Query().
 		Where(item.TenantID(tenantID), item.ID(itemID)).
-		Exist(ctx)
+		Only(ctx)
 	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ErrVariantParentNotFound
+		}
 		return nil, fmt.Errorf("items: lookup item for variants: %w", err)
 	}
-	if !exists {
-		return nil, fmt.Errorf("items: item not found")
+	children, err := s.ListChildVariants(ctx, tenantID, []uuid.UUID{itemID})
+	if err != nil {
+		return nil, err
+	}
+	if vs := children[itemID]; len(vs) > 0 {
+		sortVariantsByAxes(vs, VariantAxesFromMetadata(parent.Metadata))
+		return vs, nil
 	}
 	variants, err := s.client.ItemVariant.Query().
 		Where(itemvariant.ItemID(itemID), itemvariant.IsActive(true)).

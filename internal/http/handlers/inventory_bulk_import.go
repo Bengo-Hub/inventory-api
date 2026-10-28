@@ -107,6 +107,8 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 		skuToID[it.SKU] = it.ID
 	}
 	skuToImage := imagesBySKU(existingItems)
+	skuToMeta := metadataBySKU(existingItems)
+	variantParents := map[uuid.UUID]bool{}
 
 	rows, _ := reader.ReadAll()
 	var res importResult
@@ -123,8 +125,18 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 			h.ensureBrand(r, tenantID, brandName, brandMap)
 		}
 		dto := buildItemDTOFromRow(col, row, catMap, unitMap, brandMap)
+		parentID, linkErr := linkImportVariant(col, row, &dto, skuToID)
+		if linkErr != nil {
+			res.Failed++
+			res.Errors = append(res.Errors, "sku="+sku+": "+linkErr.Error())
+			continue
+		}
+		if parentID != nil {
+			variantParents[*parentID] = true
+		}
 		if existingID, ok := skuToID[sku]; ok {
 			keepImageOnImport(&dto, skuToImage[sku])
+			keepMetadataOnImport(&dto, skuToMeta[sku])
 			if _, uErr := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); uErr != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, "sku="+sku+": "+uErr.Error())
@@ -147,6 +159,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 			}
 		}
 	}
+	h.refreshImportedVariantAxes(r, tenantID, variantParents, &res)
 	return res
 }
 
@@ -177,7 +190,7 @@ func (h *InventoryHandler) bulkImportXLSX(r *http.Request, tenantID uuid.UUID, f
 
 	// ── Sheet 1: Items ────────────────────────────────────────────────────────
 	if rows, sheetErr := xl.GetRows("Items"); sheetErr == nil && len(rows) > 1 {
-		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, brandMap, skuToID, imagesBySKU(existingItems), importUseCase)
+		result.Items = h.parseXLSXItems(r, tenantID, rows, catMap, unitMap, brandMap, skuToID, imagesBySKU(existingItems), metadataBySKU(existingItems), importUseCase)
 	}
 
 	// ── Sheet 2: RecipeIngredients ────────────────────────────────────────────
@@ -562,8 +575,94 @@ func buildItemDTOFromRow(
 	if dims := parseDimensions(col(row, "dimensions_cm")); dims != nil {
 		dto.DimensionsCm = dims
 	}
+	// Variant child rows: "size=M;colour=Red". The parent link (variant_of_sku) needs the
+	// SKU-to-id map, so linkImportVariant resolves it after this builder.
+	if attrs := parseVariantAttributes(col(row, "variant_attributes")); len(attrs) > 0 {
+		dto.Metadata = map[string]any{items.MetaVariantAttributes: attrs}
+	}
 
 	return dto
+}
+
+// parseVariantAttributes reads "size=M;colour=Red" into {"size":"M","colour":"Red"}. Axis names
+// are lower-cased; pairs without "=" or with a blank side are skipped.
+func parseVariantAttributes(s string) map[string]any {
+	out := map[string]any{}
+	for _, pair := range strings.Split(s, ";") {
+		k, v, ok := strings.Cut(pair, "=")
+		k, v = strings.ToLower(strings.TrimSpace(k)), strings.TrimSpace(v)
+		if !ok || k == "" || v == "" {
+			continue
+		}
+		out[k] = v
+	}
+	return out
+}
+
+// linkImportVariant sets metadata.variant_of from the row's variant_of_sku, resolved against the
+// SKUs already in the tenant or created earlier in the same sheet (so a parent row must come
+// before its variants). It returns the parent id, or nil when the row is not a variant.
+func linkImportVariant(col func(row []string, name string) string, row []string, dto *items.ItemDTO, skuToID map[string]uuid.UUID) (*uuid.UUID, error) {
+	parentSKU := strings.TrimSpace(col(row, "variant_of_sku"))
+	_, hasAttrs := dto.Metadata[items.MetaVariantAttributes]
+	if parentSKU == "" && !hasAttrs {
+		return nil, nil
+	}
+	if parentSKU == "" || !hasAttrs {
+		return nil, fmt.Errorf("variant rows need both variant_of_sku and variant_attributes")
+	}
+	if strings.EqualFold(parentSKU, dto.SKU) {
+		return nil, fmt.Errorf("an item cannot be a variant of itself")
+	}
+	parentID, ok := skuToID[parentSKU]
+	if !ok {
+		return nil, fmt.Errorf("variant_of_sku %q not found (list the parent row above its variants)", parentSKU)
+	}
+	dto.Metadata[items.MetaVariantOf] = parentID.String()
+	return &parentID, nil
+}
+
+// metadataBySKU maps each existing item's SKU to its metadata, so a re-import keeps it.
+func metadataBySKU(existing []items.ItemDTO) map[string]map[string]any {
+	out := make(map[string]map[string]any, len(existing))
+	for _, it := range existing {
+		if len(it.Metadata) > 0 {
+			out[it.SKU] = it.Metadata
+		}
+	}
+	return out
+}
+
+// keepMetadataOnImport stops an import row from erasing an item's metadata (variant links and
+// axes included). UpdateItem replaces the whole metadata map, so the row's keys are merged over
+// the stored ones.
+func keepMetadataOnImport(dto *items.ItemDTO, current map[string]any) {
+	if len(current) == 0 {
+		return
+	}
+	merged := make(map[string]any, len(current)+len(dto.Metadata))
+	for k, v := range current {
+		merged[k] = v
+	}
+	for k, v := range dto.Metadata {
+		merged[k] = v
+	}
+	dto.Metadata = merged
+}
+
+// refreshImportedVariantAxes rebuilds variant_axes on every parent that gained or changed a
+// variant row in this import. Best effort: a failure is reported, the rows stay imported.
+func (h *InventoryHandler) refreshImportedVariantAxes(r *http.Request, tenantID uuid.UUID, parents map[uuid.UUID]bool, res *importResult) {
+	if len(parents) == 0 {
+		return
+	}
+	ids := make([]uuid.UUID, 0, len(parents))
+	for id := range parents {
+		ids = append(ids, id)
+	}
+	if err := h.itemsSvc.RefreshVariantAxes(r.Context(), tenantID, ids); err != nil {
+		res.Errors = append(res.Errors, "variant axes: "+err.Error())
+	}
 }
 
 // ─── row-value parse helpers ──────────────────────────────────────────────────

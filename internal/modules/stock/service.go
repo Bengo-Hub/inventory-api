@@ -1208,26 +1208,28 @@ func (s *Service) resolveWarehouseIDForOutlet(ctx context.Context, tenantID, war
 // Item's stock and BOM. So a variant SKU resolves to its parent Item, and all
 // downstream stock/BOM logic operates on the parent. Returns ent.NotFound when
 // neither an item nor a variant matches.
+//
+// An Item SKU always wins: variant child items (variant_of metadata) are real
+// Items with their own stock, and a legacy ItemVariant SKU is only consulted
+// when no item of the tenant holds that SKU at all. An inactive item with the
+// SKU is reported as not found rather than silently remapped to a variant's
+// parent. ItemVariant SKUs are unique per item, not per tenant, so several rows
+// can match; the oldest active one wins (created_at, then id) instead of the
+// former .Only() erroring on the ambiguity.
 func (s *Service) ResolveItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*ent.Item, error) {
 	itm, err := s.client.Item.Query().
-		Where(item.TenantID(tenantID), item.Sku(sku), item.IsActive(true)).
-		Only(ctx)
+		Where(item.TenantID(tenantID), item.Sku(sku)).
+		First(ctx)
 	if err == nil {
-		return itm, nil
+		if itm.IsActive {
+			return itm, nil
+		}
+		return nil, &ent.NotFoundError{}
 	}
 	if !ent.IsNotFound(err) {
 		return nil, err
 	}
-	// Fall back to a variant SKU → parent item. ItemVariant has no tenant_id of its
-	// own (it's keyed by item_id); scope the tenant via the parent Item edge.
-	v, verr := s.client.ItemVariant.Query().
-		Where(
-			itemvariant.Sku(sku),
-			itemvariant.IsActive(true),
-			itemvariant.HasItemWith(item.TenantID(tenantID)),
-		).
-		WithItem().
-		Only(ctx)
+	v, verr := s.legacyVariantBySKU(ctx, tenantID, sku)
 	if verr != nil {
 		return nil, err // surface the original item-not-found
 	}
@@ -1235,6 +1237,21 @@ func (s *Service) ResolveItemBySKU(ctx context.Context, tenantID uuid.UUID, sku 
 		return v.Edges.Item, nil
 	}
 	return s.client.Item.Get(ctx, v.ItemID)
+}
+
+// legacyVariantBySKU finds the active ItemVariant row with this SKU under the tenant (scoped
+// through the parent Item edge, since ItemVariant has no tenant_id). ItemVariant SKUs are only
+// unique per item, so the oldest match wins deterministically.
+func (s *Service) legacyVariantBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*ent.ItemVariant, error) {
+	return s.client.ItemVariant.Query().
+		Where(
+			itemvariant.Sku(sku),
+			itemvariant.IsActive(true),
+			itemvariant.HasItemWith(item.TenantID(tenantID)),
+		).
+		WithItem().
+		Order(ent.Asc(itemvariant.FieldCreatedAt), ent.Asc(itemvariant.FieldID)).
+		First(ctx)
 }
 
 // resolveStockSKU maps a sale/cart SKU to the SKU that actually keys stock/BOM:
@@ -1250,14 +1267,7 @@ func (s *Service) resolveStockSKU(ctx context.Context, tenantID uuid.UUID, sku s
 	if err == nil && exists {
 		return sku
 	}
-	v, verr := s.client.ItemVariant.Query().
-		Where(
-			itemvariant.Sku(sku),
-			itemvariant.IsActive(true),
-			itemvariant.HasItemWith(item.TenantID(tenantID)),
-		).
-		WithItem().
-		Only(ctx)
+	v, verr := s.legacyVariantBySKU(ctx, tenantID, sku)
 	if verr != nil {
 		return sku
 	}

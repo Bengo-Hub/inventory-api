@@ -204,6 +204,75 @@ layer per accepted line and then calls `stock.RecomputeStandardCost` once per it
 - A selling price change rides on the line (`new_selling_price`, `price_scope`). Mark Received now
   copies both from the PO line into the auto-created receipt line; it used to drop them.
 
+## Variants (2026-10-28)
+
+Retail products sold in several sizes and colours use child items. Each variant is a normal
+`Item` with its own SKU, barcode, price, cost and stock, so balances, receipts, transfers, counts,
+lots, reservations, pricing tiers, eTIMS registration and COGS all work for it with no special
+case. The link is stored in metadata, so there is no schema change:
+
+- child item: `metadata.variant_of` is the parent item id and `metadata.variant_attributes` holds
+  its values, for example `{"size":"M","colour":"Red"}`.
+- parent item: `metadata.variant_axes` maps each axis to its ordered values, for example
+  `{"colour":["Red","Blue"],"size":["S","M"]}`. The parent is the display product and holds no
+  stock of its own. Nothing blocks stock on it; the screens simply sell and count the children.
+
+The older `ItemVariant` table stays for price-only variations that share the parent's stock. Reads
+fall back to it whenever an item has no child items. The code lives in
+`internal/modules/items/variant_children.go`.
+
+### Endpoints
+
+- `PUT /{tenant}/inventory/items/{itemId}/variants` (permission `inventory.variants.change`)
+  takes the whole matrix, `{"axes":{"size":["S","M"],"colour":["Red","Blue"]},"rows":[{"attributes":{"size":"M","colour":"Red"},"sku":"","barcode":"","price":1200,"is_active":true}]}`.
+  Every row must give a value for each axis, from that axis's list, and no combination may
+  repeat. A row whose attributes match an existing child updates it. A new row creates a child
+  that copies the parent's type, category, unit, brand, tax code, eTIMS codes, description,
+  use case, tracking mode and purchase fields. Its name is "T-shirt, Red / M" (values in
+  alphabetical axis order) and its SKU defaults to the parent SKU plus the upper-cased values
+  ("TSHIRT-RED-M"). A row price goes through the same path as `selling_price` on item create,
+  so it becomes the Retail and Wholesale prices; without one the child inherits the parent's
+  prices. Children left out of the body are deactivated, never deleted. The parent's
+  `variant_axes` is merged into its metadata and `item.updated` is published for the parent;
+  children publish `item.created` or `item.updated` through the normal create and update code.
+  The call is not one transaction, but matching by attributes makes a retry safe. Errors are 400
+  for bad rows, 404 for an unknown parent and 409 for a SKU another item already holds. The
+  response is every child, active or not, as `VariantDTO`.
+- `GET /{tenant}/inventory/items/{itemId}/variants` returns the active children, or the legacy
+  `ItemVariant` rows when there are none.
+- `VariantDTO` is `{id, sku, name, price, attributes, barcode, is_active, image_url, on_hand, available}`.
+  For a child, `id` is the child item id and `price` its effective selling price.
+
+### Listing and lookups
+
+- `GET /items?include=variants` fills `variants[]` and `has_variants` on every parent of the page
+  from its children in one query (`metadata->>'variant_of' IN (...)`, tenant scoped), with stock
+  summed over the same outlet or warehouse scope as the row itself.
+- The same request hides the children as rows, because the storefront and POS catalog proxies
+  always send `include=variants` and show children inside the parent. `include_children=1` keeps
+  them as rows. Without `include=variants` (stock pages, receipts, counts, transfers, the bulk
+  import) and for explicit lookups (`id`, `skus`, `search`), children are always listed, so a
+  scanned child barcode or SKU resolves.
+- Every `ItemDTO` carries read-only `variant_of` and `variant_attributes` when it is a child, and
+  `GET /items/{sku}` returns the same two fields on its availability response.
+- `ResolveItemBySKU` and `resolveStockSKU` in the stock module now prefer an item with the exact
+  SKU and only then try a legacy `ItemVariant` SKU, taking the oldest match instead of failing
+  when two parents share a variant SKU.
+
+### Bulk import
+
+The Items sheet (and CSV) accepts two optional columns. `variant_of_sku` names the parent, which
+must already exist or appear earlier in the sheet, and `variant_attributes` lists the values as
+`size=M;colour=Red`. Both must be filled for a variant row. After the sheet is processed each
+touched parent's `variant_axes` is rebuilt from its active children, keeping the existing value
+order. Re-importing a row now merges the stored metadata instead of wiping it.
+
+### Index
+
+No index backs `metadata->>'variant_of'`. Every lookup is scoped by the indexed `tenant_id`, which
+keeps the scanned set to one tenant's items. If it shows up in slow query logs, add an expression
+index through the Ent and Atlas versioned migration workflow.
+
 ## Authentication
 
 - **JWT validation** via `shared-auth-client` v0.3.1 (JWKS from `sso.codevertexafrica.com`)

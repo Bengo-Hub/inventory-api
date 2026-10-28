@@ -1657,6 +1657,16 @@ definitions:
       use_case:
         description: Hospitality fields — room-type / facility / amenity SERVICE items
         type: string
+      variant_attributes:
+        additionalProperties:
+          type: string
+        type: object
+      variant_of:
+        description: |-
+          VariantOf/VariantAttributes are read-only mirrors of metadata.variant_of and
+          metadata.variant_attributes, set when this item is a variant child (see variant_children.go).
+          Ignored on create and update; write them through metadata or PUT /items/{id}/variants.
+        type: string
       variants:
         items:
           $ref: '#/definitions/items.VariantDTO'
@@ -1714,7 +1724,45 @@ definitions:
       sku:
         type: string
     type: object
+  items.SaveVariantsInput:
+    properties:
+      axes:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      rows:
+        items:
+          $ref: '#/definitions/items.VariantRowInput'
+        type: array
+    type: object
   items.VariantDTO:
+    properties:
+      attributes:
+        additionalProperties:
+          type: string
+        type: object
+      available:
+        type: number
+      barcode:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      on_hand:
+        type: number
+      price:
+        type: number
+      sku:
+        type: string
+    type: object
+  items.VariantRowInput:
     properties:
       attributes:
         additionalProperties:
@@ -1722,12 +1770,8 @@ definitions:
         type: object
       barcode:
         type: string
-      id:
-        type: string
       is_active:
         type: boolean
-      name:
-        type: string
       price:
         type: number
       sku:
@@ -3597,6 +3641,87 @@ paths:
       summary: Download inventory import template
       tags:
       - inventory
+  /{tenant}/inventory/items/{itemId}/variants:
+    get:
+      parameters:
+      - description: Tenant slug or id
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: Parent item id
+        in: path
+        name: itemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/items.VariantDTO'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - bearerAuth: []
+      summary: List an item's variants
+      tags:
+      - Items
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Tenant slug or id
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: Parent item id
+        in: path
+        name: itemId
+        required: true
+        type: string
+      - description: Axes and rows
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/items.SaveVariantsInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/items.VariantDTO'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Save an item's variant matrix
+      tags:
+      - Items
   /{tenant}/inventory/items/{sku}/stock-history:
     get:
       description: Per-item summary (opening stock, purchases, sold, sell/purchase

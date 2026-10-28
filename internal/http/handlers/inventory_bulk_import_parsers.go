@@ -95,10 +95,12 @@ func (h *InventoryHandler) parseXLSXItems(
 	brandMap map[string]uuid.UUID,
 	skuToID map[string]uuid.UUID,
 	skuToImage map[string]string,
+	skuToMeta map[string]map[string]any,
 	useCase string,
 ) importResult {
 	colMap := xlsxColMap(rows)
 	var res importResult
+	variantParents := map[uuid.UUID]bool{}
 
 	for _, row := range rows[1:] { // skip header
 		if len(row) == 0 {
@@ -128,9 +130,19 @@ func (h *InventoryHandler) parseXLSXItems(
 		}
 
 		dto := buildItemDTOFromRow(col, nil, catMap, unitMap, brandMap)
+		parentID, linkErr := linkImportVariant(col, nil, &dto, skuToID)
+		if linkErr != nil {
+			res.Failed++
+			res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, linkErr.Error()))
+			continue
+		}
+		if parentID != nil {
+			variantParents[*parentID] = true
+		}
 
 		if existingID, ok := skuToID[sku]; ok {
 			keepImageOnImport(&dto, skuToImage[sku])
+			keepMetadataOnImport(&dto, skuToMeta[sku])
 			if _, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); err != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, err.Error()))
@@ -153,6 +165,7 @@ func (h *InventoryHandler) parseXLSXItems(
 			}
 		}
 	}
+	h.refreshImportedVariantAxes(r, tenantID, variantParents, &res)
 	return res
 }
 

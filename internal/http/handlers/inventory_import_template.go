@@ -35,6 +35,8 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		"total_capacity", "event_start_at", "event_end_at", "event_venue",
 		// Brand / item attributes (retail / pharmacy)
 		"brand", "manufacturer", "model",
+		// Variants (size, colour, ...): a row is a variant child of the item with this SKU.
+		"variant_of_sku", "variant_attributes",
 	}
 	itemExample := []any{
 		"INGR-BEEF-STEAK", "Beef steak (sirloin)", "INGREDIENT",
@@ -178,6 +180,8 @@ func (h *InventoryHandler) ImportTemplate(w http.ResponseWriter, r *http.Request
 		{"brand", "NO", "string", "Brand name. Auto-created (get-or-create by name per tenant) if not found."},
 		{"manufacturer", "NO", "string", "Manufacturer name (retail/pharmacy). Free text."},
 		{"model", "NO", "string", "Model / variant identifier (retail). Free text."},
+		{"variant_of_sku", "NO", "string", "Makes this row a variant of the item with this SKU (e.g. a T-shirt in Red / M). The parent row must come earlier in the sheet or already exist. Needs variant_attributes."},
+		{"variant_attributes", "NO", "string", "The variant's attributes as name=value pairs separated by ';', e.g. size=M;colour=Red. The parent's sizes and colours are rebuilt from its variants after the import."},
 	}
 	for i, rowData := range readme {
 		for j, val := range rowData {
