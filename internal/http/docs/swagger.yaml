@@ -3722,6 +3722,44 @@ paths:
       summary: Save an item's variant matrix
       tags:
       - Items
+  /{tenant}/inventory/items/{sku}/description:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Tenant ID
+        in: path
+        name: tenant
+        required: true
+        type: string
+      - description: Item SKU
+        in: path
+        name: sku
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Set an item's description
+      tags:
+      - items
   /{tenant}/inventory/items/{sku}/stock-history:
     get:
       description: Per-item summary (opening stock, purchases, sold, sell/purchase

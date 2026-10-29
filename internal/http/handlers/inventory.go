@@ -54,6 +54,7 @@ type ItemsServicer interface {
 	EnsureDefaultPrice(ctx context.Context, tenantID, itemID uuid.UUID, price float64) error
 	SetSellingPriceBySKU(ctx context.Context, tenantID uuid.UUID, sku string, price float64) (*items.ItemDTO, error)
 	SetTaxCodeBySKU(ctx context.Context, tenantID uuid.UUID, sku, code string) (*items.ItemDTO, bool, error)
+	SetDescriptionBySKU(ctx context.Context, tenantID uuid.UUID, sku, description string) (*items.ItemDTO, bool, error)
 	ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter, statusFilter string, limit, offset int, categoryID *uuid.UUID, unitID *uuid.UUID, search string, outletID *uuid.UUID, warehouseID *uuid.UUID, useCase string, tagsFilter ...string) ([]items.ItemDTO, int, error)
 	ListItemVariants(ctx context.Context, tenantID, itemID uuid.UUID) ([]items.VariantDTO, error)
 	SaveVariants(ctx context.Context, tenantID, parentID uuid.UUID, in items.SaveVariantsInput) ([]items.VariantDTO, error)
@@ -256,6 +257,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		// Targeted tax-code change: tax_code_id only, validated against treasury's active codes.
 		// Never touches KRA (eTIMS registration is a separate, explicit sync in treasury).
 		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{sku}/tax-code", h.SetItemTaxCode)
+		inv.With(perm(rbac.PermItemsChange)).Patch("/items/{sku}/description", h.SetItemDescription)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/items/{sku}", h.DeleteItem)
 		// Bulk multi-select actions (DataTable): delete keeps the delete permission,
 		// status changes (activate/deactivate/not-for-sale) need items.change.
@@ -1690,6 +1692,54 @@ func (h *InventoryHandler) SetItemTaxCode(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"sku": dto.SKU, "tax_code_id": dto.TaxCodeID, "changed": changed})
+}
+
+// SetItemDescription handles PATCH /v1/{tenant}/inventory/items/{sku}/description: changes the
+// item's description only (the full PUT /items/{sku} replaces every field). Body:
+// {"description": "..."}; empty clears it. Unchanged text is a no-op.
+//
+//	@Summary      Set an item's description
+//	@Tags         items
+//	@Accept       json
+//	@Produce      json
+//	@Param        tenant  path      string  true  "Tenant ID"
+//	@Param        sku     path      string  true  "Item SKU"
+//	@Success      200     {object}  map[string]any
+//	@Failure      400     {object}  map[string]string
+//	@Failure      404     {object}  map[string]string
+//	@Router       /{tenant}/inventory/items/{sku}/description [patch]
+func (h *InventoryHandler) SetItemDescription(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	sku := chi.URLParam(r, "sku")
+	if sku == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
+		return
+	}
+	var req struct {
+		Description *string `json:"description"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Description == nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "description is required")
+		return
+	}
+	dto, changed, err := h.itemsSvc.SetDescriptionBySKU(r.Context(), tenantID, sku, *req.Description)
+	if err != nil {
+		switch {
+		case ent.IsNotFound(err):
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
+		case errors.Is(err, items.ErrDescriptionTooLong):
+			writeError(w, http.StatusBadRequest, "DESCRIPTION_TOO_LONG", err.Error())
+		default:
+			h.log.Error("set item description failed", zap.Error(err), zap.String("sku", sku))
+			writeError(w, http.StatusInternalServerError, "DESCRIPTION_UPDATE_FAILED", err.Error())
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"sku": dto.SKU, "description": dto.Description, "changed": changed})
 }
 
 // operatingOutletID returns the outlet the request is acting under (from the X-Outlet-ID context),
