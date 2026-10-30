@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -15,6 +16,8 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/schema"
 	entconfig "github.com/bengobox/inventory-service/internal/ent/tenantinventoryconfig"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
+	"github.com/bengobox/inventory-service/internal/modules/bulkjobs"
+	"github.com/bengobox/inventory-service/internal/modules/items"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/tenantconfig"
 	"github.com/bengobox/inventory-service/internal/platform/treasury"
@@ -49,6 +52,14 @@ type InventorySettingsHandler struct {
 	db       *ent.Client
 	rbacSvc  *rbac.Service
 	treasury *treasury.Client
+	itemsSvc *items.Service
+	jobs     *bulkjobs.Service
+}
+
+// SetCatalogTaxJobs wires the items service and bulk-job runner used to apply a changed default
+// tax code to every item, and to report the automatic (band) code on the settings payload.
+func (h *InventorySettingsHandler) SetCatalogTaxJobs(itemsSvc *items.Service, jobs *bulkjobs.Service) {
+	h.itemsSvc, h.jobs = itemsSvc, jobs
 }
 
 func NewInventorySettingsHandler(log *zap.Logger, db *ent.Client) *InventorySettingsHandler {
@@ -105,7 +116,13 @@ type inventorySettingsResponse struct {
 	CostingMethod              string   `json:"costing_method"` // wavg|fifo|lifo|fefo
 	DefaultTargetMarginPercent *float64 `json:"default_target_margin_percent"`
 	PricesInclusiveOfTax       bool     `json:"prices_inclusive_of_tax"`
-	DefaultTaxCode             string   `json:"default_tax_code"`
+	DefaultTaxCode             string   `json:"default_tax_code"` // "" = automatic
+	// AutomaticTaxCode is what "automatic" resolves to now: band B (VAT 16%) while treasury
+	// reports the business VAT-active, band D (Non-VAT) otherwise. Omitted when treasury is down.
+	AutomaticTaxCode string `json:"automatic_tax_code,omitempty"`
+	VATActive        *bool  `json:"vat_active,omitempty"`
+	// TaxCodeJob is set on the save that changed the default: the background job applying it.
+	TaxCodeJob *taxCodeJobInfo `json:"tax_code_job,omitempty"`
 	// Label printing — tenant's saved default template/format for barcode label printing (see
 	// inventory-api/internal/modules/barcode.LabelTemplateByName for valid template names).
 	LabelPrintDefaults schema.LabelPrintDefaults `json:"label_print_defaults"`
@@ -154,6 +171,25 @@ func toInventorySettingsResponse(c *ent.TenantInventoryConfig) inventorySettings
 	}
 }
 
+// taxCodeJobInfo describes the job a default tax code change queued.
+type taxCodeJobInfo struct {
+	JobID string `json:"job_id,omitempty"`
+	Code  string `json:"code"`
+	Items int    `json:"items"`
+}
+
+// withTaxContext adds the automatic tax code and VAT status to a settings payload.
+func (h *InventorySettingsHandler) withTaxContext(r *http.Request, tenantID uuid.UUID, resp inventorySettingsResponse) inventorySettingsResponse {
+	if h.itemsSvc == nil {
+		return resp
+	}
+	if code, vat, err := h.itemsSvc.BandTaxCode(r.Context(), tenantID); err == nil {
+		resp.AutomaticTaxCode = code
+		resp.VATActive = &vat
+	}
+	return resp
+}
+
 func (h *InventorySettingsHandler) getOrCreate(r *http.Request, tenantID uuid.UUID) (*ent.TenantInventoryConfig, error) {
 	ctx := r.Context()
 	cfg, err := h.db.TenantInventoryConfig.Query().
@@ -187,7 +223,7 @@ func (h *InventorySettingsHandler) GetSettings(w http.ResponseWriter, r *http.Re
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to load settings")
 		return
 	}
-	writeJSON(w, http.StatusOK, toInventorySettingsResponse(cfg))
+	writeJSON(w, http.StatusOK, h.withTaxContext(r, tenantID, toInventorySettingsResponse(cfg)))
 }
 
 type updateInventorySettingsInput struct {
@@ -269,6 +305,23 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 		h.log.Error("get inventory settings for update", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to load settings")
 		return
+	}
+
+	// A new default tax code must be one of the tenant's treasury codes ("" means automatic). A
+	// change is applied to every item afterwards, replacing codes set on single items.
+	taxDefaultChanged := false
+	if input.DefaultTaxCode != nil {
+		code := strings.TrimSpace(*input.DefaultTaxCode)
+		if code != "" && h.itemsSvc != nil {
+			canonical, verr := h.itemsSvc.CanonicalTaxCode(r.Context(), tenantID, code)
+			if verr != nil {
+				writeError(w, http.StatusUnprocessableEntity, "invalid_tax_code", verr.Error())
+				return
+			}
+			code = canonical
+		}
+		input.DefaultTaxCode = &code
+		taxDefaultChanged = !strings.EqualFold(code, cfg.DefaultTaxCode)
 	}
 
 	upd := cfg.Update()
@@ -361,7 +414,29 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 	tenantconfig.Invalidate(tenantID)
-	writeJSON(w, http.StatusOK, toInventorySettingsResponse(updated))
+	resp := h.withTaxContext(r, tenantID, toInventorySettingsResponse(updated))
+	if taxDefaultChanged && h.itemsSvc != nil {
+		var actor uuid.UUID
+		if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+			actor, _ = uuid.Parse(claims.Subject)
+		}
+		job, plan, jerr := h.itemsSvc.QueueTenantTaxCodes(r.Context(), h.jobs, tenantID, items.TaxJobOverride, actor)
+		switch {
+		case jerr != nil:
+			// The setting is saved and new items use it; the daily reconcile does not
+			// override, so report the failure for the user to retry.
+			h.log.Warn("apply default tax code to items", zap.String("tenant", tenantID.String()), zap.Error(jerr))
+			writeError(w, http.StatusBadGateway, "tax_code_job_failed", "the default was saved but could not be applied to existing items: "+jerr.Error())
+			return
+		case plan != nil:
+			info := &taxCodeJobInfo{Code: plan.FillCode, Items: plan.Total}
+			if job != nil {
+				info.JobID = job.ID.String()
+			}
+			resp.TaxCodeJob = info
+		}
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 type updateInventoryModulesInput struct {

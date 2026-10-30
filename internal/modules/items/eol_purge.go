@@ -12,7 +12,7 @@ import (
 // EOLPurgeConfig configures the daily End-of-Life hard-delete purge.
 type EOLPurgeConfig struct {
 	Enabled       bool // EOL_PURGE_ENABLED (default true)
-	RetentionDays int  // EOL_RETENTION_DAYS (default 7)
+	RetentionDays int  // EOL_RETENTION_DAYS (default 30)
 }
 
 // EOLPurgeScheduler hard-deletes items whose End-of-Life retention window has elapsed. It runs on

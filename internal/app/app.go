@@ -397,6 +397,8 @@ func New(ctx context.Context) (*App, error) {
 
 	// Treasury tax-code change consumer — invalidates cached tax data so rate changes propagate immediately
 	treasuryTaxConsumer := consumers.NewTreasuryTaxEventsConsumer(log, treasuryClient)
+	// ...and re-bands the catalog's automatic tax codes when treasury reports a VAT switch.
+	treasuryTaxConsumer.SetCatalogTaxJobs(itemsSvc, bulkJobsSvc)
 
 	// Treasury vendor-balance-updated consumer — closes the one-way sync gap where a bill
 	// payment/vendor refund recorded directly in treasury-ui never reached inventory-api.
@@ -472,6 +474,8 @@ func New(ctx context.Context) (*App, error) {
 	inventorySettingsHandler := handlers.NewInventorySettingsHandler(log, ormClient)
 	inventorySettingsHandler.SetRBACService(rbacService)
 	inventorySettingsHandler.SetTreasuryClient(treasuryClient)
+	// A changed Settings default tax code is applied to every item by a background job.
+	inventorySettingsHandler.SetCatalogTaxJobs(itemsSvc, bulkJobsSvc)
 
 	// Aging Stock report + Start/Cancel Clearance (2026-09-06 pricing/tiering plan, Phase 2)
 	stockClearanceHandler := handlers.NewStockClearanceHandler(log, itemsSvc, inventorySettingsHandler)
@@ -482,11 +486,17 @@ func New(ctx context.Context) (*App, error) {
 
 	// End-of-Life purge: hard-delete items whose EOL retention window has elapsed (audit-safe:
 	// items with transactional history are skipped and kept hidden). Advisory-lock guarded so
-	// only one replica runs it; tenant-generic.
+	// only one replica runs it; tenant-generic. The items service reports the same window on the
+	// End of Life listing so the purge date shown is the one the scheduler uses.
+	itemsSvc.SetEOLRetentionDays(cfg.EOL.RetentionDays)
 	items.NewEOLPurgeScheduler(itemsSvc, sqlDB, items.EOLPurgeConfig{
 		Enabled:       cfg.EOL.PurgeEnabled,
 		RetentionDays: cfg.EOL.RetentionDays,
 	}, log).Start(ctx)
+
+	// Catalog tax codes: gives items without a code their automatic one (band D Non-VAT, or
+	// band B VAT 16% once treasury reports the tenant VAT-active) and catches a missed VAT switch.
+	items.NewTaxCodeReconciler(itemsSvc, bulkJobsSvc, sqlDB, log).Start(ctx)
 
 	// Pharmacy (DAWA) lot-expiry alerts: consumes TenantInventoryConfig.expiry_warning_days /
 	// enable_expiry_notifications, previously stored but never read by anything.

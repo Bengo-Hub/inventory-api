@@ -260,8 +260,19 @@ func (c *Client) getRaw(ctx context.Context, url string) (json.RawMessage, error
 // charging VAT; returns false only when treasury affirmatively says the business is not
 // VAT-registered. Cached ~10m.
 func (c *Client) VATActive(ctx context.Context, tenantID uuid.UUID) bool {
-	if !c.Enabled() {
+	v, err := c.VATStatus(ctx, tenantID)
+	if err != nil {
 		return true
+	}
+	return v
+}
+
+// VATStatus is VATActive without the fail-open default: it returns treasury's answer or the
+// error. Writers that act on the answer (the catalog tax-code job) use it, so a treasury outage
+// never re-bands items. Shares VATActive's cache.
+func (c *Client) VATStatus(ctx context.Context, tenantID uuid.UUID) (bool, error) {
+	if !c.Enabled() {
+		return false, fmt.Errorf("treasury: client not configured")
 	}
 	fetch := func(ctx context.Context) (bool, error) {
 		url := fmt.Sprintf("%s/api/v1/s2s/%s/tax-profile", c.baseURL, tenantID.String())
@@ -288,17 +299,9 @@ func (c *Client) VATActive(ctx context.Context, tenantID uuid.UUID) bool {
 	}
 	if c.cache != nil {
 		key := sharedcache.Key("inventory", "treasury", "vatactive", tenantID.String())
-		v, err := sharedcache.GetOrSet(ctx, c.cache, key, taxCodesTTL, fetch)
-		if err != nil {
-			return true
-		}
-		return v
+		return sharedcache.GetOrSet(ctx, c.cache, key, taxCodesTTL, fetch)
 	}
-	v, err := fetch(ctx)
-	if err != nil {
-		return true
-	}
-	return v
+	return fetch(ctx)
 }
 
 // InvalidateTaxCache deletes the cached treasury tax data for a tenant (the tax-code

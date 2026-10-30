@@ -513,6 +513,10 @@ type ItemDTO struct {
 	// End-of-Life: non-null = the item is marked EOL (hidden everywhere; is_active is false)
 	// and awaiting hard-delete by the purge scheduler once past the retention window.
 	EndOfLifeAt *time.Time `json:"end_of_life_at,omitempty"`
+	// End of Life listing only (status=eol): when the purge hard-deletes the item, or, for an
+	// item it keeps because of its history, why (e.g. "has stock adjustments"). Exactly one is set.
+	EOLPurgeAt    *time.Time `json:"eol_purge_at,omitempty"`
+	EOLKeptReason string     `json:"eol_kept_reason,omitempty"`
 	// Product variations — surfaced from the ItemVariant edge so retail can sell variations.
 	// HasVariants is always populated; Variants is populated when variants are eager-loaded
 	// (inline for single-item reads, or for the list when ?include=variants is requested).
@@ -716,6 +720,9 @@ type Service struct {
 	auditSvc    *audit.Service
 	// onStockUnitChanged runs after a stock-unit change rescaled the item (recipe recosting).
 	onStockUnitChanged func(ctx context.Context, tenantID, itemID uuid.UUID)
+	// eolRetentionDays is the End-of-Life retention window (EOL_RETENTION_DAYS), reported on the
+	// End of Life listing as each item's purge date. Zero means DefaultEOLRetentionDays.
+	eolRetentionDays int
 	// readClient, when set, is used ONLY for ListItems' multi-row catalog fetch (see rc()) — a
 	// heavy, staleness-tolerant read routed to a replica when one is configured. Every other
 	// query in this service (single-item lookups, writes, OutletScope) always uses client
@@ -1604,8 +1611,10 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 	outletExcludeIDs, hasOperationalHistory, outletWarehouseIDs, _ := s.OutletScope(ctx, tenantID, outletID)
 	// Strict outlet catalog (?outlet_strict=1): computed once here, applied to the list and the
 	// count below. A failure to build it falls back to the lenient rule rather than an empty list.
+	// The End of Life listing always uses it: the lenient browse rule keeps every item that is not
+	// stocked solely elsewhere, so an outlet's End of Life tab listed other outlets' retired items.
 	var strictOutletPred predicate.Item
-	if outletID != nil && strictOutletScope(ctx) && itemIDFilter(ctx) == nil {
+	if outletID != nil && (strictOutletScope(ctx) || statusFilter == "eol") && itemIDFilter(ctx) == nil {
 		if p, perr := s.strictOutletPredicate(ctx, tenantID, *outletID); perr == nil {
 			strictOutletPred = p
 		} else {
@@ -1912,6 +1921,9 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		// Enrich with effective selling price + tax split for POS/ordering proxies.
 		s.enrichPrices(innerCtx, tenantID, cfg, dtos)
 		s.enrichModifierGroups(innerCtx, dtos)
+		if statusFilter == "eol" {
+			s.annotateEOL(innerCtx, dtos)
+		}
 		if includeVariants(innerCtx) {
 			// One batched lookup for every parent on the page (variant child items); parents
 			// without children keep the legacy ItemVariant rows loaded by applyEagerLoads.
@@ -2954,14 +2966,13 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 		}
 	}
 
-	// Default the tax code from the tenant compliance config when unset — treasury/eTIMS reads
-	// this off the item on POS/ordering sales. The inclusive-vs-exclusive behaviour itself is
-	// resolved at read time from the tenant setting, so it always follows the current setting.
+	// A code sent with the item was chosen by a person (marked manual); an item sent without one
+	// gets the automatic code: the Settings default, else band B while the tenant is VAT-active
+	// and band D otherwise (see tax_defaults.go). treasury/eTIMS reads it off the item on sales.
+	// The inclusive-vs-exclusive behaviour is resolved at read time from the tenant setting.
+	stampTaxCodeSource(nil, &dto)
 	if dto.TaxCodeID == "" {
-		if cfg, cErr := s.client.TenantInventoryConfig.Query().
-			Where(tenantinventoryconfig.TenantID(tenantID)).Only(ctx); cErr == nil && cfg.DefaultTaxCode != "" {
-			dto.TaxCodeID = cfg.DefaultTaxCode
-		}
+		dto.TaxCodeID = s.AutomaticTaxCode(ctx, tenantID)
 	}
 
 	tx, err := s.client.Tx(ctx)
@@ -3405,6 +3416,9 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		Only(ctx)
 	if pErr == nil {
 		prevCostPrice = prevItm.CostPrice
+		// Keep metadata.tax_code_source across the wholesale metadata replace below, and mark a
+		// changed code as chosen by hand.
+		stampTaxCodeSource(prevItm, &dto)
 	}
 	// A stock-unit change rescales every held quantity and per-unit price in this same
 	// transaction (see unit_rescale.go). Planned before validation/EP-cost so the request's

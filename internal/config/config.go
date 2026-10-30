@@ -30,7 +30,7 @@ type Config struct {
 // guarded by a once-per-hour Redis claim so only one replica performs the purge.
 type EOLConfig struct {
 	PurgeEnabled  bool `envconfig:"EOL_PURGE_ENABLED" default:"true"`
-	RetentionDays int  `envconfig:"EOL_RETENTION_DAYS" default:"7"`
+	RetentionDays int  `envconfig:"EOL_RETENTION_DAYS" default:"30"`
 }
 
 // ExpiryAlertConfig configures the pharmacy (DAWA) lot-expiry alert scan.

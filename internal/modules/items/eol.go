@@ -42,7 +42,52 @@ import (
 // DefaultEOLRetentionDays is the default End-of-Life retention window: an item marked EOL is
 // hard-deleted by the purge scheduler once its end_of_life_at is older than this (configurable
 // via EOL_RETENTION_DAYS).
-const DefaultEOLRetentionDays = 7
+const DefaultEOLRetentionDays = 30
+
+// SetEOLRetentionDays sets the retention window the End of Life listing reports (eol_purge_at).
+// The purge scheduler is built with the same value, so the date shown is the date it runs.
+func (s *Service) SetEOLRetentionDays(days int) {
+	if days <= 0 {
+		days = DefaultEOLRetentionDays
+	}
+	s.eolRetentionDays = days
+}
+
+func (s *Service) eolRetention() time.Duration {
+	days := s.eolRetentionDays
+	if days <= 0 {
+		days = DefaultEOLRetentionDays
+	}
+	return time.Duration(days) * 24 * time.Hour
+}
+
+// annotateEOL stamps End of Life listing rows with when the purge deletes each item
+// (eol_purge_at) or, for an item the purge keeps, why (eol_kept_reason). One batched history
+// check per page.
+func (s *Service) annotateEOL(ctx context.Context, dtos []ItemDTO) {
+	ids := make([]uuid.UUID, 0, len(dtos))
+	for i := range dtos {
+		if dtos[i].EndOfLifeAt != nil {
+			ids = append(ids, dtos[i].ID)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	blocked := s.eolBlockedItems(ctx, ids)
+	for i := range dtos {
+		d := &dtos[i]
+		if d.EndOfLifeAt == nil {
+			continue
+		}
+		if reason, ok := blocked[d.ID]; ok {
+			d.EOLKeptReason = reason
+			continue
+		}
+		at := d.EndOfLifeAt.Add(s.eolRetention())
+		d.EOLPurgeAt = &at
+	}
+}
 
 // MarkItemEOL marks an item End-of-Life by SKU. In a single transaction it sets
 // end_of_life_at=now AND is_active=false — the latter makes the item disappear immediately from
@@ -110,21 +155,64 @@ func (s *Service) setItemEOL(ctx context.Context, tenantID uuid.UUID, sku string
 // catalog consumers stay in sync. Kept here so the EOL mutations reuse the exact same event shape
 // without duplicating UpdateItem's large body.
 func (s *Service) emitItemUpdatedEvent(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, i *ent.Item) error {
+	return s.emitItemUpdatedEventWith(ctx, tx, tenantID, i, nil)
+}
+
+// itemEventLookups memoises the category, brand and unit rows an item.updated payload names, so
+// a batch that publishes many items reads each one once. A nil *itemEventLookups reads fresh.
+type itemEventLookups struct {
+	categories map[uuid.UUID]*ent.ItemCategory
+	brands     map[uuid.UUID]*ent.ItemBrand
+	units      map[uuid.UUID]*ent.Unit
+}
+
+func newItemEventLookups() *itemEventLookups {
+	return &itemEventLookups{
+		categories: map[uuid.UUID]*ent.ItemCategory{},
+		brands:     map[uuid.UUID]*ent.ItemBrand{},
+		units:      map[uuid.UUID]*ent.Unit{},
+	}
+}
+
+// memoGet returns the cached row for id or loads it once (a failed load is cached as nil).
+func memoGet[T any](cache map[uuid.UUID]*T, id uuid.UUID, load func() (*T, error)) *T {
+	if cache != nil {
+		if v, ok := cache[id]; ok {
+			return v
+		}
+	}
+	v, err := load()
+	if err != nil {
+		v = nil
+	}
+	if cache != nil {
+		cache[id] = v
+	}
+	return v
+}
+
+func (s *Service) emitItemUpdatedEventWith(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, i *ent.Item, lk *itemEventLookups) error {
+	var cats map[uuid.UUID]*ent.ItemCategory
+	var brands map[uuid.UUID]*ent.ItemBrand
+	var unitRows map[uuid.UUID]*ent.Unit
+	if lk != nil {
+		cats, brands, unitRows = lk.categories, lk.brands, lk.units
+	}
 	categoryName := ""
 	if i.CategoryID != nil {
-		if cat, catErr := s.client.ItemCategory.Get(ctx, *i.CategoryID); catErr == nil {
+		if cat := memoGet(cats, *i.CategoryID, func() (*ent.ItemCategory, error) { return s.client.ItemCategory.Get(ctx, *i.CategoryID) }); cat != nil {
 			categoryName = cat.Name
 		}
 	}
 	brandName := ""
 	if i.BrandID != nil {
-		if brand, brandErr := s.client.ItemBrand.Get(ctx, *i.BrandID); brandErr == nil {
+		if brand := memoGet(brands, *i.BrandID, func() (*ent.ItemBrand, error) { return s.client.ItemBrand.Get(ctx, *i.BrandID) }); brand != nil {
 			brandName = brand.Name
 		}
 	}
 	unitName, unitAbbrev, unitKraQty := "", "", ""
 	if i.UnitID != nil {
-		if u, uErr := s.client.Unit.Get(ctx, *i.UnitID); uErr == nil {
+		if u := memoGet(unitRows, *i.UnitID, func() (*ent.Unit, error) { return s.client.Unit.Get(ctx, *i.UnitID) }); u != nil {
 			unitName = u.Name
 			unitAbbrev = u.Abbreviation
 			unitKraQty = u.KraQtyUnitCd
@@ -287,39 +375,49 @@ func (s *Service) PurgeExpiredEOL(ctx context.Context, retentionDays int) (purge
 
 	rows, err := s.client.Item.Query().
 		Where(item.EndOfLifeAtNotNil(), item.EndOfLifeAtLT(cutoff)).
+		Select(item.FieldID, item.FieldTenantID, item.FieldSku).
 		All(ctx)
 	if err != nil {
 		return 0, 0, fmt.Errorf("items: query expired EOL items: %w", err)
 	}
 
-	for _, it := range rows {
-		if blocked, reason := s.eolHasBlockingHistory(ctx, it.ID); blocked {
-			skipped++
-			s.log.Info("eol purge: skipped item with transactional history (kept EOL for audit)",
+	for start := 0; start < len(rows); start += inChunk {
+		chunk := rows[start:min(start+inChunk, len(rows))]
+		ids := make([]uuid.UUID, len(chunk))
+		for i, it := range chunk {
+			ids[i] = it.ID
+		}
+		blocked := s.eolBlockedItems(ctx, ids)
+		for _, it := range chunk {
+			if reason, ok := blocked[it.ID]; ok {
+				// Kept every hour for good; the End of Life tab shows the reason, so this stays
+				// at debug level instead of logging the same items on every run.
+				skipped++
+				s.log.Debug("eol purge: kept item with transactional history",
+					zap.String("tenant", it.TenantID.String()),
+					zap.String("sku", it.Sku),
+					zap.String("reason", reason))
+				continue
+			}
+			if derr := s.hardDeleteItem(ctx, it.ID); derr != nil {
+				skipped++
+				s.log.Warn("eol purge: hard-delete failed, skipped (item stays EOL)",
+					zap.String("tenant", it.TenantID.String()),
+					zap.String("sku", it.Sku),
+					zap.String("item_id", it.ID.String()),
+					zap.Error(derr))
+				continue
+			}
+			purged++
+			s.log.Info("eol purge: item hard-deleted",
 				zap.String("tenant", it.TenantID.String()),
 				zap.String("sku", it.Sku),
-				zap.String("item_id", it.ID.String()),
-				zap.String("reason", reason))
-			continue
+				zap.String("item_id", it.ID.String()))
 		}
-		if derr := s.hardDeleteItem(ctx, it.ID); derr != nil {
-			skipped++
-			s.log.Warn("eol purge: hard-delete failed, skipped (item stays EOL)",
-				zap.String("tenant", it.TenantID.String()),
-				zap.String("sku", it.Sku),
-				zap.String("item_id", it.ID.String()),
-				zap.Error(derr))
-			continue
-		}
-		purged++
-		s.log.Info("eol purge: item hard-deleted",
-			zap.String("tenant", it.TenantID.String()),
-			zap.String("sku", it.Sku),
-			zap.String("item_id", it.ID.String()))
 	}
 
 	if purged > 0 || skipped > 0 {
-		s.log.Info("eol purge complete", zap.Int("purged", purged), zap.Int("skipped", skipped), zap.Int("retention_days", retentionDays))
+		s.log.Info("eol purge complete", zap.Int("purged", purged), zap.Int("kept", skipped), zap.Int("retention_days", retentionDays))
 	}
 	return purged, skipped, nil
 }
@@ -342,69 +440,130 @@ func (s *Service) HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UUID, s
 		return fmt.Errorf("items: query item: %w", err)
 	}
 	if blocked, reason := s.eolHasBlockingHistory(ctx, existing.ID); blocked {
-		return fmt.Errorf("items: cannot hard-delete — item has %s; mark it End-of-Life instead", reason)
+		return fmt.Errorf("items: cannot hard-delete, the item %s; mark it End-of-Life instead", reason)
 	}
 	return s.hardDeleteItem(ctx, existing.ID)
 }
 
 // eolHasBlockingHistory reports whether the item is referenced by any transactional / usage record
 // that must be preserved for the finance/eTIMS audit trail (or that would corrupt another item's
-// recipe/bundle). Returns a short reason for logging.
+// recipe/bundle). Returns a short reason.
 func (s *Service) eolHasBlockingHistory(ctx context.Context, id uuid.UUID) (bool, string) {
+	reason, ok := s.eolBlockedItems(ctx, []uuid.UUID{id})[id]
+	return ok, reason
+}
+
+// eolHistoryReasons maps each blocking record type to the wording the End of Life tab shows.
+var eolHistoryReasons = map[string]string{
+	"purchase_order_line":       "is on a purchase order",
+	"goods_receipt_line":        "is on a goods receipt",
+	"stock_adjustment":          "has stock adjustments",
+	"stock_level_event":         "has stock movements",
+	"purchase_return_line":      "is on a purchase return",
+	"stock_transfer_line":       "is on a stock transfer",
+	"requisition_line":          "is on a requisition",
+	"rfq_line":                  "is on a request for quotation",
+	"stock_count_line":          "is in a stock count",
+	"item_consumption_daily":    "has consumption history",
+	"inventory_serial":          "has serial numbers",
+	"used_as_recipe_ingredient": "is an ingredient in a recipe",
+	"used_as_bundle_component":  "is a component of a bundle",
+}
+
+// eolBlockedItems returns, for each of ids that carries history the purge must keep, the first
+// blocking record type found (worded as in eolHistoryReasons). One DISTINCT item_id query per
+// record type covers the whole batch, so a page or a purge run costs a fixed number of queries
+// however many items it holds. On a query error every unresolved id in that batch counts as
+// blocked, so an item whose history could not be checked is never deleted.
+func (s *Service) eolBlockedItems(ctx context.Context, ids []uuid.UUID) map[uuid.UUID]string {
+	out := make(map[uuid.UUID]string, len(ids))
+	if len(ids) == 0 {
+		return out
+	}
 	checks := []struct {
 		name  string
-		exist func() (bool, error)
+		items func([]uuid.UUID) ([]string, error)
 	}{
-		{"purchase_order_line", func() (bool, error) {
-			return s.client.PurchaseOrderLine.Query().Where(purchaseorderline.ItemID(id)).Exist(ctx)
+		{"purchase_order_line", func(b []uuid.UUID) ([]string, error) {
+			return s.client.PurchaseOrderLine.Query().Where(purchaseorderline.ItemIDIn(b...)).
+				Unique(true).Select(purchaseorderline.FieldItemID).Strings(ctx)
 		}},
-		{"goods_receipt_line", func() (bool, error) {
-			return s.client.GoodsReceiptLine.Query().Where(goodsreceiptline.ItemID(id)).Exist(ctx)
+		{"goods_receipt_line", func(b []uuid.UUID) ([]string, error) {
+			return s.client.GoodsReceiptLine.Query().Where(goodsreceiptline.ItemIDIn(b...)).
+				Unique(true).Select(goodsreceiptline.FieldItemID).Strings(ctx)
 		}},
-		{"stock_adjustment", func() (bool, error) {
-			return s.client.StockAdjustment.Query().Where(stockadjustment.ItemID(id)).Exist(ctx)
+		{"stock_adjustment", func(b []uuid.UUID) ([]string, error) {
+			return s.client.StockAdjustment.Query().Where(stockadjustment.ItemIDIn(b...)).
+				Unique(true).Select(stockadjustment.FieldItemID).Strings(ctx)
 		}},
-		{"stock_level_event", func() (bool, error) {
-			return s.client.StockLevelEvent.Query().Where(stocklevelevent.ItemID(id)).Exist(ctx)
+		{"stock_level_event", func(b []uuid.UUID) ([]string, error) {
+			return s.client.StockLevelEvent.Query().Where(stocklevelevent.ItemIDIn(b...)).
+				Unique(true).Select(stocklevelevent.FieldItemID).Strings(ctx)
 		}},
-		{"purchase_return_line", func() (bool, error) {
-			return s.client.PurchaseReturnLine.Query().Where(purchasereturnline.ItemID(id)).Exist(ctx)
+		{"purchase_return_line", func(b []uuid.UUID) ([]string, error) {
+			return s.client.PurchaseReturnLine.Query().Where(purchasereturnline.ItemIDIn(b...)).
+				Unique(true).Select(purchasereturnline.FieldItemID).Strings(ctx)
 		}},
-		{"stock_transfer_line", func() (bool, error) {
-			return s.client.StockTransferLine.Query().Where(stocktransferline.ItemID(id)).Exist(ctx)
+		{"stock_transfer_line", func(b []uuid.UUID) ([]string, error) {
+			return s.client.StockTransferLine.Query().Where(stocktransferline.ItemIDIn(b...)).
+				Unique(true).Select(stocktransferline.FieldItemID).Strings(ctx)
 		}},
-		{"requisition_line", func() (bool, error) {
-			return s.client.RequisitionLine.Query().Where(requisitionline.ItemID(id)).Exist(ctx)
+		{"requisition_line", func(b []uuid.UUID) ([]string, error) {
+			return s.client.RequisitionLine.Query().Where(requisitionline.ItemIDIn(b...)).
+				Unique(true).Select(requisitionline.FieldItemID).Strings(ctx)
 		}},
-		{"rfq_line", func() (bool, error) { return s.client.RFQLine.Query().Where(rfqline.ItemID(id)).Exist(ctx) }},
-		{"stock_count_line", func() (bool, error) {
-			return s.client.StockCountLine.Query().Where(stockcountline.ItemID(id)).Exist(ctx)
+		{"rfq_line", func(b []uuid.UUID) ([]string, error) {
+			return s.client.RFQLine.Query().Where(rfqline.ItemIDIn(b...)).
+				Unique(true).Select(rfqline.FieldItemID).Strings(ctx)
 		}},
-		{"item_consumption_daily", func() (bool, error) {
-			return s.client.ItemConsumptionDaily.Query().Where(itemconsumptiondaily.ItemID(id)).Exist(ctx)
+		{"stock_count_line", func(b []uuid.UUID) ([]string, error) {
+			return s.client.StockCountLine.Query().Where(stockcountline.ItemIDIn(b...)).
+				Unique(true).Select(stockcountline.FieldItemID).Strings(ctx)
 		}},
-		{"inventory_serial", func() (bool, error) {
-			return s.client.InventorySerial.Query().Where(inventoryserial.ItemID(id)).Exist(ctx)
+		{"item_consumption_daily", func(b []uuid.UUID) ([]string, error) {
+			return s.client.ItemConsumptionDaily.Query().Where(itemconsumptiondaily.ItemIDIn(b...)).
+				Unique(true).Select(itemconsumptiondaily.FieldItemID).Strings(ctx)
 		}},
-		{"used_as_recipe_ingredient", func() (bool, error) {
-			return s.client.RecipeIngredient.Query().Where(recipeingredient.ItemID(id)).Exist(ctx)
+		{"inventory_serial", func(b []uuid.UUID) ([]string, error) {
+			return s.client.InventorySerial.Query().Where(inventoryserial.ItemIDIn(b...)).
+				Unique(true).Select(inventoryserial.FieldItemID).Strings(ctx)
 		}},
-		{"used_as_bundle_component", func() (bool, error) {
-			return s.client.BundleComponent.Query().Where(bundlecomponent.ComponentItemID(id)).Exist(ctx)
+		{"used_as_recipe_ingredient", func(b []uuid.UUID) ([]string, error) {
+			return s.client.RecipeIngredient.Query().Where(recipeingredient.ItemIDIn(b...)).
+				Unique(true).Select(recipeingredient.FieldItemID).Strings(ctx)
+		}},
+		{"used_as_bundle_component", func(b []uuid.UUID) ([]string, error) {
+			return s.client.BundleComponent.Query().Where(bundlecomponent.ComponentItemIDIn(b...)).
+				Unique(true).Select(bundlecomponent.FieldComponentItemID).Strings(ctx)
 		}},
 	}
 	for _, c := range checks {
-		ok, qerr := c.exist()
-		if qerr != nil {
-			// On a query error, err on the side of caution: treat as blocking so we never
-			// delete an item whose history we could not verify.
-			return true, c.name + " (check error)"
+		pending := make([]uuid.UUID, 0, len(ids))
+		for _, id := range ids {
+			if _, done := out[id]; !done {
+				pending = append(pending, id)
+			}
 		}
-		if ok {
-			return true, c.name
+		if len(pending) == 0 {
+			break
+		}
+		for start := 0; start < len(pending); start += inChunk {
+			batch := pending[start:min(start+inChunk, len(pending))]
+			found, qerr := c.items(batch)
+			if qerr != nil {
+				for _, id := range batch {
+					out[id] = eolHistoryReasons[c.name] + " (could not verify)"
+				}
+				continue
+			}
+			for _, raw := range found {
+				if id, perr := uuid.Parse(raw); perr == nil {
+					out[id] = eolHistoryReasons[c.name]
+				}
+			}
 		}
 	}
-	return false, ""
+	return out
 }
 
 // hardDeleteItem removes an item and its OWNED catalog children in a single transaction. Callers

@@ -591,6 +591,12 @@ func (s *Service) SaveVariants(ctx context.Context, tenantID, parentID uuid.UUID
 			dto.Metadata = map[string]any{
 				MetaVariantOf:         parentID.String(),
 				MetaVariantAttributes: attrsToAny(p.row.Attributes),
+				// The child copies the parent's tax code, and who chose it with it, so an
+				// automatic parent code does not become a hand-set one on its variants.
+				MetaTaxCodeSource: TaxCodeSourceAuto,
+			}
+			if TaxCodeSource(parentDTO.Metadata) == TaxCodeSourceManual {
+				dto.Metadata[MetaTaxCodeSource] = TaxCodeSourceManual
 			}
 			if p.row.Price != nil && *p.row.Price > 0 {
 				// The create path turns selling_price into the Retail/Max and Wholesale/Min

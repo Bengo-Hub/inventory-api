@@ -6,6 +6,22 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
+### Changed (2026-10-30 - End-of-Life retention, purge dates and outlet scope)
+- `EOL_RETENTION_DAYS` now defaults to 30 (was 7). Items without stock or document history are hard-deleted 30 days after being marked End-of-Life unless restored; items with history stay hidden and are never deleted, so their records stay intact.
+- The End of Life listing (`GET /inventory/items?status=eol`) returns `eol_purge_at` (when the purge deletes the item) or `eol_kept_reason` (why it is kept, for example "has stock adjustments") on every row. The UI shows them in a "Deletes in" column.
+- The End of Life listing uses the strict outlet scope whenever an outlet is active, so an outlet's tab lists only its own items. The lenient browse rule used before listed most retired items at every outlet.
+- History checks are batched: one DISTINCT query per record type for a whole page or purge run, replacing 13 queries per item. Kept items log at debug level instead of once per item every hour.
+
+### Added (2026-10-30 - Catalog tax codes follow VAT status)
+- Items default to band D (Non-VAT) until treasury reports the tenant VAT-active, then band B (VAT 16%). A Settings default overrides both. Codes are resolved by KRA band, so per-tenant spellings (`B`, `VAT-16`) both work. See `docs/catalog-tax-codes.md`.
+- `metadata.tax_code_source` records hand-set codes; background jobs leave them alone.
+- New background job type `item_tax_codes` (modes `reconcile`, `vat_off`, `override`), triggered by the new `treasury.tax.vat_status_changed` event, by a daily reconcile, and by a change of the default in Settings (which applies to every item after a confirm).
+- Settings payload gains `automatic_tax_code`, `vat_active` and, on a changing save, `tax_code_job`. A new default is validated against the tenant's treasury codes.
+- `treasury.Client.VATStatus` reports treasury errors instead of answering "VAT on", for writers that act on the answer.
+
+### Fixed (2026-10-30 - item form tax fields)
+- The item form hid the tax code and eTIMS fields for ingredient and equipment items. They now show for every type.
+
 ### Added (2026-10-21 - Service / repair destination for purchase returns)
 - **Repair orders:** a purchase return can now have `destination=service`, for in-stock items sent to a technician, service centre or care centre and expected back. The provider is free text in `purchase_returns.metadata`. Approving takes the items out as `service_out`; `POST /inventory/purchase-returns/{id}/receive` puts repaired units back as `service_in` with a restored cost layer and writes off unrepairable units as `damaged`. Statuses: `out`, `partial`, `returned`, `written_off`. No supplier credit note and no eTIMS movement is raised for a repair. Atlas migration `20261021132441_purchase_return_service_destination.sql`.
 - `GET /inventory/purchase-returns/service-summary` (units and cost away, overdue, top providers); list filters `destination`, `service_status`, `overdue`. Stock history shows "Sent for Repair" and "Returned from Repair". Printable Service / Repair Order document.

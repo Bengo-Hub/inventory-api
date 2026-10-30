@@ -167,6 +167,12 @@ publishes that subject. Add a consumer again only when ordering ships returns.)
 **Events Consumed**:
 - `treasury.invoice.received` - Match supplier invoice
 - `treasury.subscription.updated` - Update entitlements
+- `treasury.tax.code_updated` - Drop the cached tax codes and VAT status for the tenant
+- `treasury.tax.vat_status_changed` - The tenant started or stopped charging VAT: automatic item tax codes move between band D (Non-VAT) and band B (VAT 16%) in a background job. See [catalog-tax-codes.md](catalog-tax-codes.md).
+
+**REST API Usage (tax)**:
+- `GET /api/v1/s2s/{tenant}/taxes` - Tax codes with their KRA band (`kra_code`), resolved by band, never by spelling
+- `GET /api/v1/s2s/{tenant}/tax-profile` - `vat_active`
 
 **Events Published**:
 - `inventory.cost.allocated` - Cost allocation event
