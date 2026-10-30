@@ -19,6 +19,9 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 - Settings payload gains `automatic_tax_code`, `vat_active` and, on a changing save, `tax_code_job`. A new default is validated against the tenant's treasury codes.
 - `treasury.Client.VATStatus` reports treasury errors instead of answering "VAT on", for writers that act on the answer.
 
+### Fixed (2026-10-30 - POS returns not restocked since 2026-10-02)
+- Raising the return consumers' ack wait from 30s to 60s stopped the existing `inventory-pos-returns` and `inventory-pos-exchanges` durables from binding ("configuration requests ack wait to be 1m0s, but consumer's value is 30s"), so no completed POS return or exchange was restocked from 2026-10-02. Each subscription now adopts the stored durable's ack wait and max deliver. Returns from that window are recovered with pos-api's `POST /{tenant}/pos/returns/restock/resync`, which dedupes per return.
+
 ### Fixed (2026-10-30 - item form tax fields)
 - The item form hid the tax code and eTIMS fields for ingredient and equipment items. They now show for every type.
 

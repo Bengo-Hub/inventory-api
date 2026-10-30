@@ -101,13 +101,27 @@ func (c *ReturnEventsConsumer) Start(ctx context.Context, js nats.JetStreamConte
 		{"pos.return.restock_requested", posRestockResyncDurable},
 	}
 	for _, sub := range subs {
+		// JetStream refuses to bind a durable whose stored ack wait or max deliver differs from
+		// the subscription's ("configuration requests ack wait to be 1m0s, but consumer's value
+		// is 30s"). The 2026-10-02 raise from 30s to 60s stopped inventory-pos-returns and
+		// inventory-pos-exchanges binding at all, so POS returns were never restocked. An
+		// existing durable keeps its stored values; the constants apply to new ones.
+		ackWait, maxDeliver := returnEventsAckWait, returnEventsMaxDeliver
+		if info, err := js.ConsumerInfo("pos", sub.durable); err == nil && info != nil {
+			if info.Config.AckWait > 0 {
+				ackWait = info.Config.AckWait
+			}
+			if info.Config.MaxDeliver != 0 {
+				maxDeliver = info.Config.MaxDeliver
+			}
+		}
 		eventslib.SubscribeQueueWithRebind(
 			c.log, js, "pos", sub.subject, sub.durable,
 			c.handle,
 			nats.Durable(sub.durable),
 			nats.AckExplicit(),
-			nats.AckWait(returnEventsAckWait),
-			nats.MaxDeliver(returnEventsMaxDeliver),
+			nats.AckWait(ackWait),
+			nats.MaxDeliver(maxDeliver),
 			nats.DeliverAll(),
 		)
 	}
