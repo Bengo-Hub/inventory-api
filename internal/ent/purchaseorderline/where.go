@@ -109,6 +109,21 @@ func PriceScope(v string) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldPriceScope, v))
 }
 
+// TaxCode applies equality check predicate on the "tax_code" field. It's identical to TaxCodeEQ.
+func TaxCode(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldTaxCode, v))
+}
+
+// TaxRate applies equality check predicate on the "tax_rate" field. It's identical to TaxRateEQ.
+func TaxRate(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldTaxRate, v))
+}
+
+// PriceIncludesTax applies equality check predicate on the "price_includes_tax" field. It's identical to PriceIncludesTaxEQ.
+func PriceIncludesTax(v bool) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldPriceIncludesTax, v))
+}
+
 // PoIDEQ applies the EQ predicate on the "po_id" field.
 func PoIDEQ(v uuid.UUID) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldPoID, v))
@@ -592,6 +607,131 @@ func PriceScopeEqualFold(v string) predicate.PurchaseOrderLine {
 // PriceScopeContainsFold applies the ContainsFold predicate on the "price_scope" field.
 func PriceScopeContainsFold(v string) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldContainsFold(FieldPriceScope, v))
+}
+
+// TaxCodeEQ applies the EQ predicate on the "tax_code" field.
+func TaxCodeEQ(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldTaxCode, v))
+}
+
+// TaxCodeNEQ applies the NEQ predicate on the "tax_code" field.
+func TaxCodeNEQ(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldTaxCode, v))
+}
+
+// TaxCodeIn applies the In predicate on the "tax_code" field.
+func TaxCodeIn(vs ...string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldIn(FieldTaxCode, vs...))
+}
+
+// TaxCodeNotIn applies the NotIn predicate on the "tax_code" field.
+func TaxCodeNotIn(vs ...string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNotIn(FieldTaxCode, vs...))
+}
+
+// TaxCodeGT applies the GT predicate on the "tax_code" field.
+func TaxCodeGT(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGT(FieldTaxCode, v))
+}
+
+// TaxCodeGTE applies the GTE predicate on the "tax_code" field.
+func TaxCodeGTE(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGTE(FieldTaxCode, v))
+}
+
+// TaxCodeLT applies the LT predicate on the "tax_code" field.
+func TaxCodeLT(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLT(FieldTaxCode, v))
+}
+
+// TaxCodeLTE applies the LTE predicate on the "tax_code" field.
+func TaxCodeLTE(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldTaxCode, v))
+}
+
+// TaxCodeContains applies the Contains predicate on the "tax_code" field.
+func TaxCodeContains(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldContains(FieldTaxCode, v))
+}
+
+// TaxCodeHasPrefix applies the HasPrefix predicate on the "tax_code" field.
+func TaxCodeHasPrefix(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldHasPrefix(FieldTaxCode, v))
+}
+
+// TaxCodeHasSuffix applies the HasSuffix predicate on the "tax_code" field.
+func TaxCodeHasSuffix(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldHasSuffix(FieldTaxCode, v))
+}
+
+// TaxCodeIsNil applies the IsNil predicate on the "tax_code" field.
+func TaxCodeIsNil() predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldIsNull(FieldTaxCode))
+}
+
+// TaxCodeNotNil applies the NotNil predicate on the "tax_code" field.
+func TaxCodeNotNil() predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNotNull(FieldTaxCode))
+}
+
+// TaxCodeEqualFold applies the EqualFold predicate on the "tax_code" field.
+func TaxCodeEqualFold(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEqualFold(FieldTaxCode, v))
+}
+
+// TaxCodeContainsFold applies the ContainsFold predicate on the "tax_code" field.
+func TaxCodeContainsFold(v string) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldContainsFold(FieldTaxCode, v))
+}
+
+// TaxRateEQ applies the EQ predicate on the "tax_rate" field.
+func TaxRateEQ(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldTaxRate, v))
+}
+
+// TaxRateNEQ applies the NEQ predicate on the "tax_rate" field.
+func TaxRateNEQ(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldTaxRate, v))
+}
+
+// TaxRateIn applies the In predicate on the "tax_rate" field.
+func TaxRateIn(vs ...float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldIn(FieldTaxRate, vs...))
+}
+
+// TaxRateNotIn applies the NotIn predicate on the "tax_rate" field.
+func TaxRateNotIn(vs ...float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNotIn(FieldTaxRate, vs...))
+}
+
+// TaxRateGT applies the GT predicate on the "tax_rate" field.
+func TaxRateGT(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGT(FieldTaxRate, v))
+}
+
+// TaxRateGTE applies the GTE predicate on the "tax_rate" field.
+func TaxRateGTE(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGTE(FieldTaxRate, v))
+}
+
+// TaxRateLT applies the LT predicate on the "tax_rate" field.
+func TaxRateLT(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLT(FieldTaxRate, v))
+}
+
+// TaxRateLTE applies the LTE predicate on the "tax_rate" field.
+func TaxRateLTE(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldTaxRate, v))
+}
+
+// PriceIncludesTaxEQ applies the EQ predicate on the "price_includes_tax" field.
+func PriceIncludesTaxEQ(v bool) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldPriceIncludesTax, v))
+}
+
+// PriceIncludesTaxNEQ applies the NEQ predicate on the "price_includes_tax" field.
+func PriceIncludesTaxNEQ(v bool) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldPriceIncludesTax, v))
 }
 
 // HasPurchaseOrder applies the HasEdge predicate on the "purchase_order" edge.

@@ -162,6 +162,48 @@ func (_c *PurchaseOrderLineCreate) SetNillablePriceScope(v *string) *PurchaseOrd
 	return _c
 }
 
+// SetTaxCode sets the "tax_code" field.
+func (_c *PurchaseOrderLineCreate) SetTaxCode(v string) *PurchaseOrderLineCreate {
+	_c.mutation.SetTaxCode(v)
+	return _c
+}
+
+// SetNillableTaxCode sets the "tax_code" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillableTaxCode(v *string) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetTaxCode(*v)
+	}
+	return _c
+}
+
+// SetTaxRate sets the "tax_rate" field.
+func (_c *PurchaseOrderLineCreate) SetTaxRate(v float64) *PurchaseOrderLineCreate {
+	_c.mutation.SetTaxRate(v)
+	return _c
+}
+
+// SetNillableTaxRate sets the "tax_rate" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillableTaxRate(v *float64) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetTaxRate(*v)
+	}
+	return _c
+}
+
+// SetPriceIncludesTax sets the "price_includes_tax" field.
+func (_c *PurchaseOrderLineCreate) SetPriceIncludesTax(v bool) *PurchaseOrderLineCreate {
+	_c.mutation.SetPriceIncludesTax(v)
+	return _c
+}
+
+// SetNillablePriceIncludesTax sets the "price_includes_tax" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillablePriceIncludesTax(v *bool) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetPriceIncludesTax(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PurchaseOrderLineCreate) SetID(v uuid.UUID) *PurchaseOrderLineCreate {
 	_c.mutation.SetID(v)
@@ -246,6 +288,18 @@ func (_c *PurchaseOrderLineCreate) defaults() {
 		v := purchaseorderline.DefaultPriceScope
 		_c.mutation.SetPriceScope(v)
 	}
+	if _, ok := _c.mutation.TaxCode(); !ok {
+		v := purchaseorderline.DefaultTaxCode
+		_c.mutation.SetTaxCode(v)
+	}
+	if _, ok := _c.mutation.TaxRate(); !ok {
+		v := purchaseorderline.DefaultTaxRate
+		_c.mutation.SetTaxRate(v)
+	}
+	if _, ok := _c.mutation.PriceIncludesTax(); !ok {
+		v := purchaseorderline.DefaultPriceIncludesTax
+		_c.mutation.SetPriceIncludesTax(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := purchaseorderline.DefaultID()
 		_c.mutation.SetID(v)
@@ -274,6 +328,12 @@ func (_c *PurchaseOrderLineCreate) check() error {
 	}
 	if _, ok := _c.mutation.RebatePercent(); !ok {
 		return &ValidationError{Name: "rebate_percent", err: errors.New(`ent: missing required field "PurchaseOrderLine.rebate_percent"`)}
+	}
+	if _, ok := _c.mutation.TaxRate(); !ok {
+		return &ValidationError{Name: "tax_rate", err: errors.New(`ent: missing required field "PurchaseOrderLine.tax_rate"`)}
+	}
+	if _, ok := _c.mutation.PriceIncludesTax(); !ok {
+		return &ValidationError{Name: "price_includes_tax", err: errors.New(`ent: missing required field "PurchaseOrderLine.price_includes_tax"`)}
 	}
 	if len(_c.mutation.PurchaseOrderIDs()) == 0 {
 		return &ValidationError{Name: "purchase_order", err: errors.New(`ent: missing required edge "PurchaseOrderLine.purchase_order"`)}
@@ -353,6 +413,18 @@ func (_c *PurchaseOrderLineCreate) createSpec() (*PurchaseOrderLine, *sqlgraph.C
 	if value, ok := _c.mutation.PriceScope(); ok {
 		_spec.SetField(purchaseorderline.FieldPriceScope, field.TypeString, value)
 		_node.PriceScope = value
+	}
+	if value, ok := _c.mutation.TaxCode(); ok {
+		_spec.SetField(purchaseorderline.FieldTaxCode, field.TypeString, value)
+		_node.TaxCode = value
+	}
+	if value, ok := _c.mutation.TaxRate(); ok {
+		_spec.SetField(purchaseorderline.FieldTaxRate, field.TypeFloat64, value)
+		_node.TaxRate = value
+	}
+	if value, ok := _c.mutation.PriceIncludesTax(); ok {
+		_spec.SetField(purchaseorderline.FieldPriceIncludesTax, field.TypeBool, value)
+		_node.PriceIncludesTax = value
 	}
 	if nodes := _c.mutation.PurchaseOrderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -612,6 +684,54 @@ func (u *PurchaseOrderLineUpsert) UpdatePriceScope() *PurchaseOrderLineUpsert {
 // ClearPriceScope clears the value of the "price_scope" field.
 func (u *PurchaseOrderLineUpsert) ClearPriceScope() *PurchaseOrderLineUpsert {
 	u.SetNull(purchaseorderline.FieldPriceScope)
+	return u
+}
+
+// SetTaxCode sets the "tax_code" field.
+func (u *PurchaseOrderLineUpsert) SetTaxCode(v string) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldTaxCode, v)
+	return u
+}
+
+// UpdateTaxCode sets the "tax_code" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdateTaxCode() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldTaxCode)
+	return u
+}
+
+// ClearTaxCode clears the value of the "tax_code" field.
+func (u *PurchaseOrderLineUpsert) ClearTaxCode() *PurchaseOrderLineUpsert {
+	u.SetNull(purchaseorderline.FieldTaxCode)
+	return u
+}
+
+// SetTaxRate sets the "tax_rate" field.
+func (u *PurchaseOrderLineUpsert) SetTaxRate(v float64) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldTaxRate, v)
+	return u
+}
+
+// UpdateTaxRate sets the "tax_rate" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdateTaxRate() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldTaxRate)
+	return u
+}
+
+// AddTaxRate adds v to the "tax_rate" field.
+func (u *PurchaseOrderLineUpsert) AddTaxRate(v float64) *PurchaseOrderLineUpsert {
+	u.Add(purchaseorderline.FieldTaxRate, v)
+	return u
+}
+
+// SetPriceIncludesTax sets the "price_includes_tax" field.
+func (u *PurchaseOrderLineUpsert) SetPriceIncludesTax(v bool) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldPriceIncludesTax, v)
+	return u
+}
+
+// UpdatePriceIncludesTax sets the "price_includes_tax" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdatePriceIncludesTax() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldPriceIncludesTax)
 	return u
 }
 
@@ -884,6 +1004,62 @@ func (u *PurchaseOrderLineUpsertOne) UpdatePriceScope() *PurchaseOrderLineUpsert
 func (u *PurchaseOrderLineUpsertOne) ClearPriceScope() *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.ClearPriceScope()
+	})
+}
+
+// SetTaxCode sets the "tax_code" field.
+func (u *PurchaseOrderLineUpsertOne) SetTaxCode(v string) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetTaxCode(v)
+	})
+}
+
+// UpdateTaxCode sets the "tax_code" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdateTaxCode() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateTaxCode()
+	})
+}
+
+// ClearTaxCode clears the value of the "tax_code" field.
+func (u *PurchaseOrderLineUpsertOne) ClearTaxCode() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearTaxCode()
+	})
+}
+
+// SetTaxRate sets the "tax_rate" field.
+func (u *PurchaseOrderLineUpsertOne) SetTaxRate(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetTaxRate(v)
+	})
+}
+
+// AddTaxRate adds v to the "tax_rate" field.
+func (u *PurchaseOrderLineUpsertOne) AddTaxRate(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddTaxRate(v)
+	})
+}
+
+// UpdateTaxRate sets the "tax_rate" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdateTaxRate() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateTaxRate()
+	})
+}
+
+// SetPriceIncludesTax sets the "price_includes_tax" field.
+func (u *PurchaseOrderLineUpsertOne) SetPriceIncludesTax(v bool) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetPriceIncludesTax(v)
+	})
+}
+
+// UpdatePriceIncludesTax sets the "price_includes_tax" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdatePriceIncludesTax() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdatePriceIncludesTax()
 	})
 }
 
@@ -1323,6 +1499,62 @@ func (u *PurchaseOrderLineUpsertBulk) UpdatePriceScope() *PurchaseOrderLineUpser
 func (u *PurchaseOrderLineUpsertBulk) ClearPriceScope() *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.ClearPriceScope()
+	})
+}
+
+// SetTaxCode sets the "tax_code" field.
+func (u *PurchaseOrderLineUpsertBulk) SetTaxCode(v string) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetTaxCode(v)
+	})
+}
+
+// UpdateTaxCode sets the "tax_code" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdateTaxCode() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateTaxCode()
+	})
+}
+
+// ClearTaxCode clears the value of the "tax_code" field.
+func (u *PurchaseOrderLineUpsertBulk) ClearTaxCode() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.ClearTaxCode()
+	})
+}
+
+// SetTaxRate sets the "tax_rate" field.
+func (u *PurchaseOrderLineUpsertBulk) SetTaxRate(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetTaxRate(v)
+	})
+}
+
+// AddTaxRate adds v to the "tax_rate" field.
+func (u *PurchaseOrderLineUpsertBulk) AddTaxRate(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddTaxRate(v)
+	})
+}
+
+// UpdateTaxRate sets the "tax_rate" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdateTaxRate() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateTaxRate()
+	})
+}
+
+// SetPriceIncludesTax sets the "price_includes_tax" field.
+func (u *PurchaseOrderLineUpsertBulk) SetPriceIncludesTax(v bool) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetPriceIncludesTax(v)
+	})
+}
+
+// UpdatePriceIncludesTax sets the "price_includes_tax" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdatePriceIncludesTax() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdatePriceIncludesTax()
 	})
 }
 

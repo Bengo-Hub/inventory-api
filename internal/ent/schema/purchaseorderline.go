@@ -52,6 +52,16 @@ func (PurchaseOrderLine) Fields() []ent.Field {
 			Comment("Selling price to apply once this line is received, if the buyer chose to adjust it at order time."),
 		field.String("price_scope").Optional().Default("all_stock").
 			Comment("all_stock: apply new_selling_price immediately on receipt, everywhere. new_stock_only: queue it — old stock keeps its current price until every pre-receipt cost layer is depleted."),
+		// Input VAT on the purchase. The code is a treasury tax code; the rate is the one in force
+		// when the order was raised, kept so a later rate change never rewrites what was ordered.
+		// The VAT itself is worked out when goods are received, on the quantity received, and sent to
+		// treasury on goods_receipt.posted for the vendor bill.
+		field.String("tax_code").Optional().Default("").
+			Comment("Treasury tax code for input VAT on this line; empty = no VAT claimed"),
+		field.Float("tax_rate").Default(0).
+			Comment("VAT % of tax_code when the order was raised"),
+		field.Bool("price_includes_tax").Default(false).
+			Comment("unit_price already holds the VAT (as on most supplier price lists)"),
 	}
 }
 

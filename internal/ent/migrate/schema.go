@@ -2305,6 +2305,9 @@ var (
 		{Name: "rebate_percent", Type: field.TypeFloat64, Default: 0},
 		{Name: "new_selling_price", Type: field.TypeFloat64, Nullable: true},
 		{Name: "price_scope", Type: field.TypeString, Nullable: true, Default: "all_stock"},
+		{Name: "tax_code", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "tax_rate", Type: field.TypeFloat64, Default: 0},
+		{Name: "price_includes_tax", Type: field.TypeBool, Default: false},
 		{Name: "po_id", Type: field.TypeUUID},
 	}
 	// PurchaseOrderLinesTable holds the schema information for the "purchase_order_lines" table.
@@ -2315,7 +2318,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_order_lines_purchase_orders_lines",
-				Columns:    []*schema.Column{PurchaseOrderLinesColumns[11]},
+				Columns:    []*schema.Column{PurchaseOrderLinesColumns[14]},
 				RefColumns: []*schema.Column{PurchaseOrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2324,7 +2327,7 @@ var (
 			{
 				Name:    "purchaseorderline_po_id_item_id",
 				Unique:  true,
-				Columns: []*schema.Column{PurchaseOrderLinesColumns[11], PurchaseOrderLinesColumns[1]},
+				Columns: []*schema.Column{PurchaseOrderLinesColumns[14], PurchaseOrderLinesColumns[1]},
 			},
 		},
 	}

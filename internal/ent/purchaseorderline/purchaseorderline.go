@@ -35,6 +35,12 @@ const (
 	FieldNewSellingPrice = "new_selling_price"
 	// FieldPriceScope holds the string denoting the price_scope field in the database.
 	FieldPriceScope = "price_scope"
+	// FieldTaxCode holds the string denoting the tax_code field in the database.
+	FieldTaxCode = "tax_code"
+	// FieldTaxRate holds the string denoting the tax_rate field in the database.
+	FieldTaxRate = "tax_rate"
+	// FieldPriceIncludesTax holds the string denoting the price_includes_tax field in the database.
+	FieldPriceIncludesTax = "price_includes_tax"
 	// EdgePurchaseOrder holds the string denoting the purchase_order edge name in mutations.
 	EdgePurchaseOrder = "purchase_order"
 	// Table holds the table name of the purchaseorderline in the database.
@@ -62,6 +68,9 @@ var Columns = []string{
 	FieldRebatePercent,
 	FieldNewSellingPrice,
 	FieldPriceScope,
+	FieldTaxCode,
+	FieldTaxRate,
+	FieldPriceIncludesTax,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -87,6 +96,12 @@ var (
 	DefaultRebatePercent float64
 	// DefaultPriceScope holds the default value on creation for the "price_scope" field.
 	DefaultPriceScope string
+	// DefaultTaxCode holds the default value on creation for the "tax_code" field.
+	DefaultTaxCode string
+	// DefaultTaxRate holds the default value on creation for the "tax_rate" field.
+	DefaultTaxRate float64
+	// DefaultPriceIncludesTax holds the default value on creation for the "price_includes_tax" field.
+	DefaultPriceIncludesTax bool
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -152,6 +167,21 @@ func ByNewSellingPrice(opts ...sql.OrderTermOption) OrderOption {
 // ByPriceScope orders the results by the price_scope field.
 func ByPriceScope(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPriceScope, opts...).ToFunc()
+}
+
+// ByTaxCode orders the results by the tax_code field.
+func ByTaxCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTaxCode, opts...).ToFunc()
+}
+
+// ByTaxRate orders the results by the tax_rate field.
+func ByTaxRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTaxRate, opts...).ToFunc()
+}
+
+// ByPriceIncludesTax orders the results by the price_includes_tax field.
+func ByPriceIncludesTax(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPriceIncludesTax, opts...).ToFunc()
 }
 
 // ByPurchaseOrderField orders the results by purchase_order field.

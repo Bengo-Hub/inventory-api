@@ -63830,6 +63830,10 @@ type PurchaseOrderLineMutation struct {
 	new_selling_price     *float64
 	addnew_selling_price  *float64
 	price_scope           *string
+	tax_code              *string
+	tax_rate              *float64
+	addtax_rate           *float64
+	price_includes_tax    *bool
 	clearedFields         map[string]struct{}
 	purchase_order        *uuid.UUID
 	clearedpurchase_order bool
@@ -64511,6 +64515,147 @@ func (m *PurchaseOrderLineMutation) ResetPriceScope() {
 	delete(m.clearedFields, purchaseorderline.FieldPriceScope)
 }
 
+// SetTaxCode sets the "tax_code" field.
+func (m *PurchaseOrderLineMutation) SetTaxCode(s string) {
+	m.tax_code = &s
+}
+
+// TaxCode returns the value of the "tax_code" field in the mutation.
+func (m *PurchaseOrderLineMutation) TaxCode() (r string, exists bool) {
+	v := m.tax_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTaxCode returns the old "tax_code" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldTaxCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaxCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaxCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaxCode: %w", err)
+	}
+	return oldValue.TaxCode, nil
+}
+
+// ClearTaxCode clears the value of the "tax_code" field.
+func (m *PurchaseOrderLineMutation) ClearTaxCode() {
+	m.tax_code = nil
+	m.clearedFields[purchaseorderline.FieldTaxCode] = struct{}{}
+}
+
+// TaxCodeCleared returns if the "tax_code" field was cleared in this mutation.
+func (m *PurchaseOrderLineMutation) TaxCodeCleared() bool {
+	_, ok := m.clearedFields[purchaseorderline.FieldTaxCode]
+	return ok
+}
+
+// ResetTaxCode resets all changes to the "tax_code" field.
+func (m *PurchaseOrderLineMutation) ResetTaxCode() {
+	m.tax_code = nil
+	delete(m.clearedFields, purchaseorderline.FieldTaxCode)
+}
+
+// SetTaxRate sets the "tax_rate" field.
+func (m *PurchaseOrderLineMutation) SetTaxRate(f float64) {
+	m.tax_rate = &f
+	m.addtax_rate = nil
+}
+
+// TaxRate returns the value of the "tax_rate" field in the mutation.
+func (m *PurchaseOrderLineMutation) TaxRate() (r float64, exists bool) {
+	v := m.tax_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTaxRate returns the old "tax_rate" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldTaxRate(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTaxRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTaxRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTaxRate: %w", err)
+	}
+	return oldValue.TaxRate, nil
+}
+
+// AddTaxRate adds f to the "tax_rate" field.
+func (m *PurchaseOrderLineMutation) AddTaxRate(f float64) {
+	if m.addtax_rate != nil {
+		*m.addtax_rate += f
+	} else {
+		m.addtax_rate = &f
+	}
+}
+
+// AddedTaxRate returns the value that was added to the "tax_rate" field in this mutation.
+func (m *PurchaseOrderLineMutation) AddedTaxRate() (r float64, exists bool) {
+	v := m.addtax_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTaxRate resets all changes to the "tax_rate" field.
+func (m *PurchaseOrderLineMutation) ResetTaxRate() {
+	m.tax_rate = nil
+	m.addtax_rate = nil
+}
+
+// SetPriceIncludesTax sets the "price_includes_tax" field.
+func (m *PurchaseOrderLineMutation) SetPriceIncludesTax(b bool) {
+	m.price_includes_tax = &b
+}
+
+// PriceIncludesTax returns the value of the "price_includes_tax" field in the mutation.
+func (m *PurchaseOrderLineMutation) PriceIncludesTax() (r bool, exists bool) {
+	v := m.price_includes_tax
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPriceIncludesTax returns the old "price_includes_tax" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldPriceIncludesTax(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPriceIncludesTax is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPriceIncludesTax requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPriceIncludesTax: %w", err)
+	}
+	return oldValue.PriceIncludesTax, nil
+}
+
+// ResetPriceIncludesTax resets all changes to the "price_includes_tax" field.
+func (m *PurchaseOrderLineMutation) ResetPriceIncludesTax() {
+	m.price_includes_tax = nil
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by id.
 func (m *PurchaseOrderLineMutation) SetPurchaseOrderID(id uuid.UUID) {
 	m.purchase_order = &id
@@ -64585,7 +64730,7 @@ func (m *PurchaseOrderLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderLineMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 14)
 	if m.purchase_order != nil {
 		fields = append(fields, purchaseorderline.FieldPoID)
 	}
@@ -64619,6 +64764,15 @@ func (m *PurchaseOrderLineMutation) Fields() []string {
 	if m.price_scope != nil {
 		fields = append(fields, purchaseorderline.FieldPriceScope)
 	}
+	if m.tax_code != nil {
+		fields = append(fields, purchaseorderline.FieldTaxCode)
+	}
+	if m.tax_rate != nil {
+		fields = append(fields, purchaseorderline.FieldTaxRate)
+	}
+	if m.price_includes_tax != nil {
+		fields = append(fields, purchaseorderline.FieldPriceIncludesTax)
+	}
 	return fields
 }
 
@@ -64649,6 +64803,12 @@ func (m *PurchaseOrderLineMutation) Field(name string) (ent.Value, bool) {
 		return m.NewSellingPrice()
 	case purchaseorderline.FieldPriceScope:
 		return m.PriceScope()
+	case purchaseorderline.FieldTaxCode:
+		return m.TaxCode()
+	case purchaseorderline.FieldTaxRate:
+		return m.TaxRate()
+	case purchaseorderline.FieldPriceIncludesTax:
+		return m.PriceIncludesTax()
 	}
 	return nil, false
 }
@@ -64680,6 +64840,12 @@ func (m *PurchaseOrderLineMutation) OldField(ctx context.Context, name string) (
 		return m.OldNewSellingPrice(ctx)
 	case purchaseorderline.FieldPriceScope:
 		return m.OldPriceScope(ctx)
+	case purchaseorderline.FieldTaxCode:
+		return m.OldTaxCode(ctx)
+	case purchaseorderline.FieldTaxRate:
+		return m.OldTaxRate(ctx)
+	case purchaseorderline.FieldPriceIncludesTax:
+		return m.OldPriceIncludesTax(ctx)
 	}
 	return nil, fmt.Errorf("unknown PurchaseOrderLine field %s", name)
 }
@@ -64766,6 +64932,27 @@ func (m *PurchaseOrderLineMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetPriceScope(v)
 		return nil
+	case purchaseorderline.FieldTaxCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaxCode(v)
+		return nil
+	case purchaseorderline.FieldTaxRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTaxRate(v)
+		return nil
+	case purchaseorderline.FieldPriceIncludesTax:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPriceIncludesTax(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine field %s", name)
 }
@@ -64792,6 +64979,9 @@ func (m *PurchaseOrderLineMutation) AddedFields() []string {
 	if m.addnew_selling_price != nil {
 		fields = append(fields, purchaseorderline.FieldNewSellingPrice)
 	}
+	if m.addtax_rate != nil {
+		fields = append(fields, purchaseorderline.FieldTaxRate)
+	}
 	return fields
 }
 
@@ -64812,6 +65002,8 @@ func (m *PurchaseOrderLineMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRebatePercent()
 	case purchaseorderline.FieldNewSellingPrice:
 		return m.AddedNewSellingPrice()
+	case purchaseorderline.FieldTaxRate:
+		return m.AddedTaxRate()
 	}
 	return nil, false
 }
@@ -64863,6 +65055,13 @@ func (m *PurchaseOrderLineMutation) AddField(name string, value ent.Value) error
 		}
 		m.AddNewSellingPrice(v)
 		return nil
+	case purchaseorderline.FieldTaxRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTaxRate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine numeric field %s", name)
 }
@@ -64882,6 +65081,9 @@ func (m *PurchaseOrderLineMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(purchaseorderline.FieldPriceScope) {
 		fields = append(fields, purchaseorderline.FieldPriceScope)
+	}
+	if m.FieldCleared(purchaseorderline.FieldTaxCode) {
+		fields = append(fields, purchaseorderline.FieldTaxCode)
 	}
 	return fields
 }
@@ -64908,6 +65110,9 @@ func (m *PurchaseOrderLineMutation) ClearField(name string) error {
 		return nil
 	case purchaseorderline.FieldPriceScope:
 		m.ClearPriceScope()
+		return nil
+	case purchaseorderline.FieldTaxCode:
+		m.ClearTaxCode()
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine nullable field %s", name)
@@ -64949,6 +65154,15 @@ func (m *PurchaseOrderLineMutation) ResetField(name string) error {
 		return nil
 	case purchaseorderline.FieldPriceScope:
 		m.ResetPriceScope()
+		return nil
+	case purchaseorderline.FieldTaxCode:
+		m.ResetTaxCode()
+		return nil
+	case purchaseorderline.FieldTaxRate:
+		m.ResetTaxRate()
+		return nil
+	case purchaseorderline.FieldPriceIncludesTax:
+		m.ResetPriceIncludesTax()
 		return nil
 	}
 	return fmt.Errorf("unknown PurchaseOrderLine field %s", name)

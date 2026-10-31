@@ -249,6 +249,61 @@ func (_u *PurchaseOrderLineUpdate) ClearPriceScope() *PurchaseOrderLineUpdate {
 	return _u
 }
 
+// SetTaxCode sets the "tax_code" field.
+func (_u *PurchaseOrderLineUpdate) SetTaxCode(v string) *PurchaseOrderLineUpdate {
+	_u.mutation.SetTaxCode(v)
+	return _u
+}
+
+// SetNillableTaxCode sets the "tax_code" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillableTaxCode(v *string) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetTaxCode(*v)
+	}
+	return _u
+}
+
+// ClearTaxCode clears the value of the "tax_code" field.
+func (_u *PurchaseOrderLineUpdate) ClearTaxCode() *PurchaseOrderLineUpdate {
+	_u.mutation.ClearTaxCode()
+	return _u
+}
+
+// SetTaxRate sets the "tax_rate" field.
+func (_u *PurchaseOrderLineUpdate) SetTaxRate(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.ResetTaxRate()
+	_u.mutation.SetTaxRate(v)
+	return _u
+}
+
+// SetNillableTaxRate sets the "tax_rate" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillableTaxRate(v *float64) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetTaxRate(*v)
+	}
+	return _u
+}
+
+// AddTaxRate adds value to the "tax_rate" field.
+func (_u *PurchaseOrderLineUpdate) AddTaxRate(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.AddTaxRate(v)
+	return _u
+}
+
+// SetPriceIncludesTax sets the "price_includes_tax" field.
+func (_u *PurchaseOrderLineUpdate) SetPriceIncludesTax(v bool) *PurchaseOrderLineUpdate {
+	_u.mutation.SetPriceIncludesTax(v)
+	return _u
+}
+
+// SetNillablePriceIncludesTax sets the "price_includes_tax" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillablePriceIncludesTax(v *bool) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetPriceIncludesTax(*v)
+	}
+	return _u
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by ID.
 func (_u *PurchaseOrderLineUpdate) SetPurchaseOrderID(id uuid.UUID) *PurchaseOrderLineUpdate {
 	_u.mutation.SetPurchaseOrderID(id)
@@ -377,6 +432,21 @@ func (_u *PurchaseOrderLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if _u.mutation.PriceScopeCleared() {
 		_spec.ClearField(purchaseorderline.FieldPriceScope, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxCode(); ok {
+		_spec.SetField(purchaseorderline.FieldTaxCode, field.TypeString, value)
+	}
+	if _u.mutation.TaxCodeCleared() {
+		_spec.ClearField(purchaseorderline.FieldTaxCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxRate(); ok {
+		_spec.SetField(purchaseorderline.FieldTaxRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTaxRate(); ok {
+		_spec.AddField(purchaseorderline.FieldTaxRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.PriceIncludesTax(); ok {
+		_spec.SetField(purchaseorderline.FieldPriceIncludesTax, field.TypeBool, value)
 	}
 	if _u.mutation.PurchaseOrderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -647,6 +717,61 @@ func (_u *PurchaseOrderLineUpdateOne) ClearPriceScope() *PurchaseOrderLineUpdate
 	return _u
 }
 
+// SetTaxCode sets the "tax_code" field.
+func (_u *PurchaseOrderLineUpdateOne) SetTaxCode(v string) *PurchaseOrderLineUpdateOne {
+	_u.mutation.SetTaxCode(v)
+	return _u
+}
+
+// SetNillableTaxCode sets the "tax_code" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillableTaxCode(v *string) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetTaxCode(*v)
+	}
+	return _u
+}
+
+// ClearTaxCode clears the value of the "tax_code" field.
+func (_u *PurchaseOrderLineUpdateOne) ClearTaxCode() *PurchaseOrderLineUpdateOne {
+	_u.mutation.ClearTaxCode()
+	return _u
+}
+
+// SetTaxRate sets the "tax_rate" field.
+func (_u *PurchaseOrderLineUpdateOne) SetTaxRate(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.ResetTaxRate()
+	_u.mutation.SetTaxRate(v)
+	return _u
+}
+
+// SetNillableTaxRate sets the "tax_rate" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillableTaxRate(v *float64) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetTaxRate(*v)
+	}
+	return _u
+}
+
+// AddTaxRate adds value to the "tax_rate" field.
+func (_u *PurchaseOrderLineUpdateOne) AddTaxRate(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.AddTaxRate(v)
+	return _u
+}
+
+// SetPriceIncludesTax sets the "price_includes_tax" field.
+func (_u *PurchaseOrderLineUpdateOne) SetPriceIncludesTax(v bool) *PurchaseOrderLineUpdateOne {
+	_u.mutation.SetPriceIncludesTax(v)
+	return _u
+}
+
+// SetNillablePriceIncludesTax sets the "price_includes_tax" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillablePriceIncludesTax(v *bool) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetPriceIncludesTax(*v)
+	}
+	return _u
+}
+
 // SetPurchaseOrderID sets the "purchase_order" edge to the PurchaseOrder entity by ID.
 func (_u *PurchaseOrderLineUpdateOne) SetPurchaseOrderID(id uuid.UUID) *PurchaseOrderLineUpdateOne {
 	_u.mutation.SetPurchaseOrderID(id)
@@ -805,6 +930,21 @@ func (_u *PurchaseOrderLineUpdateOne) sqlSave(ctx context.Context) (_node *Purch
 	}
 	if _u.mutation.PriceScopeCleared() {
 		_spec.ClearField(purchaseorderline.FieldPriceScope, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxCode(); ok {
+		_spec.SetField(purchaseorderline.FieldTaxCode, field.TypeString, value)
+	}
+	if _u.mutation.TaxCodeCleared() {
+		_spec.ClearField(purchaseorderline.FieldTaxCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.TaxRate(); ok {
+		_spec.SetField(purchaseorderline.FieldTaxRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedTaxRate(); ok {
+		_spec.AddField(purchaseorderline.FieldTaxRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.PriceIncludesTax(); ok {
+		_spec.SetField(purchaseorderline.FieldPriceIncludesTax, field.TypeBool, value)
 	}
 	if _u.mutation.PurchaseOrderCleared() {
 		edge := &sqlgraph.EdgeSpec{

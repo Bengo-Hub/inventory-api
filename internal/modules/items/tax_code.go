@@ -19,17 +19,24 @@ var ErrUnknownTaxCode = errors.New("unknown tax code")
 // CanonicalTaxCode checks that code is one of the tenant's active treasury tax codes and returns
 // it in treasury's spelling, or ErrUnknownTaxCode (also when treasury cannot be asked).
 func (s *Service) CanonicalTaxCode(ctx context.Context, tenantID uuid.UUID, code string) (string, error) {
+	canonical, _, err := s.TaxCodeRate(ctx, tenantID, code)
+	return canonical, err
+}
+
+// TaxCodeRate is CanonicalTaxCode plus the code's rate in percent, for callers that store the rate
+// in force alongside the code (purchase order lines).
+func (s *Service) TaxCodeRate(ctx context.Context, tenantID uuid.UUID, code string) (string, float64, error) {
 	code = strings.TrimSpace(code)
 	if s.taxResolver == nil {
-		return "", fmt.Errorf("%w: tax codes are unavailable", ErrUnknownTaxCode)
+		return "", 0, fmt.Errorf("%w: tax codes are unavailable", ErrUnknownTaxCode)
 	}
 	// ResolveVATRate falls back to the default code for an unknown one, so only an exact match
 	// counts as valid.
-	_, canonical, ok := s.taxResolver.ResolveVATRate(ctx, tenantID, code)
+	rate, canonical, ok := s.taxResolver.ResolveVATRate(ctx, tenantID, code)
 	if !ok || !strings.EqualFold(canonical, code) {
-		return "", fmt.Errorf("%w: %q is not an active tax code for this business", ErrUnknownTaxCode, code)
+		return "", 0, fmt.Errorf("%w: %q is not an active tax code for this business", ErrUnknownTaxCode, code)
 	}
-	return canonical, nil
+	return canonical, rate, nil
 }
 
 // SetTaxCodeBySKU changes one item's tax code (tax_code_id) and nothing else. The code must be

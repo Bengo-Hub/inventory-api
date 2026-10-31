@@ -275,6 +275,10 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 		NewSellingPrice     *float64 `json:"new_selling_price,omitempty"`
 		PriceScope          string   `json:"price_scope,omitempty"`
 		CurrentSellingPrice *float64 `json:"current_selling_price,omitempty"`
+		// Input VAT on the line (treasury tax code, the rate when ordered, price holds VAT).
+		TaxCode          string  `json:"tax_code,omitempty"`
+		TaxRate          float64 `json:"tax_rate,omitempty"`
+		PriceIncludesTax bool    `json:"price_includes_tax,omitempty"`
 	}
 
 	lines := make([]lineDTO, 0, len(po.Edges.Lines))
@@ -297,6 +301,9 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 			NewSellingPrice:     l.NewSellingPrice,
 			PriceScope:          l.PriceScope,
 			CurrentSellingPrice: itemCurrentPrice[l.ItemID],
+			TaxCode:             l.TaxCode,
+			TaxRate:             l.TaxRate,
+			PriceIncludesTax:    l.PriceIncludesTax,
 		})
 	}
 
@@ -340,6 +347,42 @@ type createPOLineInput struct {
 	// received (see postGoodsReceiptCore) — nothing changes at PO creation/amend time.
 	NewSellingPrice *float64 `json:"new_selling_price,omitempty"`
 	PriceScope      string   `json:"price_scope,omitempty"`
+	// Input VAT: a treasury tax code (empty = no VAT claimed) and whether unit_cost already holds
+	// the VAT. The code's rate is looked up and stored with the line.
+	TaxCode          string `json:"tax_code,omitempty"`
+	PriceIncludesTax bool   `json:"price_includes_tax,omitempty"`
+}
+
+// poLineTax is a PO line's checked tax code and the rate in force when the order was raised.
+type poLineTax struct {
+	code string
+	rate float64
+}
+
+// resolvePOLineTaxes checks every line's tax code against the tenant's treasury tax codes, before
+// any transaction opens. An unknown code is the caller's mistake (400); lines without a code claim
+// no input VAT.
+func (h *InventoryExtrasHandler) resolvePOLineTaxes(ctx context.Context, tenantID uuid.UUID, lines []createPOLineInput) ([]poLineTax, error) {
+	out := make([]poLineTax, len(lines))
+	cache := map[string]poLineTax{}
+	for i, l := range lines {
+		code := strings.TrimSpace(l.TaxCode)
+		if code == "" {
+			continue
+		}
+		if t, ok := cache[strings.ToUpper(code)]; ok {
+			out[i] = t
+			continue
+		}
+		canonical, rate, err := h.itemsSvc.TaxCodeRate(ctx, tenantID, code)
+		if err != nil {
+			return nil, err
+		}
+		t := poLineTax{code: canonical, rate: rate}
+		cache[strings.ToUpper(code)] = t
+		out[i] = t
+	}
+	return out, nil
 }
 
 type createPOInput struct {
@@ -390,6 +433,11 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 	}
 	if len(req.LineItems) == 0 {
 		writeError(w, http.StatusBadRequest, "MISSING_LINES", "at least one line item is required")
+		return
+	}
+	lineTaxes, err := h.resolvePOLineTaxes(r.Context(), tenantID, req.LineItems)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TAX_CODE", err.Error())
 		return
 	}
 
@@ -463,14 +511,17 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 		return
 	}
 
-	for _, l := range req.LineItems {
+	for i, l := range req.LineItems {
 		lc := tx.PurchaseOrderLine.Create().
 			SetPoID(po.ID).
 			SetItemID(l.ItemID).
 			SetQuantityOrdered(l.Quantity).
 			SetUnitPrice(l.UnitCost).
 			SetTotalPrice(roundDecimal(l.Quantity * l.UnitCost)).
-			SetNillableUnitID(l.UnitID)
+			SetNillableUnitID(l.UnitID).
+			SetTaxCode(lineTaxes[i].code).
+			SetTaxRate(lineTaxes[i].rate).
+			SetPriceIncludesTax(lineTaxes[i].code != "" && l.PriceIncludesTax)
 		if l.NewSellingPrice != nil && *l.NewSellingPrice > 0 {
 			lc = lc.SetNewSellingPrice(*l.NewSellingPrice)
 		}
@@ -544,6 +595,11 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusBadRequest, "MISSING_LINES", "at least one line item is required")
 		return
 	}
+	lineTaxes, err := h.resolvePOLineTaxes(r.Context(), tenantID, req.LineItems)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TAX_CODE", err.Error())
+		return
+	}
 
 	tx, err := h.orm.Tx(r.Context())
 	if err != nil {
@@ -556,12 +612,14 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 		return
 	}
 	var total float64
-	for _, l := range req.LineItems {
+	for i, l := range req.LineItems {
 		lineTotal := roundDecimal(l.Quantity * l.UnitCost)
 		total += lineTotal
 		lc := tx.PurchaseOrderLine.Create().
 			SetPoID(po.ID).SetItemID(l.ItemID).SetQuantityOrdered(l.Quantity).
-			SetUnitPrice(l.UnitCost).SetTotalPrice(lineTotal).SetNillableUnitID(l.UnitID)
+			SetUnitPrice(l.UnitCost).SetTotalPrice(lineTotal).SetNillableUnitID(l.UnitID).
+			SetTaxCode(lineTaxes[i].code).SetTaxRate(lineTaxes[i].rate).
+			SetPriceIncludesTax(lineTaxes[i].code != "" && l.PriceIncludesTax)
 		if l.NewSellingPrice != nil && *l.NewSellingPrice > 0 {
 			lc = lc.SetNewSellingPrice(*l.NewSellingPrice)
 		}

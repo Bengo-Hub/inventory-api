@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	vat "github.com/Bengo-Hub/httpware/tax"
 	"github.com/Bengo-Hub/pagination"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
@@ -802,8 +803,10 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	// goods_receipt_id/gr_number/po_id/supplier_*/received_amount + per-GR lines (it was getting
 	// none of these, so per-GR billing silently no-op'd). Unit price comes from the matching PO line.
 	unitPriceByItem := make(map[uuid.UUID]float64, len(poLines))
+	poLineByItem := make(map[uuid.UUID]*ent.PurchaseOrderLine, len(poLines))
 	for _, pl := range poLines {
 		unitPriceByItem[pl.ItemID] = pl.UnitPrice
+		poLineByItem[pl.ItemID] = pl
 	}
 	grItemIDs := make([]uuid.UUID, 0, len(grnLines))
 	for _, l := range grnLines {
@@ -821,13 +824,23 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	for _, l := range grnLines {
 		up := unitPriceByItem[l.ItemID]
 		receivedAmount += l.QuantityAccepted * up
-		grLineArr = append(grLineArr, map[string]any{
+		line := map[string]any{
 			"item_id":           l.ItemID,
 			"sku":               grSkus[l.ItemID],
 			"name":              grNames[l.ItemID],
 			"quantity_received": l.QuantityAccepted,
 			"unit_price":        up,
-		})
+		}
+		// Input VAT on what was accepted, from the PO line's tax code and the rate it was ordered at,
+		// through the shared calculator; treasury books it on the vendor bill.
+		if pl := poLineByItem[l.ItemID]; pl != nil && pl.TaxCode != "" {
+			_, tax, _ := vat.Split(l.QuantityAccepted*up, pl.TaxRate, pl.PriceIncludesTax)
+			line["tax_code"] = pl.TaxCode
+			line["tax_rate"] = pl.TaxRate
+			line["tax_inclusive"] = pl.PriceIncludesTax
+			line["tax_amount"] = tax
+		}
+		grLineArr = append(grLineArr, line)
 	}
 	grPayload := map[string]any{
 		"tenant_id":            tenantID,

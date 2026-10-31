@@ -73,8 +73,20 @@ the same one POS, ordering and treasury use, so a price splits to the same cent 
 comes from treasury for the item's own code, else the tenant default. When no rate is known (no code,
 or treasury unreachable with nothing cached) the item carries no VAT split; a rate is never assumed.
 
-Purchase orders carry no VAT of their own. The purchase order PDF prints the difference between the
-lines and the total as "Shipping and charges". Input VAT is booked from the supplier's invoice.
+## Input VAT on purchases
+
+Each purchase order line can carry a treasury tax code (`tax_code`) and whether its unit cost already
+holds the VAT (`price_includes_tax`). The code is checked against the tenant's treasury codes when the
+order is created or amended (400 `INVALID_TAX_CODE` otherwise), and the code's rate is stored on the line
+(`tax_rate`) so a later rate change never rewrites what was ordered. A line with no code claims no VAT.
+
+When goods are received, each line of the `goods_receipt.posted` event carries `tax_code`, `tax_rate`,
+`tax_inclusive` and `tax_amount`, the VAT on the quantity accepted worked out with the shared calculator.
+treasury books that as input VAT on the vendor bill it creates. Whether the VAT can be claimed still
+depends on the supplier's eTIMS invoice, which treasury tracks on the bill.
+
+The purchase order total is the sum of the lines as ordered. The PDF prints any difference between the
+lines and the total as "Shipping and charges".
 
 ## Item form
 

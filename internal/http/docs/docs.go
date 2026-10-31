@@ -7279,11 +7279,18 @@ const docTemplate = `{
                     "description": "Selling-price adjustment decided at order time. Applied only when this line is actually\nreceived (see postGoodsReceiptCore) — nothing changes at PO creation/amend time.",
                     "type": "number"
                 },
+                "price_includes_tax": {
+                    "type": "boolean"
+                },
                 "price_scope": {
                     "type": "string"
                 },
                 "quantity": {
                     "type": "number"
+                },
+                "tax_code": {
+                    "description": "Input VAT: a treasury tax code (empty = no VAT claimed) and whether unit_cost already holds\nthe VAT. The code's rate is looked up and stored with the line.",
+                    "type": "string"
                 },
                 "unit_cost": {
                     "type": "number"
@@ -8505,6 +8512,13 @@ const docTemplate = `{
                 },
                 "end_of_life_at": {
                     "description": "End-of-Life: non-null = the item is marked EOL (hidden everywhere; is_active is false)\nand awaiting hard-delete by the purge scheduler once past the retention window.",
+                    "type": "string"
+                },
+                "eol_kept_reason": {
+                    "type": "string"
+                },
+                "eol_purge_at": {
+                    "description": "End of Life listing only (status=eol): when the purge hard-deletes the item, or, for an\nitem it keeps because of its history, why (e.g. \"has stock adjustments\"). Exactly one is set.",
                     "type": "string"
                 },
                 "etims_item_cls_cd": {

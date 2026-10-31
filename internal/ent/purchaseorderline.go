@@ -40,6 +40,12 @@ type PurchaseOrderLine struct {
 	NewSellingPrice *float64 `json:"new_selling_price,omitempty"`
 	// all_stock: apply new_selling_price immediately on receipt, everywhere. new_stock_only: queue it — old stock keeps its current price until every pre-receipt cost layer is depleted.
 	PriceScope string `json:"price_scope,omitempty"`
+	// Treasury tax code for input VAT on this line; empty = no VAT claimed
+	TaxCode string `json:"tax_code,omitempty"`
+	// VAT % of tax_code when the order was raised
+	TaxRate float64 `json:"tax_rate,omitempty"`
+	// unit_price already holds the VAT (as on most supplier price lists)
+	PriceIncludesTax bool `json:"price_includes_tax,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PurchaseOrderLineQuery when eager-loading is set.
 	Edges        PurchaseOrderLineEdges `json:"edges"`
@@ -73,9 +79,11 @@ func (*PurchaseOrderLine) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case purchaseorderline.FieldVariantID, purchaseorderline.FieldUnitID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent, purchaseorderline.FieldNewSellingPrice:
+		case purchaseorderline.FieldPriceIncludesTax:
+			values[i] = new(sql.NullBool)
+		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent, purchaseorderline.FieldNewSellingPrice, purchaseorderline.FieldTaxRate:
 			values[i] = new(sql.NullFloat64)
-		case purchaseorderline.FieldPriceScope:
+		case purchaseorderline.FieldPriceScope, purchaseorderline.FieldTaxCode:
 			values[i] = new(sql.NullString)
 		case purchaseorderline.FieldID, purchaseorderline.FieldPoID, purchaseorderline.FieldItemID:
 			values[i] = new(uuid.UUID)
@@ -169,6 +177,24 @@ func (_m *PurchaseOrderLine) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				_m.PriceScope = value.String
 			}
+		case purchaseorderline.FieldTaxCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tax_code", values[i])
+			} else if value.Valid {
+				_m.TaxCode = value.String
+			}
+		case purchaseorderline.FieldTaxRate:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field tax_rate", values[i])
+			} else if value.Valid {
+				_m.TaxRate = value.Float64
+			}
+		case purchaseorderline.FieldPriceIncludesTax:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field price_includes_tax", values[i])
+			} else if value.Valid {
+				_m.PriceIncludesTax = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -248,6 +274,15 @@ func (_m *PurchaseOrderLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("price_scope=")
 	builder.WriteString(_m.PriceScope)
+	builder.WriteString(", ")
+	builder.WriteString("tax_code=")
+	builder.WriteString(_m.TaxCode)
+	builder.WriteString(", ")
+	builder.WriteString("tax_rate=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TaxRate))
+	builder.WriteString(", ")
+	builder.WriteString("price_includes_tax=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PriceIncludesTax))
 	builder.WriteByte(')')
 	return builder.String()
 }

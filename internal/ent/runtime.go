@@ -1568,6 +1568,18 @@ func init() {
 	purchaseorderlineDescPriceScope := purchaseorderlineFields[11].Descriptor()
 	// purchaseorderline.DefaultPriceScope holds the default value on creation for the price_scope field.
 	purchaseorderline.DefaultPriceScope = purchaseorderlineDescPriceScope.Default.(string)
+	// purchaseorderlineDescTaxCode is the schema descriptor for tax_code field.
+	purchaseorderlineDescTaxCode := purchaseorderlineFields[12].Descriptor()
+	// purchaseorderline.DefaultTaxCode holds the default value on creation for the tax_code field.
+	purchaseorderline.DefaultTaxCode = purchaseorderlineDescTaxCode.Default.(string)
+	// purchaseorderlineDescTaxRate is the schema descriptor for tax_rate field.
+	purchaseorderlineDescTaxRate := purchaseorderlineFields[13].Descriptor()
+	// purchaseorderline.DefaultTaxRate holds the default value on creation for the tax_rate field.
+	purchaseorderline.DefaultTaxRate = purchaseorderlineDescTaxRate.Default.(float64)
+	// purchaseorderlineDescPriceIncludesTax is the schema descriptor for price_includes_tax field.
+	purchaseorderlineDescPriceIncludesTax := purchaseorderlineFields[14].Descriptor()
+	// purchaseorderline.DefaultPriceIncludesTax holds the default value on creation for the price_includes_tax field.
+	purchaseorderline.DefaultPriceIncludesTax = purchaseorderlineDescPriceIncludesTax.Default.(bool)
 	// purchaseorderlineDescID is the schema descriptor for id field.
 	purchaseorderlineDescID := purchaseorderlineFields[0].Descriptor()
 	// purchaseorderline.DefaultID holds the default value on creation for the id field.
