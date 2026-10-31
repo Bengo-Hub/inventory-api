@@ -831,15 +831,7 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 			"quantity_received": l.QuantityAccepted,
 			"unit_price":        up,
 		}
-		// Input VAT on what was accepted, from the PO line's tax code and the rate it was ordered at,
-		// through the shared calculator; treasury books it on the vendor bill.
-		if pl := poLineByItem[l.ItemID]; pl != nil && pl.TaxCode != "" {
-			_, tax, _ := vat.Split(l.QuantityAccepted*up, pl.TaxRate, pl.PriceIncludesTax)
-			line["tax_code"] = pl.TaxCode
-			line["tax_rate"] = pl.TaxRate
-			line["tax_inclusive"] = pl.PriceIncludesTax
-			line["tax_amount"] = tax
-		}
+		addPOLineInputVAT(line, poLineByItem[l.ItemID], l.QuantityAccepted*up)
 		grLineArr = append(grLineArr, line)
 	}
 	grPayload := map[string]any{
@@ -936,6 +928,21 @@ func supplierPaymentFields(po *ent.PurchaseOrder) map[string]any {
 	return m
 }
 
+// addPOLineInputVAT adds the input VAT on amount (what was received at the PO line's price) to a
+// goods_receipt.posted or purchase_order.received event line, from the PO line's tax code and the
+// rate it was ordered at, through the shared calculator. treasury books it on the vendor bill. A
+// PO line with no tax code adds nothing and bills with no input VAT.
+func addPOLineInputVAT(line map[string]any, pl *ent.PurchaseOrderLine, amount float64) {
+	if pl == nil || pl.TaxCode == "" {
+		return
+	}
+	_, tax, _ := vat.Split(amount, pl.TaxRate, pl.PriceIncludesTax)
+	line["tax_code"] = pl.TaxCode
+	line["tax_rate"] = pl.TaxRate
+	line["tax_inclusive"] = pl.PriceIncludesTax
+	line["tax_amount"] = tax
+}
+
 // emitPurchaseOrderReceived writes the enriched purchase_order.received outbox
 // event (supplier payment details) that treasury consumes for auto-payout.
 func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, po *ent.PurchaseOrder, totalRebate float64) {
@@ -986,13 +993,15 @@ func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, p
 			if qty <= 0 {
 				qty = l.QuantityOrdered
 			}
-			lineArr = append(lineArr, map[string]any{
+			line := map[string]any{
 				"item_id":    l.ItemID,
 				"sku":        skus[l.ItemID],
 				"name":       names[l.ItemID],
 				"quantity":   qty,
 				"unit_price": l.UnitPrice,
-			})
+			}
+			addPOLineInputVAT(line, l, qty*l.UnitPrice)
+			lineArr = append(lineArr, line)
 		}
 		payload["lines"] = lineArr
 	}
