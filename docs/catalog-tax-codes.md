@@ -65,6 +65,17 @@ now) and `vat_active`. A PUT that changes `default_tax_code` validates it agains
 treasury codes (422 `invalid_tax_code` otherwise) and returns `tax_code_job` (`job_id`, `code`,
 `items`). An empty `default_tax_code` means Automatic.
 
+## Catalog prices and VAT
+
+The catalog's net and VAT split of a price (`net_price`, `tax_amount`, `tax_rate`) comes from the
+platform's shared calculator (`github.com/Bengo-Hub/httpware/tax`, through `items.ComputeTaxSplit`),
+the same one POS, ordering and treasury use, so a price splits to the same cent everywhere. The rate
+comes from treasury for the item's own code, else the tenant default. When no rate is known (no code,
+or treasury unreachable with nothing cached) the item carries no VAT split; a rate is never assumed.
+
+Purchase orders carry no VAT of their own. The purchase order PDF prints the difference between the
+lines and the total as "Shipping and charges". Input VAT is booked from the supplier's invoice.
+
 ## Item form
 
 The tax fields (tax code, inclusive pricing, eTIMS classification, packaging and quantity units)

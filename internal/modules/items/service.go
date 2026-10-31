@@ -716,7 +716,7 @@ type Service struct {
 	cache       *sharedcache.Aside
 	log         *zap.Logger
 	media       *objectstore.Store // item images: stored keys, links on read (httpware/objectstore)
-	taxResolver TaxResolver        // resolves VAT rate from treasury-api (optional; nil → DefaultVATRate)
+	taxResolver TaxResolver        // resolves VAT rate from treasury-api (optional; nil means no VAT split)
 	auditSvc    *audit.Service
 	// onStockUnitChanged runs after a stock-unit change rescaled the item (recipe recosting).
 	onStockUnitChanged func(ctx context.Context, tenantID, itemID uuid.UUID)

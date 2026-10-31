@@ -80,11 +80,19 @@ func TestApplyItemTax(t *testing.T) {
 		}
 	})
 
-	t.Run("inclusive pricing backfills DefaultVATRate when treasury unreachable", func(t *testing.T) {
+	t.Run("no rate known means no VAT split, never an assumed 16%", func(t *testing.T) {
 		d := &ItemDTO{TaxInclusive: true}
 		applyItemTax(d, 100, 0, "", "", true, false)
-		if d.TaxRate == nil || *d.TaxRate != DefaultVATRate {
-			t.Errorf("TaxRate = %v, want DefaultVATRate (%v)", d.TaxRate, DefaultVATRate)
+		if d.TaxRate != nil || d.TaxAmount != nil {
+			t.Errorf("TaxRate = %v TaxAmount = %v, want both unset", d.TaxRate, d.TaxAmount)
+		}
+	})
+
+	t.Run("inclusive split matches the shared calculator", func(t *testing.T) {
+		d := &ItemDTO{}
+		applyItemTax(d, 85.6, 16, "VAT-16", "", true, false)
+		if d.NetPrice == nil || *d.NetPrice != 73.79 || *d.TaxAmount != 11.81 {
+			t.Errorf("net %v tax %v, want 73.79 and 11.81", d.NetPrice, d.TaxAmount)
 		}
 	})
 }

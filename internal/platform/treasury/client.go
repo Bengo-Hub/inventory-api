@@ -320,8 +320,10 @@ func (c *Client) InvalidateTaxCache(ctx context.Context, tenantID uuid.UUID) {
 }
 
 // ResolveVATRate returns the VAT rate (percent) and the tax code used, selecting by:
-// preferred code → is_default → first tax_type=="vat". ok=false when treasury is
-// unavailable or no VAT code exists (caller should apply its own fallback).
+// preferred code, then is_default, then the first tax_type "vat". ok=false when treasury is
+// unavailable or no VAT code exists; callers then charge no VAT and never assume a rate. It does
+// not apply the VAT switch: pricing checks VATActive separately, and canonical code lookups
+// (tax_code.go) must resolve whatever the switch says.
 func (c *Client) ResolveVATRate(ctx context.Context, tenantID uuid.UUID, preferredCode string) (rate float64, code string, ok bool) {
 	codes, err := c.GetTaxCodes(ctx, tenantID)
 	if err != nil {

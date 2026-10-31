@@ -23,8 +23,8 @@ import (
 // DTOs so the POS/ordering proxies receive a usable customer price and tax. The effective price
 // is resolved as: recipe selling price (RECIPE items) → default pricing-tier price → existing
 // cost+margin suggestion. When the tenant (or the item) treats prices as tax-inclusive, the tax
-// is computed backwards using the VAT rate resolved from treasury-api (falling back to
-// DefaultVATRate when treasury is unavailable). cfg may be nil.
+// is computed backwards using the VAT rate resolved from treasury-api; with no rate known the item
+// carries no VAT split. cfg may be nil.
 func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent.TenantInventoryConfig, dtos []ItemDTO) {
 	if len(dtos) == 0 {
 		return
@@ -49,8 +49,8 @@ func (s *Service) enrichPrices(ctx context.Context, tenantID uuid.UUID, cfg *ent
 	if cfg != nil {
 		defaultTaxCode = cfg.DefaultTaxCode
 	}
-	// A business that isn't VAT-registered must not charge VAT — suppress the rate entirely
-	// (including the inclusive-price DefaultVATRate fallback) so no tax is split out.
+	// A business that isn't VAT-registered must not charge VAT: suppress the rate entirely so no
+	// tax is split out.
 	suppressVAT := s.vatSuppressed(ctx, tenantID)
 
 	// Per-call memoization, keyed by tax code: resolveVATRate's own cache is Redis-backed and
@@ -132,11 +132,11 @@ func applyItemTax(d *ItemDTO, price, rate float64, rateCode, defaultTaxCode stri
 	effRate := rate
 	if suppressVAT {
 		effRate = 0
-	} else if effRate <= 0 && inclusive {
-		effRate = DefaultVATRate // must still back-compute when treasury is unreachable
 	}
 	if effRate <= 0 {
-		return // no VAT (exclusive w/ no rate, or suppressed) → leave tax fields unset
+		// No VAT: suppressed, or no rate known from treasury. A rate is never assumed, so a
+		// non-VAT tenant or an exempt item never shows VAT it does not charge.
+		return
 	}
 	split := ComputeTaxSplit(price, effRate, inclusive)
 	net, tax, r := split.Net, split.Tax, split.Rate

@@ -77,11 +77,22 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 		}
 	}
 
+	// One query for every line's item, not one per line.
+	lineItemIDs := make([]uuid.UUID, 0, len(lines))
+	for _, l := range lines {
+		lineItemIDs = append(lineItemIDs, l.ItemID)
+	}
+	lineItems := map[uuid.UUID]*invent.Item{}
+	if found, e := h.orm.Item.Query().Where(entitem.IDIn(lineItemIDs...)).WithUnits().All(ctx); e == nil {
+		for _, it := range found {
+			lineItems[it.ID] = it
+		}
+	}
 	items := make([]documents.DocLine, 0, len(lines))
 	var subtotal float64
 	for _, l := range lines {
 		desc, unit := l.ItemID.String(), ""
-		if it, e := h.orm.Item.Query().Where(entitem.ID(l.ItemID)).WithUnits().Only(ctx); e == nil {
+		if it, ok := lineItems[l.ItemID]; ok {
 			desc = it.Name
 			if it.Edges.Units != nil {
 				unit = it.Edges.Units.Abbreviation
@@ -96,10 +107,12 @@ func (h *InventoryExtrasHandler) GeneratePurchaseOrderPDF(w http.ResponseWriter,
 			Amount: formatMoney(l.TotalPrice),
 		})
 	}
-	tax := po.TotalAmount - subtotal
+	// A purchase order carries no VAT of its own (input VAT comes with the supplier's eTIMS
+	// invoice), so the difference between the lines and the total is shipping and other charges,
+	// never tax.
 	taxLabel, taxAmount := "", ""
-	if tax > 0.0049 {
-		taxLabel, taxAmount = "Tax", formatMoney(tax)
+	if extra := po.TotalAmount - subtotal; extra > 0.0049 {
+		taxLabel, taxAmount = "Shipping and charges", formatMoney(extra)
 	}
 
 	doc := documents.PurchaseOrderDoc{
