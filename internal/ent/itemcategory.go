@@ -44,6 +44,8 @@ type ItemCategory struct {
 	IsGlobal bool `json:"is_global,omitempty"`
 	// Outlet use_cases this category is relevant to (hospitality, pharmacy, retail…); empty = all
 	UseCases []string `json:"use_cases,omitempty"`
+	// KRA eTIMS item classification (UNSPSC leaf, itemClsCd) for items in this category; items may override per-item via etims_item_cls_cd
+	KraItemClsCd string `json:"kra_item_cls_cd,omitempty"`
 	// IsActive holds the value of the "is_active" field.
 	IsActive bool `json:"is_active,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -135,7 +137,7 @@ func (*ItemCategory) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case itemcategory.FieldDepth, itemcategory.FieldSortOrder:
 			values[i] = new(sql.NullInt64)
-		case itemcategory.FieldName, itemcategory.FieldCode, itemcategory.FieldSlug, itemcategory.FieldIcon, itemcategory.FieldDescription, itemcategory.FieldPath:
+		case itemcategory.FieldName, itemcategory.FieldCode, itemcategory.FieldSlug, itemcategory.FieldIcon, itemcategory.FieldDescription, itemcategory.FieldPath, itemcategory.FieldKraItemClsCd:
 			values[i] = new(sql.NullString)
 		case itemcategory.FieldCreatedAt, itemcategory.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -236,6 +238,12 @@ func (_m *ItemCategory) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.UseCases); err != nil {
 					return fmt.Errorf("unmarshal field use_cases: %w", err)
 				}
+			}
+		case itemcategory.FieldKraItemClsCd:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field kra_item_cls_cd", values[i])
+			} else if value.Valid {
+				_m.KraItemClsCd = value.String
 			}
 		case itemcategory.FieldIsActive:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -353,6 +361,9 @@ func (_m *ItemCategory) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("use_cases=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UseCases))
+	builder.WriteString(", ")
+	builder.WriteString("kra_item_cls_cd=")
+	builder.WriteString(_m.KraItemClsCd)
 	builder.WriteString(", ")
 	builder.WriteString("is_active=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsActive))

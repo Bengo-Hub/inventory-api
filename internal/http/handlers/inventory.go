@@ -64,6 +64,7 @@ type ItemsServicer interface {
 	ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID, hasItems, sellableOnly bool) ([]items.CategoryDTO, error)
 	CreateCategory(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
+	SetCategoryKRAClass(ctx context.Context, tenantID, id uuid.UUID, code string) (*items.CategoryDTO, error)
 	DeleteCategory(ctx context.Context, tenantID, id uuid.UUID) error
 	ListBrands(ctx context.Context, tenantID uuid.UUID) ([]items.BrandDTO, error)
 	CreateBrand(ctx context.Context, tenantID uuid.UUID, dto items.BrandDTO) (*items.BrandDTO, error)
@@ -314,6 +315,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/categories", h.ListCategories)
 		inv.With(perm(rbac.PermItemsAdd)).Post("/categories", h.CreateCategory)
 		inv.With(perm(rbac.PermItemsChange)).Put("/categories/{categoryID}", h.UpdateCategory)
+		inv.With(perm(rbac.PermItemsChange)).Put("/categories/{categoryID}/kra-class", h.SetCategoryKRAClass)
 		inv.With(perm(rbac.PermItemsDelete)).Delete("/categories/{categoryID}", h.DeleteCategory)
 
 		// Reservations
@@ -2686,6 +2688,10 @@ func (h *InventoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request
 	req.IsGlobal = false
 	result, err := h.itemsSvc.CreateCategory(r.Context(), tenantID, req)
 	if err != nil {
+		if errors.Is(err, items.ErrInvalidKRAItemClass) {
+			writeError(w, http.StatusBadRequest, "INVALID_KRA_CLASS", err.Error())
+			return
+		}
 		var dupErr *items.DuplicateCategoryError
 		if errors.As(err, &dupErr) {
 			writeError(w, http.StatusConflict, "DUPLICATE_CATEGORY", fmt.Sprintf("A category named %q already exists.", dupErr.Name))
@@ -2696,6 +2702,51 @@ func (h *InventoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeJSON(w, http.StatusCreated, result)
+}
+
+// SetCategoryKRAClass godoc
+// @Summary Set a category's KRA eTIMS classification
+// @Description Sets (or with an empty code clears) the KRA item classification the tenant's own category gives items that carry none of their own. Platform-global categories are not editable.
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Param tenant path string true "Tenant ID"
+// @Param categoryID path string true "Category ID"
+// @Param body body object true "{kra_item_cls_cd: string}"
+// @Success 200 {object} items.CategoryDTO
+// @Router /{tenant}/inventory/categories/{categoryID}/kra-class [put]
+func (h *InventoryHandler) SetCategoryKRAClass(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	categoryID, err := uuid.Parse(chi.URLParam(r, "categoryID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid category ID")
+		return
+	}
+	var req struct {
+		KRAItemClsCd string `json:"kra_item_cls_cd"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
+		return
+	}
+	result, err := h.itemsSvc.SetCategoryKRAClass(r.Context(), tenantID, categoryID, req.KRAItemClsCd)
+	if err != nil {
+		switch {
+		case errors.Is(err, items.ErrInvalidKRAItemClass):
+			writeError(w, http.StatusBadRequest, "INVALID_KRA_CLASS", err.Error())
+		case errors.Is(err, items.ErrCategoryNotFound):
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "Category not found, or it is a platform category")
+		default:
+			h.log.Error("set category KRA class failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", err.Error())
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
 }
 
 // UpdateCategory handles PUT /v1/{tenant}/inventory/categories/{categoryID} — updates an item category.
@@ -2721,6 +2772,10 @@ func (h *InventoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request
 	}
 	result, err := h.itemsSvc.UpdateCategory(r.Context(), tenantID, categoryID, req)
 	if err != nil {
+		if errors.Is(err, items.ErrInvalidKRAItemClass) {
+			writeError(w, http.StatusBadRequest, "INVALID_KRA_CLASS", err.Error())
+			return
+		}
 		var dupErr *items.DuplicateCategoryError
 		if errors.As(err, &dupErr) {
 			writeError(w, http.StatusConflict, "DUPLICATE_CATEGORY", fmt.Sprintf("A category named %q already exists.", dupErr.Name))

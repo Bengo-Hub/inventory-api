@@ -3,6 +3,7 @@ package items
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -576,6 +577,11 @@ type ItemDTO struct {
 	EtimsItemClsCd string `json:"etims_item_cls_cd,omitempty"` // UNSPSC leaf from KRA selectItemClass
 	EtimsPkgUnitCd string `json:"etims_pkg_unit_cd,omitempty"` // KRA packaging unit (NT/CT/BX…)
 	EtimsQtyUnitCd string `json:"etims_qty_unit_cd,omitempty"` // KRA quantity unit override (else the unit's mapping)
+	// EtimsItemClsEffective is the classification the item registers with at KRA: its own
+	// etims_item_cls_cd, else its category's kra_item_cls_cd (nearest ancestor). Read only, never
+	// saved back; EtimsItemClsSource says which ("item" or "category"; empty when neither is set).
+	EtimsItemClsEffective string `json:"etims_item_cls_effective,omitempty"`
+	EtimsItemClsSource    string `json:"etims_item_cls_source,omitempty"`
 	// Event capacity fields — SERVICE type only
 	TotalCapacity  *int       `json:"total_capacity,omitempty"`
 	BookedCapacity *int       `json:"booked_capacity,omitempty"`
@@ -673,8 +679,81 @@ type CategoryDTO struct {
 	// Outlet use_cases this category is relevant to (hospitality, pharmacy,
 	// retail…); empty = universal. Keeps food categories out of a pharmacy
 	// outlet's pickers (and vice versa) on mixed-use tenants.
-	UseCases  []string  `json:"use_cases,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	UseCases []string `json:"use_cases,omitempty"`
+	// KRAItemClsCd is the KRA eTIMS classification the category's items register with when they
+	// carry none of their own (see resolveCategoryKRAClasses). On create/update: absent keeps it,
+	// "" clears it.
+	KRAItemClsCd *string   `json:"kra_item_cls_cd,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// categoryToDTO is the one mapping of a category row to its API shape (create, update, list).
+func (s *Service) categoryToDTO(c *ent.ItemCategory) CategoryDTO {
+	dto := CategoryDTO{
+		ID:          c.ID,
+		Name:        c.Name,
+		Code:        c.Code,
+		Description: c.Description,
+		Icon:        s.mediaURL(c.Icon),
+		ParentID:    c.ParentID,
+		IsActive:    c.IsActive,
+		IsGlobal:    c.IsGlobal,
+		Depth:       c.Depth,
+		Path:        c.Path,
+		SortOrder:   c.SortOrder,
+		UseCases:    c.UseCases,
+		CreatedAt:   c.CreatedAt,
+	}
+	if c.KraItemClsCd != "" {
+		cls := c.KraItemClsCd
+		dto.KRAItemClsCd = &cls
+	}
+	return dto
+}
+
+// ErrInvalidKRAItemClass rejects a classification that is not a KRA UNSPSC leaf code.
+var ErrInvalidKRAItemClass = errors.New("the KRA classification must be the 8 to 10 digit code from the KRA item classification list")
+
+// ErrCategoryNotFound is returned for a category that does not exist or is not the tenant's own.
+var ErrCategoryNotFound = errors.New("category not found")
+
+// kraClassInput validates an optional classification from a create/update body.
+func kraClassInput(p *string) (code string, set bool, err error) {
+	if p == nil {
+		return "", false, nil
+	}
+	code, ok := NormalizeKRAItemClass(*p)
+	if !ok {
+		return "", false, ErrInvalidKRAItemClass
+	}
+	return code, true, nil
+}
+
+// SetCategoryKRAClass sets (or with "" clears) the KRA classification a tenant's own category
+// gives its items. Platform-global categories are not editable here.
+func (s *Service) SetCategoryKRAClass(ctx context.Context, tenantID, id uuid.UUID, code string) (*CategoryDTO, error) {
+	code, ok := NormalizeKRAItemClass(code)
+	if !ok {
+		return nil, ErrInvalidKRAItemClass
+	}
+	upd := s.client.ItemCategory.UpdateOneID(id).Where(itemcategory.TenantID(tenantID), itemcategory.IsGlobal(false))
+	if code == "" {
+		upd = upd.ClearKraItemClsCd()
+	} else {
+		upd = upd.SetKraItemClsCd(code)
+	}
+	c, err := upd.Save(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ErrCategoryNotFound
+		}
+		return nil, fmt.Errorf("items: set category KRA classification: %w", err)
+	}
+	if s.cache != nil {
+		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
+	}
+	dto := s.categoryToDTO(c)
+	return &dto, nil
 }
 
 // RelevantToUseCase reports whether the category applies to an outlet use_case:
@@ -1789,11 +1868,13 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			itemIDs = append(itemIDs, it.ID)
 		}
 		catNames := make(map[uuid.UUID]string)
+		var catClasses map[uuid.UUID]string
 		if len(catIDs) > 0 {
 			cats, _ := s.client.ItemCategory.Query().Where(itemcategory.IDIn(catIDs...)).All(innerCtx)
 			for _, c := range cats {
 				catNames[c.ID] = c.Name
 			}
+			catClasses = s.resolveCategoryKRAClasses(innerCtx, cats)
 		}
 		type brandMeta struct{ name, code string }
 		brandInfo := make(map[uuid.UUID]brandMeta)
@@ -1864,6 +1945,11 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 			if it.CategoryID != nil {
 				dto.CategoryName = catNames[*it.CategoryID]
 			}
+			catClass := ""
+			if it.CategoryID != nil {
+				catClass = catClasses[*it.CategoryID]
+			}
+			dto.EtimsItemClsEffective, dto.EtimsItemClsSource = itemKRAClass(it, catClass)
 			if it.BrandID != nil {
 				if bm, ok := brandInfo[*it.BrandID]; ok {
 					dto.BrandName = bm.name
@@ -2347,6 +2433,11 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 	if len(dto.UseCases) > 0 {
 		q = q.SetUseCases(dto.UseCases)
 	}
+	if cls, set, err := kraClassInput(dto.KRAItemClsCd); err != nil {
+		return nil, err
+	} else if set && cls != "" {
+		q = q.SetKraItemClsCd(cls)
+	}
 	c, err := q.Save(ctx)
 	if err != nil {
 		if ent.IsConstraintError(err) {
@@ -2358,20 +2449,8 @@ func (s *Service) CreateCategory(ctx context.Context, tenantID uuid.UUID, dto Ca
 		// Invalidate both the tenant-specific key and force a global refresh.
 		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
 	}
-	return &CategoryDTO{
-		ID:          c.ID,
-		Name:        c.Name,
-		Code:        c.Code,
-		Description: c.Description,
-		Icon:        s.mediaURL(c.Icon),
-		ParentID:    c.ParentID,
-		IsActive:    c.IsActive,
-		IsGlobal:    c.IsGlobal,
-		Depth:       c.Depth,
-		Path:        c.Path,
-		SortOrder:   c.SortOrder,
-		CreatedAt:   c.CreatedAt,
-	}, nil
+	out := s.categoryToDTO(c)
+	return &out, nil
 }
 
 // UpdateCategory updates an existing item category.
@@ -2436,6 +2515,13 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 	} else {
 		q = q.ClearParentID()
 	}
+	if cls, set, err := kraClassInput(dto.KRAItemClsCd); err != nil {
+		return nil, err
+	} else if set && cls != "" {
+		q = q.SetKraItemClsCd(cls)
+	} else if set {
+		q = q.ClearKraItemClsCd()
+	}
 	c, err := q.Save(ctx)
 	if err != nil {
 		if ent.IsConstraintError(err) {
@@ -2452,19 +2538,8 @@ func (s *Service) UpdateCategory(ctx context.Context, tenantID, id uuid.UUID, dt
 	if s.cache != nil {
 		s.cache.Invalidate(ctx, sharedcache.Key("inv", "categories", tenantID.String()))
 	}
-	return &CategoryDTO{
-		ID:          c.ID,
-		Name:        c.Name,
-		Code:        c.Code,
-		Description: c.Description,
-		Icon:        s.mediaURL(c.Icon),
-		ParentID:    c.ParentID,
-		IsActive:    c.IsActive,
-		Depth:       c.Depth,
-		Path:        c.Path,
-		SortOrder:   c.SortOrder,
-		CreatedAt:   c.CreatedAt,
-	}, nil
+	out := s.categoryToDTO(c)
+	return &out, nil
 }
 
 // ListCategories returns all item categories for a tenant (cached 5 min).
@@ -2601,21 +2676,7 @@ func (s *Service) listCategoriesAll(ctx context.Context, tenantID uuid.UUID) ([]
 		// active row wins (data is normally already unique per scope). Keyed on lower(trim(name)).
 		seen := make(map[string]int, len(cats)) // normalized name → index in dtos
 		for _, c := range cats {
-			dto := CategoryDTO{
-				ID:          c.ID,
-				Name:        c.Name,
-				Code:        c.Code,
-				Description: c.Description,
-				Icon:        s.mediaURL(c.Icon),
-				ParentID:    c.ParentID,
-				IsActive:    c.IsActive,
-				IsGlobal:    c.IsGlobal,
-				Depth:       c.Depth,
-				Path:        c.Path,
-				SortOrder:   c.SortOrder,
-				UseCases:    c.UseCases,
-				CreatedAt:   c.CreatedAt,
-			}
+			dto := s.categoryToDTO(c)
 			if c.ParentID != nil {
 				if pName, ok := nameMap[*c.ParentID]; ok {
 					dto.ParentName = pName
@@ -3338,7 +3399,7 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 		},
 		Timestamp: time.Now().UTC(),
 	}
-	mergeEtimsEventFields(event.Payload, i, unitAbbrev, unitKraQty)
+	mergeEtimsEventFields(event.Payload, i, unitAbbrev, unitKraQty, s.categoryKRAClass(ctx, i.CategoryID))
 
 	payload, err := event.ToJSON()
 	if err != nil {
@@ -3812,6 +3873,11 @@ func (s *Service) SetEtimsRegistration(ctx context.Context, tenantID uuid.UUID, 
 
 	upd := s.client.Item.UpdateOneID(target.ID).Where(item.TenantID(tenantID))
 	changed := false
+	// A class the item only inherits from its category is not pinned onto the item, so a later
+	// change to the category's classification still reaches items registered from it.
+	if reg.ItemClsCd != "" && derefStr(target.EtimsItemClsCd) == "" && reg.ItemClsCd == s.categoryKRAClass(ctx, target.CategoryID) {
+		reg.ItemClsCd = ""
+	}
 	if reg.ItemClsCd != "" {
 		upd = upd.SetEtimsItemClsCd(reg.ItemClsCd)
 		changed = true

@@ -17,16 +17,19 @@ func derefStr(p *string) string {
 //
 // etims_qty_unit_cd resolution order: the item's own override, else the unit's KRA
 // mapping (Unit.kra_qty_unit_cd), else empty — treasury applies its own default ("U")
-// so an unmapped unit never blocks registration.
-func mergeEtimsEventFields(payload map[string]any, i *ent.Item, unitAbbrev, unitKraQty string) {
+// so an unmapped unit never blocks registration. etims_item_cls_cd follows the same
+// rule: the item's own classification, else its category's (categoryKraCls, see
+// resolveCategoryKRAClasses), else empty for treasury's general goods default.
+func mergeEtimsEventFields(payload map[string]any, i *ent.Item, unitAbbrev, unitKraQty, categoryKraCls string) {
 	qtyUnit := derefStr(i.EtimsQtyUnitCd)
 	if qtyUnit == "" {
 		qtyUnit = unitKraQty
 	}
+	cls, _ := itemKRAClass(i, categoryKraCls)
 	payload["country_of_origin"] = i.CountryOfOrigin
 	payload["hs_code"] = i.HsCode
 	payload["unit_abbreviation"] = unitAbbrev
-	payload["etims_item_cls_cd"] = derefStr(i.EtimsItemClsCd)
+	payload["etims_item_cls_cd"] = cls
 	payload["etims_pkg_unit_cd"] = derefStr(i.EtimsPkgUnitCd)
 	payload["etims_qty_unit_cd"] = qtyUnit
 }

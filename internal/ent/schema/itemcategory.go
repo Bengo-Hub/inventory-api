@@ -63,6 +63,9 @@ func (ItemCategory) Fields() []ent.Field {
 		field.JSON("use_cases", []string{}).
 			Optional().
 			Comment("Outlet use_cases this category is relevant to (hospitality, pharmacy, retail…); empty = all"),
+		field.String("kra_item_cls_cd").
+			Optional().
+			Comment("KRA eTIMS item classification (UNSPSC leaf, itemClsCd) for items in this category; items may override per-item via etims_item_cls_cd"),
 		field.Bool("is_active").
 			Default(true),
 		field.Time("created_at").

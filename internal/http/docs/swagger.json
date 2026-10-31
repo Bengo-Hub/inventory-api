@@ -1969,6 +1969,54 @@
                 }
             }
         },
+        "/{tenant}/inventory/categories/{categoryID}/kra-class": {
+            "put": {
+                "description": "Sets (or with an empty code clears) the KRA item classification the tenant's own category gives items that carry none of their own. Platform-global categories are not editable.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Set a category's KRA eTIMS classification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "categoryID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "{kra_item_cls_cd: string}",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/items.CategoryDTO"
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/contracts": {
             "get": {
                 "security": [
@@ -8376,6 +8424,62 @@
                 }
             }
         },
+        "items.CategoryDTO": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "depth": {
+                    "description": "Depth/Path mirror the ent schema's materialized-path hierarchy fields\n(0 = root; path = root-id/parent-id/self-id) so clients (e.g. the\nordering-frontend \"Shop by Category\" flyout) can render trees without a\nsecond round trip. Maintained by CreateCategory/UpdateCategory — see\nresolveCategoryPath and cascadeCategoryDescendants below.",
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_global": {
+                    "type": "boolean"
+                },
+                "kra_item_cls_cd": {
+                    "description": "KRAItemClsCd is the KRA eTIMS classification the category's items register with when they\ncarry none of their own (see resolveCategoryKRAClasses). On create/update: absent keeps it,\n\"\" clears it.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "parent_name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "use_cases": {
+                    "description": "Outlet use_cases this category is relevant to (hospitality, pharmacy,\nretail…); empty = universal. Keeps food categories out of a pharmacy\noutlet's pickers (and vice versa) on mixed-use tenants.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "items.ImageMatchCandidate": {
             "type": "object",
             "properties": {
@@ -8520,6 +8624,13 @@
                 },
                 "etims_item_cls_cd": {
                     "description": "KRA eTIMS catalog classification (drives treasury's eTIMS item registration —\ninventory is the item source of truth; empty values fall back at registration).",
+                    "type": "string"
+                },
+                "etims_item_cls_effective": {
+                    "description": "EtimsItemClsEffective is the classification the item registers with at KRA: its own\netims_item_cls_cd, else its category's kra_item_cls_cd (nearest ancestor). Read only, never\nsaved back; EtimsItemClsSource says which (\"item\" or \"category\"; empty when neither is set).",
+                    "type": "string"
+                },
+                "etims_item_cls_source": {
                     "type": "string"
                 },
                 "etims_pkg_unit_cd": {

@@ -1731,6 +1731,7 @@ var (
 		{Name: "sort_order", Type: field.TypeInt, Default: 0},
 		{Name: "is_global", Type: field.TypeBool, Default: false},
 		{Name: "use_cases", Type: field.TypeJSON, Nullable: true},
+		{Name: "kra_item_cls_cd", Type: field.TypeString, Nullable: true},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -1745,13 +1746,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "item_categories_item_categories_children",
-				Columns:    []*schema.Column{ItemCategoriesColumns[14]},
+				Columns:    []*schema.Column{ItemCategoriesColumns[15]},
 				RefColumns: []*schema.Column{ItemCategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "item_categories_tenants_item_categories",
-				Columns:    []*schema.Column{ItemCategoriesColumns[15]},
+				Columns:    []*schema.Column{ItemCategoriesColumns[16]},
 				RefColumns: []*schema.Column{TenantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1760,12 +1761,12 @@ var (
 			{
 				Name:    "itemcategory_tenant_id_name",
 				Unique:  true,
-				Columns: []*schema.Column{ItemCategoriesColumns[15], ItemCategoriesColumns[1]},
+				Columns: []*schema.Column{ItemCategoriesColumns[16], ItemCategoriesColumns[1]},
 			},
 			{
 				Name:    "itemcategory_tenant_id_parent_id",
 				Unique:  false,
-				Columns: []*schema.Column{ItemCategoriesColumns[15], ItemCategoriesColumns[14]},
+				Columns: []*schema.Column{ItemCategoriesColumns[16], ItemCategoriesColumns[15]},
 			},
 			{
 				Name:    "itemcategory_path",
@@ -1775,7 +1776,7 @@ var (
 			{
 				Name:    "itemcategory_tenant_id_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{ItemCategoriesColumns[15], ItemCategoriesColumns[8]},
+				Columns: []*schema.Column{ItemCategoriesColumns[16], ItemCategoriesColumns[8]},
 			},
 		},
 	}

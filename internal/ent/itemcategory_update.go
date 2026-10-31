@@ -255,6 +255,26 @@ func (_u *ItemCategoryUpdate) ClearUseCases() *ItemCategoryUpdate {
 	return _u
 }
 
+// SetKraItemClsCd sets the "kra_item_cls_cd" field.
+func (_u *ItemCategoryUpdate) SetKraItemClsCd(v string) *ItemCategoryUpdate {
+	_u.mutation.SetKraItemClsCd(v)
+	return _u
+}
+
+// SetNillableKraItemClsCd sets the "kra_item_cls_cd" field if the given value is not nil.
+func (_u *ItemCategoryUpdate) SetNillableKraItemClsCd(v *string) *ItemCategoryUpdate {
+	if v != nil {
+		_u.SetKraItemClsCd(*v)
+	}
+	return _u
+}
+
+// ClearKraItemClsCd clears the value of the "kra_item_cls_cd" field.
+func (_u *ItemCategoryUpdate) ClearKraItemClsCd() *ItemCategoryUpdate {
+	_u.mutation.ClearKraItemClsCd()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *ItemCategoryUpdate) SetIsActive(v bool) *ItemCategoryUpdate {
 	_u.mutation.SetIsActive(v)
@@ -534,6 +554,12 @@ func (_u *ItemCategoryUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.UseCasesCleared() {
 		_spec.ClearField(itemcategory.FieldUseCases, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.KraItemClsCd(); ok {
+		_spec.SetField(itemcategory.FieldKraItemClsCd, field.TypeString, value)
+	}
+	if _u.mutation.KraItemClsCdCleared() {
+		_spec.ClearField(itemcategory.FieldKraItemClsCd, field.TypeString)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -976,6 +1002,26 @@ func (_u *ItemCategoryUpdateOne) ClearUseCases() *ItemCategoryUpdateOne {
 	return _u
 }
 
+// SetKraItemClsCd sets the "kra_item_cls_cd" field.
+func (_u *ItemCategoryUpdateOne) SetKraItemClsCd(v string) *ItemCategoryUpdateOne {
+	_u.mutation.SetKraItemClsCd(v)
+	return _u
+}
+
+// SetNillableKraItemClsCd sets the "kra_item_cls_cd" field if the given value is not nil.
+func (_u *ItemCategoryUpdateOne) SetNillableKraItemClsCd(v *string) *ItemCategoryUpdateOne {
+	if v != nil {
+		_u.SetKraItemClsCd(*v)
+	}
+	return _u
+}
+
+// ClearKraItemClsCd clears the value of the "kra_item_cls_cd" field.
+func (_u *ItemCategoryUpdateOne) ClearKraItemClsCd() *ItemCategoryUpdateOne {
+	_u.mutation.ClearKraItemClsCd()
+	return _u
+}
+
 // SetIsActive sets the "is_active" field.
 func (_u *ItemCategoryUpdateOne) SetIsActive(v bool) *ItemCategoryUpdateOne {
 	_u.mutation.SetIsActive(v)
@@ -1285,6 +1331,12 @@ func (_u *ItemCategoryUpdateOne) sqlSave(ctx context.Context) (_node *ItemCatego
 	}
 	if _u.mutation.UseCasesCleared() {
 		_spec.ClearField(itemcategory.FieldUseCases, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.KraItemClsCd(); ok {
+		_spec.SetField(itemcategory.FieldKraItemClsCd, field.TypeString, value)
+	}
+	if _u.mutation.KraItemClsCdCleared() {
+		_spec.ClearField(itemcategory.FieldKraItemClsCd, field.TypeString)
 	}
 	if value, ok := _u.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)

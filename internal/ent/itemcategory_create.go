@@ -171,6 +171,20 @@ func (_c *ItemCategoryCreate) SetUseCases(v []string) *ItemCategoryCreate {
 	return _c
 }
 
+// SetKraItemClsCd sets the "kra_item_cls_cd" field.
+func (_c *ItemCategoryCreate) SetKraItemClsCd(v string) *ItemCategoryCreate {
+	_c.mutation.SetKraItemClsCd(v)
+	return _c
+}
+
+// SetNillableKraItemClsCd sets the "kra_item_cls_cd" field if the given value is not nil.
+func (_c *ItemCategoryCreate) SetNillableKraItemClsCd(v *string) *ItemCategoryCreate {
+	if v != nil {
+		_c.SetKraItemClsCd(*v)
+	}
+	return _c
+}
+
 // SetIsActive sets the "is_active" field.
 func (_c *ItemCategoryCreate) SetIsActive(v bool) *ItemCategoryCreate {
 	_c.mutation.SetIsActive(v)
@@ -461,6 +475,10 @@ func (_c *ItemCategoryCreate) createSpec() (*ItemCategory, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.UseCases(); ok {
 		_spec.SetField(itemcategory.FieldUseCases, field.TypeJSON, value)
 		_node.UseCases = value
+	}
+	if value, ok := _c.mutation.KraItemClsCd(); ok {
+		_spec.SetField(itemcategory.FieldKraItemClsCd, field.TypeString, value)
+		_node.KraItemClsCd = value
 	}
 	if value, ok := _c.mutation.IsActive(); ok {
 		_spec.SetField(itemcategory.FieldIsActive, field.TypeBool, value)
@@ -806,6 +824,24 @@ func (u *ItemCategoryUpsert) ClearUseCases() *ItemCategoryUpsert {
 	return u
 }
 
+// SetKraItemClsCd sets the "kra_item_cls_cd" field.
+func (u *ItemCategoryUpsert) SetKraItemClsCd(v string) *ItemCategoryUpsert {
+	u.Set(itemcategory.FieldKraItemClsCd, v)
+	return u
+}
+
+// UpdateKraItemClsCd sets the "kra_item_cls_cd" field to the value that was provided on create.
+func (u *ItemCategoryUpsert) UpdateKraItemClsCd() *ItemCategoryUpsert {
+	u.SetExcluded(itemcategory.FieldKraItemClsCd)
+	return u
+}
+
+// ClearKraItemClsCd clears the value of the "kra_item_cls_cd" field.
+func (u *ItemCategoryUpsert) ClearKraItemClsCd() *ItemCategoryUpsert {
+	u.SetNull(itemcategory.FieldKraItemClsCd)
+	return u
+}
+
 // SetIsActive sets the "is_active" field.
 func (u *ItemCategoryUpsert) SetIsActive(v bool) *ItemCategoryUpsert {
 	u.Set(itemcategory.FieldIsActive, v)
@@ -1109,6 +1145,27 @@ func (u *ItemCategoryUpsertOne) UpdateUseCases() *ItemCategoryUpsertOne {
 func (u *ItemCategoryUpsertOne) ClearUseCases() *ItemCategoryUpsertOne {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.ClearUseCases()
+	})
+}
+
+// SetKraItemClsCd sets the "kra_item_cls_cd" field.
+func (u *ItemCategoryUpsertOne) SetKraItemClsCd(v string) *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetKraItemClsCd(v)
+	})
+}
+
+// UpdateKraItemClsCd sets the "kra_item_cls_cd" field to the value that was provided on create.
+func (u *ItemCategoryUpsertOne) UpdateKraItemClsCd() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateKraItemClsCd()
+	})
+}
+
+// ClearKraItemClsCd clears the value of the "kra_item_cls_cd" field.
+func (u *ItemCategoryUpsertOne) ClearKraItemClsCd() *ItemCategoryUpsertOne {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearKraItemClsCd()
 	})
 }
 
@@ -1586,6 +1643,27 @@ func (u *ItemCategoryUpsertBulk) UpdateUseCases() *ItemCategoryUpsertBulk {
 func (u *ItemCategoryUpsertBulk) ClearUseCases() *ItemCategoryUpsertBulk {
 	return u.Update(func(s *ItemCategoryUpsert) {
 		s.ClearUseCases()
+	})
+}
+
+// SetKraItemClsCd sets the "kra_item_cls_cd" field.
+func (u *ItemCategoryUpsertBulk) SetKraItemClsCd(v string) *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.SetKraItemClsCd(v)
+	})
+}
+
+// UpdateKraItemClsCd sets the "kra_item_cls_cd" field to the value that was provided on create.
+func (u *ItemCategoryUpsertBulk) UpdateKraItemClsCd() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.UpdateKraItemClsCd()
+	})
+}
+
+// ClearKraItemClsCd clears the value of the "kra_item_cls_cd" field.
+func (u *ItemCategoryUpsertBulk) ClearKraItemClsCd() *ItemCategoryUpsertBulk {
+	return u.Update(func(s *ItemCategoryUpsert) {
+		s.ClearKraItemClsCd()
 	})
 }
 

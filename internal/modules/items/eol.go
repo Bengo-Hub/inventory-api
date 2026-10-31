@@ -274,7 +274,7 @@ func (s *Service) emitItemUpdatedEventWith(ctx context.Context, tx *ent.Tx, tena
 		},
 		Timestamp: time.Now().UTC(),
 	}
-	mergeEtimsEventFields(event.Payload, i, unitAbbrev, unitKraQty)
+	mergeEtimsEventFields(event.Payload, i, unitAbbrev, unitKraQty, s.categoryKRAClass(ctx, i.CategoryID))
 
 	payload, err := event.ToJSON()
 	if err != nil {

@@ -111,6 +111,11 @@ func IsGlobal(v bool) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldIsGlobal, v))
 }
 
+// KraItemClsCd applies equality check predicate on the "kra_item_cls_cd" field. It's identical to KraItemClsCdEQ.
+func KraItemClsCd(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldKraItemClsCd, v))
+}
+
 // IsActive applies equality check predicate on the "is_active" field. It's identical to IsActiveEQ.
 func IsActive(v bool) predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldEQ(FieldIsActive, v))
@@ -714,6 +719,81 @@ func UseCasesIsNil() predicate.ItemCategory {
 // UseCasesNotNil applies the NotNil predicate on the "use_cases" field.
 func UseCasesNotNil() predicate.ItemCategory {
 	return predicate.ItemCategory(sql.FieldNotNull(FieldUseCases))
+}
+
+// KraItemClsCdEQ applies the EQ predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEQ(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdNEQ applies the NEQ predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdNEQ(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNEQ(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdIn applies the In predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIn(FieldKraItemClsCd, vs...))
+}
+
+// KraItemClsCdNotIn applies the NotIn predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdNotIn(vs ...string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotIn(FieldKraItemClsCd, vs...))
+}
+
+// KraItemClsCdGT applies the GT predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdGT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGT(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdGTE applies the GTE predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdGTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldGTE(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdLT applies the LT predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdLT(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLT(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdLTE applies the LTE predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdLTE(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldLTE(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdContains applies the Contains predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdContains(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContains(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdHasPrefix applies the HasPrefix predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdHasPrefix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasPrefix(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdHasSuffix applies the HasSuffix predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdHasSuffix(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldHasSuffix(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdIsNil applies the IsNil predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdIsNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldIsNull(FieldKraItemClsCd))
+}
+
+// KraItemClsCdNotNil applies the NotNil predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdNotNil() predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldNotNull(FieldKraItemClsCd))
+}
+
+// KraItemClsCdEqualFold applies the EqualFold predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdEqualFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldEqualFold(FieldKraItemClsCd, v))
+}
+
+// KraItemClsCdContainsFold applies the ContainsFold predicate on the "kra_item_cls_cd" field.
+func KraItemClsCdContainsFold(v string) predicate.ItemCategory {
+	return predicate.ItemCategory(sql.FieldContainsFold(FieldKraItemClsCd, v))
 }
 
 // IsActiveEQ applies the EQ predicate on the "is_active" field.

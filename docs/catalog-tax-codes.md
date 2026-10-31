@@ -93,3 +93,25 @@ lines and the total as "Shipping and charges".
 The tax fields (tax code, inclusive pricing, eTIMS classification, packaging and quantity units)
 show for every item type. They used to be hidden for ingredients and equipment, which eTIMS still
 registers and bands on purchases and stock movements.
+
+## KRA classification by category
+
+KRA wants each item registered with its UNSPSC classification (`itemClsCd`). Without one, treasury
+registers the item as "1000000000 General goods", which leaves almost the whole catalogue
+unclassified at KRA.
+
+- A category can hold a KRA classification (`item_categories.kra_item_cls_cd`, set on create or
+  update, or on its own with `PUT /{tenant}/inventory/categories/{id}/kra-class
+  {kra_item_cls_cd}`; an empty code clears it). Platform-global categories cannot be set by a tenant.
+- An item registers with its own `etims_item_cls_cd` when it has one, else its category's class,
+  else the nearest ancestor category's (read from the materialized path), else the general goods
+  default. This works like the quantity unit, where the unit's `kra_qty_unit_cd` fills in for an item
+  with no override.
+- The item list returns the result as `etims_item_cls_effective`, with `etims_item_cls_source`
+  (`item` or `category`). These are read only. `etims_item_cls_cd` stays the item's own override,
+  so saving the item form never copies the category's class onto the item.
+- `item.created` and `item.updated` events carry the resolved class in `etims_item_cls_cd`, so
+  treasury's item master sync registers it.
+- When treasury writes the registered codes back, a class the item only inherited is not pinned
+  onto the item. A later change to the category still reaches its items.
+- Codes are 8 to 10 digits (KRA's list uses 10). Anything else is rejected with `INVALID_KRA_CLASS`.

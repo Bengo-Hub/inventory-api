@@ -164,6 +164,10 @@ func (m *mockItemsSvc) UpdateCategory(ctx context.Context, tenantID, id uuid.UUI
 	return nil, fmt.Errorf("not implemented")
 }
 
+func (m *mockItemsSvc) SetCategoryKRAClass(context.Context, uuid.UUID, uuid.UUID, string) (*items.CategoryDTO, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func (m *mockItemsSvc) ListCategoriesFiltered(ctx context.Context, tenantID uuid.UUID, _, _ bool) ([]items.CategoryDTO, error) {
 	return m.ListCategories(ctx, tenantID)
 }

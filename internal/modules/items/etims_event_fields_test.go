@@ -17,6 +17,7 @@ func TestMergeEtimsEventFields(t *testing.T) {
 		item       *ent.Item
 		unitAbbrev string
 		unitKraQty string
+		catCls     string
 		wantQty    string
 		wantCls    string
 		wantPkg    string
@@ -39,6 +40,18 @@ func TestMergeEtimsEventFields(t *testing.T) {
 			wantQty: "LTR", wantCls: "", wantPkg: "",
 		},
 		{
+			name:    "category classification fills when the item has none",
+			item:    &ent.Item{},
+			catCls:  "5020230600",
+			wantCls: "5020230600",
+		},
+		{
+			name:    "the item's own classification wins over its category's",
+			item:    &ent.Item{EtimsItemClsCd: strPtr("5020230602")},
+			catCls:  "5020230600",
+			wantCls: "5020230602",
+		},
+		{
 			name:    "everything unset stays empty (treasury defaults downstream)",
 			item:    &ent.Item{},
 			wantQty: "", wantCls: "", wantPkg: "",
@@ -47,7 +60,7 @@ func TestMergeEtimsEventFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			payload := map[string]any{}
-			mergeEtimsEventFields(payload, tt.item, tt.unitAbbrev, tt.unitKraQty)
+			mergeEtimsEventFields(payload, tt.item, tt.unitAbbrev, tt.unitKraQty, tt.catCls)
 
 			if got := payload["etims_qty_unit_cd"]; got != tt.wantQty {
 				t.Errorf("etims_qty_unit_cd = %v, want %q", got, tt.wantQty)

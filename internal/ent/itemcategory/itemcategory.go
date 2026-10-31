@@ -39,6 +39,8 @@ const (
 	FieldIsGlobal = "is_global"
 	// FieldUseCases holds the string denoting the use_cases field in the database.
 	FieldUseCases = "use_cases"
+	// FieldKraItemClsCd holds the string denoting the kra_item_cls_cd field in the database.
+	FieldKraItemClsCd = "kra_item_cls_cd"
 	// FieldIsActive holds the string denoting the is_active field in the database.
 	FieldIsActive = "is_active"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -103,6 +105,7 @@ var Columns = []string{
 	FieldSortOrder,
 	FieldIsGlobal,
 	FieldUseCases,
+	FieldKraItemClsCd,
 	FieldIsActive,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -202,6 +205,11 @@ func BySortOrder(opts ...sql.OrderTermOption) OrderOption {
 // ByIsGlobal orders the results by the is_global field.
 func ByIsGlobal(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsGlobal, opts...).ToFunc()
+}
+
+// ByKraItemClsCd orders the results by the kra_item_cls_cd field.
+func ByKraItemClsCd(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKraItemClsCd, opts...).ToFunc()
 }
 
 // ByIsActive orders the results by the is_active field.

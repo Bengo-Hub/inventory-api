@@ -48668,6 +48668,7 @@ type ItemCategoryMutation struct {
 	is_global                       *bool
 	use_cases                       *[]string
 	appenduse_cases                 []string
+	kra_item_cls_cd                 *string
 	is_active                       *bool
 	created_at                      *time.Time
 	updated_at                      *time.Time
@@ -49373,6 +49374,55 @@ func (m *ItemCategoryMutation) ResetUseCases() {
 	delete(m.clearedFields, itemcategory.FieldUseCases)
 }
 
+// SetKraItemClsCd sets the "kra_item_cls_cd" field.
+func (m *ItemCategoryMutation) SetKraItemClsCd(s string) {
+	m.kra_item_cls_cd = &s
+}
+
+// KraItemClsCd returns the value of the "kra_item_cls_cd" field in the mutation.
+func (m *ItemCategoryMutation) KraItemClsCd() (r string, exists bool) {
+	v := m.kra_item_cls_cd
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKraItemClsCd returns the old "kra_item_cls_cd" field's value of the ItemCategory entity.
+// If the ItemCategory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemCategoryMutation) OldKraItemClsCd(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKraItemClsCd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKraItemClsCd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKraItemClsCd: %w", err)
+	}
+	return oldValue.KraItemClsCd, nil
+}
+
+// ClearKraItemClsCd clears the value of the "kra_item_cls_cd" field.
+func (m *ItemCategoryMutation) ClearKraItemClsCd() {
+	m.kra_item_cls_cd = nil
+	m.clearedFields[itemcategory.FieldKraItemClsCd] = struct{}{}
+}
+
+// KraItemClsCdCleared returns if the "kra_item_cls_cd" field was cleared in this mutation.
+func (m *ItemCategoryMutation) KraItemClsCdCleared() bool {
+	_, ok := m.clearedFields[itemcategory.FieldKraItemClsCd]
+	return ok
+}
+
+// ResetKraItemClsCd resets all changes to the "kra_item_cls_cd" field.
+func (m *ItemCategoryMutation) ResetKraItemClsCd() {
+	m.kra_item_cls_cd = nil
+	delete(m.clearedFields, itemcategory.FieldKraItemClsCd)
+}
+
 // SetIsActive sets the "is_active" field.
 func (m *ItemCategoryMutation) SetIsActive(b bool) {
 	m.is_active = &b
@@ -49731,7 +49781,7 @@ func (m *ItemCategoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemCategoryMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.tenant != nil {
 		fields = append(fields, itemcategory.FieldTenantID)
 	}
@@ -49767,6 +49817,9 @@ func (m *ItemCategoryMutation) Fields() []string {
 	}
 	if m.use_cases != nil {
 		fields = append(fields, itemcategory.FieldUseCases)
+	}
+	if m.kra_item_cls_cd != nil {
+		fields = append(fields, itemcategory.FieldKraItemClsCd)
 	}
 	if m.is_active != nil {
 		fields = append(fields, itemcategory.FieldIsActive)
@@ -49809,6 +49862,8 @@ func (m *ItemCategoryMutation) Field(name string) (ent.Value, bool) {
 		return m.IsGlobal()
 	case itemcategory.FieldUseCases:
 		return m.UseCases()
+	case itemcategory.FieldKraItemClsCd:
+		return m.KraItemClsCd()
 	case itemcategory.FieldIsActive:
 		return m.IsActive()
 	case itemcategory.FieldCreatedAt:
@@ -49848,6 +49903,8 @@ func (m *ItemCategoryMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldIsGlobal(ctx)
 	case itemcategory.FieldUseCases:
 		return m.OldUseCases(ctx)
+	case itemcategory.FieldKraItemClsCd:
+		return m.OldKraItemClsCd(ctx)
 	case itemcategory.FieldIsActive:
 		return m.OldIsActive(ctx)
 	case itemcategory.FieldCreatedAt:
@@ -49946,6 +50003,13 @@ func (m *ItemCategoryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUseCases(v)
+		return nil
+	case itemcategory.FieldKraItemClsCd:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKraItemClsCd(v)
 		return nil
 	case itemcategory.FieldIsActive:
 		v, ok := value.(bool)
@@ -50046,6 +50110,9 @@ func (m *ItemCategoryMutation) ClearedFields() []string {
 	if m.FieldCleared(itemcategory.FieldUseCases) {
 		fields = append(fields, itemcategory.FieldUseCases)
 	}
+	if m.FieldCleared(itemcategory.FieldKraItemClsCd) {
+		fields = append(fields, itemcategory.FieldKraItemClsCd)
+	}
 	return fields
 }
 
@@ -50080,6 +50147,9 @@ func (m *ItemCategoryMutation) ClearField(name string) error {
 		return nil
 	case itemcategory.FieldUseCases:
 		m.ClearUseCases()
+		return nil
+	case itemcategory.FieldKraItemClsCd:
+		m.ClearKraItemClsCd()
 		return nil
 	}
 	return fmt.Errorf("unknown ItemCategory nullable field %s", name)
@@ -50124,6 +50194,9 @@ func (m *ItemCategoryMutation) ResetField(name string) error {
 		return nil
 	case itemcategory.FieldUseCases:
 		m.ResetUseCases()
+		return nil
+	case itemcategory.FieldKraItemClsCd:
+		m.ResetKraItemClsCd()
 		return nil
 	case itemcategory.FieldIsActive:
 		m.ResetIsActive()
