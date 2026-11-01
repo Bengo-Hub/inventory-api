@@ -4,6 +4,7 @@ import (
 	"context"
 	ratelimit "github.com/Bengo-Hub/shared-ratelimit"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -306,6 +307,9 @@ func New(
 					// Anonymous GETs are DELIBERATE here (public storefront catalog);
 					// mutations require PIN/SSO auth.
 					g.Use(publicCatalogReads(pinSecret, authMiddleware))
+					// A signed-in caller may only act in its own tenant (anonymous catalogue reads
+					// carry no token and are scoped by the URL).
+					g.Use(handlers.RequireOwnTenant)
 					// Subscription gate for mutations (grace period + X-Sub-Grace-Days-Left header)
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					// Module gate: block the WHOLE inventory module for an AUTHENTICATED tenant
@@ -382,6 +386,8 @@ func New(
 					// ALWAYS send X-API-Key — so it is fully locked for ALL methods (GETs
 					// included; they previously bypassed auth entirely).
 					g.Use(requireInternalKeyOrAuth(internalServiceKey, pinSecret, authMiddleware))
+					// Service-key callers carry no tenant and pass; a user token must be its own tenant's.
+					g.Use(handlers.RequireOwnTenant)
 					// Subscription gate for mutations
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					// Module gate — no-op for genuine S2S/API-key callers (HasServiceAccess fails
@@ -428,14 +434,17 @@ func New(
 	return r
 }
 
-// publicCatalogReads leaves GET requests unauthenticated on the /api/v1 tenant tree —
-// DELIBERATE, not a bug: the public cafe storefront (cafe-website, theurbanloftcafe.com)
-// browses the menu/catalog directly from the browser with no credentials. Non-GET requests
-// require terminal-PIN or SSO auth via RequireAnyAuth.
+// publicCatalogReads leaves only the public catalogue open to anonymous GETs on the /api/v1
+// tenant tree: what a storefront shows a visitor (items, item details and images, categories,
+// brands, units, recipes for the menu, availability). Every other request, and any request that
+// carries a token, is authenticated (terminal PIN or SSO), so warehouses, transfers, stock and
+// analytics are never readable without signing in, and the claims are there for
+// RequireOwnTenant to compare with the tenant in the URL.
 func publicCatalogReads(pinSecret []byte, authMiddleware *authclient.AuthMiddleware) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == http.MethodGet {
+			anonymous := r.Header.Get("Authorization") == "" && r.URL.Query().Get("access_token") == ""
+			if r.Method == http.MethodGet && anonymous && isPublicCatalogPath(r.URL.Path) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -446,6 +455,29 @@ func publicCatalogReads(pinSecret []byte, authMiddleware *authclient.AuthMiddlew
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// publicCatalogPrefixes are the inventory reads a storefront makes without signing in, relative
+// to /api/v1/{tenant}/.
+var publicCatalogPrefixes = []string{
+	"inventory/items", "inventory/categories", "inventory/brands", "inventory/units",
+	"inventory/recipes", "inventory/availability",
+}
+
+// isPublicCatalogPath reports whether path (/api/v1/{tenant}/...) is a public catalogue read.
+// A prefix matches whole path segments only, so inventory/items-export never counts as items.
+func isPublicCatalogPath(path string) bool {
+	parts := strings.SplitN(strings.TrimPrefix(path, "/"), "/", 4) // api, v1, tenant, rest
+	if len(parts) < 4 || parts[0] != "api" || parts[1] != "v1" {
+		return false
+	}
+	rest := strings.TrimSuffix(parts[3], "/")
+	for _, p := range publicCatalogPrefixes {
+		if rest == p || strings.HasPrefix(rest, p+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 // requireInternalKeyOrAuth guards the /v1 S2S tree for ALL methods. First chance: a
