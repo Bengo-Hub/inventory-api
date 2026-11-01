@@ -235,6 +235,8 @@ func New(
 			tenant.Group(func(private chi.Router) {
 				if authMiddleware != nil {
 					private.Use(handlers.RequireAnyAuth(pinSecret, authMiddleware))
+					// The token must belong to the tenant in the URL (and any X-Tenant-ID header).
+					private.Use(handlers.RequireOwnTenant)
 					// Layer 2: Subscription enforcement — reject expired/cancelled tenants
 					private.Use(authclient.RequireActiveSubscription())
 				}
