@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"path"
 
 	"github.com/Bengo-Hub/httpware/objectstore"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -20,13 +23,58 @@ var mediaUploadTypes = map[string]bool{
 
 // MediaHandler handles single image uploads (items in create mode, brand and supplier logos).
 type MediaHandler struct {
-	log   *zap.Logger
-	store *objectstore.Store
+	log     *zap.Logger
+	store   *objectstore.Store
+	discard func(ctx context.Context, tenantID uuid.UUID, ref string) error
 }
 
 // NewMediaHandler creates a new media handler on the shared object storage.
 func NewMediaHandler(log *zap.Logger, store *objectstore.Store) *MediaHandler {
 	return &MediaHandler{log: log.Named("media.handler"), store: store}
+}
+
+// WithItemImageDiscard sets what deletes an uploaded item image that was never saved
+// (items.Service.DiscardUnusedImage).
+func (h *MediaHandler) WithItemImageDiscard(fn func(ctx context.Context, tenantID uuid.UUID, ref string) error) *MediaHandler {
+	h.discard = fn
+	return h
+}
+
+// Discard deletes an item image uploaded for a new item and removed from its form before the
+// item was saved, so storage never keeps pictures nothing shows. Only the caller's own unused
+// item images are deleted; anything else answers 400 and is left alone.
+//
+// @Summary Discard an unsaved item image
+// @Tags Media
+// @Accept json
+// @Produce json
+// @Param body body object true "{\"url\": \"link or key from the upload\"}"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /api/v1/media/upload/discard [post]
+func (h *MediaHandler) Discard(w http.ResponseWriter, r *http.Request) {
+	claims, ok := authclient.ClaimsFromContext(r.Context())
+	if !ok || claims.TenantID == "" {
+		writeError(w, http.StatusBadRequest, "TENANT_REQUIRED", "Sign in to an organisation")
+		return
+	}
+	tenantID, err := uuid.Parse(claims.TenantID)
+	if err != nil || h.discard == nil {
+		writeError(w, http.StatusBadRequest, "TENANT_REQUIRED", "Invalid organisation")
+		return
+	}
+	var body struct {
+		URL string `json:"url"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&body); err != nil || body.URL == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Send the image url")
+		return
+	}
+	if err := h.discard(r.Context(), tenantID, body.URL); err != nil {
+		writeError(w, http.StatusBadRequest, "NOT_DISCARDABLE", "Not an unsaved item image of this organisation")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "discarded"})
 }
 
 // Upload stores one image for the caller's tenant: JPEG or PNG within the type's limit, checked from the bytes

@@ -185,6 +185,7 @@ All routes are mounted under `/v1/{tenantID}/inventory/`.
 | GET/POST/PUT | `/transfers` | Stock transfer CRUD. The list takes `status` as one value or a comma list (`draft,in_transit` lists every transfer not yet received) plus `search`, `from`, `to`, `page`, `limit` |
 | GET/POST/PUT/DELETE | `/rbac/assignments` | RBAC role assignment |
 | POST | `/media/upload` | Item asset upload |
+| POST | `/media/upload/discard` | Delete an unsaved item image (own, unused `item-images` keys only) |
 | GET/POST/PUT/DELETE | `/modifiers` | Modifier group management |
 
 ---
@@ -370,6 +371,17 @@ see `devops-k8s/docs/object-storage.md`), public bucket, served from `https://me
   deleting an item frees its files, and replacing a brand or supplier logo frees the old logo, each
   once no other row of the tenant uses the file. The file is deleted right after the row is saved,
   so a failed save never leaves a row on a deleted file.
+- A deleted image never comes back (2026-11-01). The gallery owns the picture of an item that has
+  images: an item update keeps the gallery's primary as `image_url` whatever the form sends
+  (`keepGalleryImage`), because an item form opened before a gallery delete still held the deleted
+  picture's link, and saving it pointed the item, the POS and the storefront back at a deleted file
+  that CDN and browser caches kept showing. Without a gallery, a link to one of this service's files
+  that is no longer stored keeps the item's current picture. inventory-ui also takes the server's
+  primary into the form after every gallery change and refetches item lists, the catalog and item
+  search. Image keys are never reused, so once nothing links a deleted key no cache can show it.
+- `POST /api/v1/media/upload/discard` (`{"url"}`) deletes a picture uploaded for a new item and
+  removed (or replaced) in the form before the item was saved. Only the caller's own
+  `item-images` keys that no item or gallery row uses are deleted; anything else answers 400.
 - Shipped platform assets stay static files of the image, served at `/media`: the category icons
   (`/media/icons/*.svg`) and the demo menu pictures the seeds use (`/media/images/outlets/menu/*`,
   shipped since 2026-10-17; before that the seeded demo items pointed at files that were never

@@ -465,7 +465,7 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	// Single image uploads (create-mode item images, brand and supplier logos).
-	mediaHandler := handlers.NewMediaHandler(log, mediaStore)
+	mediaHandler := handlers.NewMediaHandler(log, mediaStore).WithItemImageDiscard(itemsSvc.DiscardUnusedImage)
 
 	// Initialize service config handler for platform admin + tenant settings
 	serviceConfigHandler := handlers.NewServiceConfigHandler(ormClient, log)

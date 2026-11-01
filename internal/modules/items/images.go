@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/Bengo-Hub/httpware/objectstore"
@@ -303,6 +304,37 @@ func (s *Service) DeleteItemImage(ctx context.Context, tenantID, itemID, imageID
 	return nil
 }
 
+// keepGalleryImage decides the image_url an item update stores. The gallery owns the picture of an
+// item that has images: its primary stays, whatever the form sends, since an item form opened
+// before a gallery delete still holds the deleted image's link and saving it would bring the
+// deleted picture back. Without a gallery, a link to one of this service's files that is no
+// longer stored is dropped (kept as it was), so a stale link never points the item, the POS and
+// the storefront at a deleted file. A failed lookup keeps the request's value.
+func (s *Service) keepGalleryImage(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, prev *ent.Item, requested string) string {
+	if requested == prev.ImageURL {
+		return requested
+	}
+	primary, err := tx.ItemAsset.Query().
+		Where(itemasset.ItemID(prev.ID), itemasset.AssetType(AssetTypeImage)).
+		Order(ent.Desc(itemasset.FieldIsPrimary), ent.Asc(itemasset.FieldDisplayOrder), ent.Asc(itemasset.FieldCreatedAt)).
+		First(ctx)
+	if err == nil {
+		return primary.URL
+	}
+	if !ent.IsNotFound(err) {
+		return requested
+	}
+	if requested == "" || s.media == nil || !s.media.Owned(requested) {
+		return requested
+	}
+	if ok, err := s.media.Exists(ctx, requested); err == nil && !ok {
+		s.log.Info("item update kept its image: the sent image is no longer stored",
+			zap.String("tenant_id", tenantID.String()), zap.String("item_id", prev.ID.String()), zap.String("key", requested))
+		return prev.ImageURL
+	}
+	return requested
+}
+
 // syncPrimaryImage points the item's image_url mirror at the primary image key (empty clears it)
 // and writes item.updated to the outbox in the same transaction, like relinkItemImage, so the POS
 // catalogue cache, terminals and the storefront pick up the new picture.
@@ -314,6 +346,28 @@ func (s *Service) syncPrimaryImage(ctx context.Context, tx *ent.Tx, tenantID, it
 		return fmt.Errorf("items: sync image_url: %w", err)
 	}
 	return s.emitItemUpdatedEvent(ctx, tx, tenantID, updated)
+}
+
+// ErrNotDiscardable is returned for a reference that is not one of the tenant's item images.
+var ErrNotDiscardable = fmt.Errorf("items: not an item image of this organisation")
+
+// DiscardUnusedImage deletes an item image that was uploaded but never saved on an item (the
+// picture removed from a new item's form before it was created). Only the tenant's own
+// item-images keys qualify, and only while no item or gallery row of the tenant uses them, so a
+// picture in use can never be deleted this way.
+func (s *Service) DiscardUnusedImage(ctx context.Context, tenantID uuid.UUID, ref string) error {
+	if s.media == nil || !s.media.Owned(ref) {
+		return ErrNotDiscardable
+	}
+	prefix, err := s.media.Key(objectstore.Owner{TenantID: tenantID.String()}, objectstore.TypeItemImages)
+	if err != nil {
+		return ErrNotDiscardable
+	}
+	if !strings.HasPrefix(s.media.Normalize(ref), prefix+"/") {
+		return ErrNotDiscardable
+	}
+	s.dropImage(ctx, tenantID, ref)
+	return nil
 }
 
 // dropImage deletes a stored image once nothing references it any more: only this service's own

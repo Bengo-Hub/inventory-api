@@ -127,3 +127,72 @@ func TestItemImageChangesPublishItemUpdated(t *testing.T) {
 	_, stored := objects["pub/"+key]
 	require.False(t, stored, "the unused file is deleted")
 }
+
+// TestDeletedImageNeverComesBack: an item form opened before a gallery delete still holds the
+// deleted picture's link; saving it keeps the gallery's primary (or no picture) instead of
+// pointing the item back at the deleted file. An image uploaded for a new item and removed before
+// saving can be discarded, but only the tenant's own unused item images.
+func TestDeletedImageNeverComesBack(t *testing.T) {
+	client := testutil.SchemaClient(t, "inv_imgstale_")
+	ctx := context.Background()
+	objects, endpoint := fakeBucket(t)
+	store, err := objectstore.New("inventory", objectstore.Config{
+		Endpoint: endpoint, AccessKeyID: "AK", SecretAccessKey: "SK",
+		PublicBucket: "pub", PrivateBucket: "priv", PublicBaseURL: "https://media.example.com",
+	})
+	require.NoError(t, err)
+	svc := NewService(client, zap.NewNop(), store)
+
+	tenantID, other := uuid.New(), uuid.New()
+	for _, id := range []uuid.UUID{tenantID, other} {
+		_, err := client.Tenant.Create().SetID(id).SetName("Shop").SetSlug("shop-" + id.String()[:8]).Save(ctx)
+		require.NoError(t, err)
+	}
+	it, err := client.Item.Create().SetTenantID(tenantID).SetSku("A-1").SetName("Pan").SetType(item.TypeGOODS).Save(ctx)
+	require.NoError(t, err)
+	up := func() *objectstore.Upload {
+		return &objectstore.Upload{Data: []byte("jpeg"), ContentType: "image/jpeg", Ext: ".jpg"}
+	}
+	keep := func(sent string) string {
+		tx, err := client.Tx(ctx)
+		require.NoError(t, err)
+		defer func() { _ = tx.Rollback() }()
+		return svc.keepGalleryImage(ctx, tx, tenantID, client.Item.GetX(ctx, it.ID), store.Normalize(sent))
+	}
+
+	first, err := svc.AddItemImage(ctx, tenantID, it.ID, up(), false)
+	require.NoError(t, err)
+	second, err := svc.AddItemImage(ctx, tenantID, it.ID, up(), false)
+	require.NoError(t, err)
+	staleLink := first.URL
+	require.NoError(t, svc.DeleteItemImage(ctx, tenantID, it.ID, first.ID))
+	secondKey := client.Item.GetX(ctx, it.ID).ImageURL
+	require.Equal(t, store.Normalize(second.URL), secondKey, "the next image became primary")
+	require.Equal(t, secondKey, keep(staleLink), "the gallery's primary stays")
+
+	require.NoError(t, svc.DeleteItemImage(ctx, tenantID, it.ID, second.ID))
+	require.Empty(t, keep(staleLink), "a deleted file is never linked again")
+	require.Equal(t, "https://cdn.example.org/pan.jpg", keep("https://cdn.example.org/pan.jpg"), "an outside link is the tenant's choice")
+
+	// A new item's picture removed from the form before saving.
+	unsaved, err := store.NewKey(objectstore.Owner{TenantID: tenantID.String()}, objectstore.TypeItemImages, ".jpg")
+	require.NoError(t, err)
+	require.NoError(t, store.Put(ctx, unsaved, []byte("jpeg"), "image/jpeg"))
+	theirs, err := store.NewKey(objectstore.Owner{TenantID: other.String()}, objectstore.TypeItemImages, ".jpg")
+	require.NoError(t, err)
+	require.NoError(t, store.Put(ctx, theirs, []byte("jpeg"), "image/jpeg"))
+
+	require.ErrorIs(t, svc.DiscardUnusedImage(ctx, tenantID, store.URL(theirs)), ErrNotDiscardable)
+	_, stored := objects["pub/"+theirs]
+	require.True(t, stored, "another organisation's file is left alone")
+
+	inUse, err := svc.AddItemImage(ctx, tenantID, it.ID, up(), false)
+	require.NoError(t, err)
+	require.NoError(t, svc.DiscardUnusedImage(ctx, tenantID, inUse.URL))
+	_, stored = objects["pub/"+store.Normalize(inUse.URL)]
+	require.True(t, stored, "a picture in use is never deleted")
+
+	require.NoError(t, svc.DiscardUnusedImage(ctx, tenantID, store.URL(unsaved)))
+	_, stored = objects["pub/"+unsaved]
+	require.False(t, stored, "the unsaved picture is deleted")
+}

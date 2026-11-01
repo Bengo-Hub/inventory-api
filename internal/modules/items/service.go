@@ -3501,6 +3501,9 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 	resolveEPCost(&dto, s.stockUnitAbbr(ctx, dto.UnitID))
 	// Store the image's key, not the link a client sends back (often the item's own image URL).
 	dto.ImageURL = s.media.Normalize(dto.ImageURL)
+	if pErr == nil {
+		dto.ImageURL = s.keepGalleryImage(ctx, tx, tenantID, prevItm, dto.ImageURL)
+	}
 
 	updateBuilder := tx.Item.UpdateOneID(id).
 		Where(item.TenantID(tenantID)).

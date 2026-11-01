@@ -6330,6 +6330,35 @@ paths:
       summary: Upload an image
       tags:
       - Media
+  /api/v1/media/upload/discard:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: '{\'
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Discard an unsaved item image
+      tags:
+      - Media
   /healthz:
     get:
       description: Returns OK when the inventory API process is running.

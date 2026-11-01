@@ -109,6 +109,7 @@ func New(
 	// Media upload endpoint — requires authentication to prevent anonymous file uploads
 	if mediaHandler != nil && authMiddleware != nil {
 		r.With(authMiddleware.RequireAuth).Post("/api/v1/media/upload", mediaHandler.Upload)
+		r.With(authMiddleware.RequireAuth).Post("/api/v1/media/upload/discard", mediaHandler.Discard)
 	}
 
 	// /media: shipped icons and images not yet moved to object storage, served from the media
