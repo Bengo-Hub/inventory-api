@@ -326,6 +326,95 @@ func (h *InventoryHandler) StockDeadstockReportPDF(w http.ResponseWriter, r *htt
 	streamReportDoc(w, h.log, rep, format, "deadstock")
 }
 
+// StockFastMovingReportPDF renders the fast-moving report as a branded PDF/CSV, scoped like the
+// JSON report (resolveReportScope).
+//
+//	@Summary   Fast-moving stock report document (PDF/CSV)
+//	@Tags      Reports
+//	@Produce   application/pdf
+//	@Param     format  query  string  false  "pdf | csv"
+//	@Param     days    query  int     false  "lookback window (default 90)"
+//	@Param     warehouse_id  query  string  false  "one location; else the selected outlet's own locations"
+//	@Param     outlet_id     query  string  false  "outlet scope (or send X-Outlet-ID)"
+//	@Success   200  {file}  binary
+//	@Security  bearerAuth
+//	@Router    /{tenant}/inventory/reports/fast-moving.pdf [get]
+func (h *InventoryHandler) StockFastMovingReportPDF(w http.ResponseWriter, r *http.Request) {
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	format, err := docs.FormatFromString(r.URL.Query().Get("format"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_FORMAT", err.Error())
+		return
+	}
+	days := 90
+	if d := r.URL.Query().Get("days"); d != "" {
+		if n, e := strconv.Atoi(d); e == nil && n > 0 {
+			days = n
+		}
+	}
+	ctx := r.Context()
+	scope, serr := h.resolveReportScope(r, tenantID)
+	if serr != nil {
+		writeError(w, serr.status, serr.code, serr.message)
+		return
+	}
+	fast, err := h.itemsSvc.StockFastMoving(ctx, tenantID, days, scope.warehouseIDs)
+	if err != nil {
+		h.log.Error("fast-moving report pdf failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute fast-moving report")
+		return
+	}
+	var moved float64
+	for _, it := range fast.Items {
+		moved += it.QuantityMoved
+	}
+	rep := &docs.Report{
+		Title:       "Fast-Moving Stock Report",
+		Subtitle:    fmt.Sprintf("Busiest items over %d days, %s", days, ifBlank(scope.label, "All Locations")),
+		GeneratedAt: time.Now().UTC(),
+		Landscape:   true,
+		Cards: []docs.Card{
+			{Label: "Items Moving", Value: strconv.Itoa(fast.ItemCount)},
+			{Label: "Units Moved (listed)", Value: fmtQtyReport(moved)},
+			{Label: "Lookback", Value: strconv.Itoa(days) + " days"},
+		},
+	}
+	applyBranding(rep, h.docSvc.GetBranding(ctx, tenantID))
+
+	rows := make([][]docs.Cell, 0, len(fast.Items))
+	for _, it := range fast.Items {
+		last := "—"
+		if !it.LastActivity.IsZero() {
+			last = it.LastActivity.Format("02 Jan 2006")
+		}
+		rows = append(rows, []docs.Cell{
+			docs.Text(itemLabel(it.Name, it.SKU)),
+			docs.Text(ifBlank(it.CategoryName, "—")),
+			docs.Text(fmtQtyReport(it.QuantityMoved)),
+			docs.Text(fmtQtyReport(it.OnHand)),
+			docs.Text(last),
+		})
+	}
+	rep.Sections = append(rep.Sections, docs.Section{
+		Kind:  docs.SectionTable,
+		Title: "Fast-Moving Stock",
+		Columns: []docs.Column{
+			{Header: "Item / SKU", Weight: 3},
+			{Header: "Category", Weight: 1.6},
+			{Header: "Qty Moved", Weight: 1.2, Align: "R"},
+			{Header: "Qty on Hand", Weight: 1.2, Align: "R"},
+			{Header: "Last Movement", Weight: 1.3, Align: "R"},
+		},
+		Rows: rows,
+	})
+
+	streamReportDoc(w, h.log, rep, format, "fast-moving")
+}
+
 // FoodCostVarianceReportPDF renders the food-cost variance report as a branded PDF/CSV.
 //
 //	@Summary   Food-cost variance report document (PDF/CSV)

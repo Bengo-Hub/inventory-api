@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 )
@@ -10,16 +11,20 @@ import (
 type ctxKey string
 
 const (
-	outletIDKey        ctxKey = "outlet_id"
-	restrictedUserKey  ctxKey = "restricted_user"
+	outletIDKey       ctxKey = "outlet_id"
+	restrictedUserKey ctxKey = "restricted_user"
 )
 
-// OutletContext extracts the outlet context from the request.
+// OutletContext extracts the outlet context from the request. It must run after authentication
+// (it reads the caller's claims) and after EnforceOutletAssignment, which refuses an outlet a
+// branch user is not assigned to.
 //
-// Rules:
-//   - HQ users (CanAccessAllOutlets): may pass any X-Outlet-ID or omit for tenant-wide data
-//   - Non-HQ users: cannot override the outlet via header; outlet from their JWT claim is used
+// Rules (aligned with pos-api's outlet context):
+//   - All-outlet users (CanAccessAllOutletsFor): may pass any X-Outlet-ID or omit it for tenant-wide data
+//   - Other users: the X-Outlet-ID they send (already checked against their assignments), else the
+//     outlet in their token (a terminal's login outlet, a member's home outlet)
 //   - Service accounts (IsService): pass through without outlet restriction
+//   - No claims (an anonymous public catalogue read): the header picks the storefront's outlet
 func OutletContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -29,13 +34,11 @@ func OutletContext(next http.Handler) http.Handler {
 
 		if hasClaims && claims != nil {
 			if claims.IsService {
-				// Service accounts bypass outlet filtering
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			if claims.CanAccessAllOutlets() {
-				// HQ/admin: honour X-Outlet-ID header for drill-down; empty = all outlets
+			if CanAccessAllOutletsFor(claims) {
 				if headerOutletID != "" {
 					ctx = context.WithValue(ctx, outletIDKey, headerOutletID)
 				}
@@ -43,21 +46,40 @@ func OutletContext(next http.Handler) http.Handler {
 				return
 			}
 
-			// Non-HQ user: use their outlet from JWT claims; ignore any override header
-			if claims.OutletID != "" {
-				ctx = context.WithValue(ctx, outletIDKey, claims.OutletID)
+			outlet := headerOutletID
+			if outlet == "" {
+				outlet = claims.OutletID
+			}
+			if outlet != "" {
+				ctx = context.WithValue(ctx, outletIDKey, outlet)
 			}
 			ctx = context.WithValue(ctx, restrictedUserKey, true)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
-		// No claims (shouldn't reach here in authenticated routes, but be safe)
 		if headerOutletID != "" {
 			ctx = context.WithValue(ctx, outletIDKey, headerOutletID)
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+// CanAccessAllOutletsFor reports whether the caller may work in any outlet of the tenant: the
+// platform owner, admins and HQ sessions (Claims.CanAccessAllOutlets), and the manager tier, which
+// pos-api also treats as tenant-wide (posrole.IsAdminLevel).
+func CanAccessAllOutletsFor(claims *authclient.Claims) bool {
+	if claims.CanAccessAllOutlets() {
+		return true
+	}
+	for _, role := range claims.Roles {
+		switch strings.ToLower(strings.TrimSpace(role)) {
+		case "superuser", "owner", "super_admin", "tenant_admin", "administrator",
+			"manager", "store_manager", "outlet_manager", "supervisor":
+			return true
+		}
+	}
+	return false
 }
 
 // GetOutletID retrieves the outlet ID stored in context by OutletContext middleware.

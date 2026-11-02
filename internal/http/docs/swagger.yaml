@@ -5351,6 +5351,37 @@ paths:
       summary: Deadstock report document (PDF/CSV)
       tags:
       - Reports
+  /{tenant}/inventory/reports/fast-moving.pdf:
+    get:
+      parameters:
+      - description: pdf | csv
+        in: query
+        name: format
+        type: string
+      - description: lookback window (default 90)
+        in: query
+        name: days
+        type: integer
+      - description: one location; else the selected outlet's own locations
+        in: query
+        name: warehouse_id
+        type: string
+      - description: outlet scope (or send X-Outlet-ID)
+        in: query
+        name: outlet_id
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - bearerAuth: []
+      summary: Fast-moving stock report document (PDF/CSV)
+      tags:
+      - Reports
   /{tenant}/inventory/reports/food-cost-variance.pdf:
     get:
       parameters:

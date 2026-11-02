@@ -12,9 +12,9 @@ import (
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
 )
 
-// EnforceOutletAssignment rejects a non-HQ user's request when it targets an
+// EnforceOutletAssignment rejects a branch user's request when it targets an
 // outlet (via X-Outlet-ID) the user is not assigned to. Mirrors the POS
-// outlet_context guard.
+// outlet_context guard. It must run after authentication: it reads the claims.
 //
 // Progressive rollout: a user with zero UserOutlet rows is treated as
 // unrestricted (pass-through) so existing users aren't locked out before an
@@ -24,7 +24,7 @@ func EnforceOutletAssignment(client *ent.Client, log *zap.Logger) func(http.Hand
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims, ok := authclient.ClaimsFromContext(r.Context())
-			if !ok || claims == nil || claims.IsService || claims.CanAccessAllOutlets() {
+			if !ok || claims == nil || claims.IsService || CanAccessAllOutletsFor(claims) {
 				next.ServeHTTP(w, r)
 				return
 			}

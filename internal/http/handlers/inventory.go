@@ -337,6 +337,7 @@ func (h *InventoryHandler) RegisterRoutes(r chi.Router) {
 		inv.Get("/reports/deadstock", h.StockDeadstockReport)
 		inv.Get("/reports/deadstock.pdf", h.StockDeadstockReportPDF)
 		inv.Get("/reports/fast-moving", h.StockFastMovingReport)
+		inv.Get("/reports/fast-moving.pdf", h.StockFastMovingReportPDF)
 
 		// Recipes / BOM — hospitality & quick_service (menu recipes), warehouse &
 		// manufacturing (bills of materials), plus retail (fractional/refill sale

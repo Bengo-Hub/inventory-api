@@ -40,17 +40,24 @@
     store at every outlet), and `?warehouse_id=` picks one location, which must belong to the
     selected outlet. Stock and movement both come from the scoped warehouses, so an item selling at
     one location is still dead stock where it sits idle. For a user `OutletContext` marks as
-    restricted, the report ignores `?outlet_id=` and keeps their own outlet (see the open item
-    below for why that mark is not set yet). The PDF subtitle names the location. Both reports now aggregate movement in Postgres
+    restricted, the report ignores `?outlet_id=` and keeps their own outlet. The PDF subtitle
+    names the location. Both reports now aggregate movement in Postgres
     (`items/stock_movement.go`, consumption lines unnested and grouped per SKU) instead of loading
     every consumption into memory, backed by the new `consumption_tenant_id_created_at` index
     (migration `20261102204401`). The Deadstock page has the same location picker as Stock
-    Valuation. inventory-ui has no Fast-Moving page yet; the endpoint takes the same scope.
-  - Open: `OutletContext` runs at the `/api/v1/{tenant}` level, before the auth group sets claims,
-    so on that tree it never sees a branch user's claims and does not pin them to their own outlet
-    (it honours whatever `X-Outlet-ID` is sent). Report scoping is only as strict as that
-    middleware. Moving the outlet context after auth affects every route in the tree, so it needs
-    its own change and test pass.
+    Valuation.
+  - Fast Moving page (2026-11-03): `/reports/fast-moving` in inventory-ui (Stock reports menu), same
+    location picker as Deadstock (shared `components/reports/report-location-scope.tsx`), windows of
+    7 to 90 days, units moved and per day, busy items already out of stock, and a PDF/CSV export
+    (`GET .../inventory/reports/fast-moving.pdf`).
+  - Outlet context after authentication (2026-11-03, was open): `OutletContext` and
+    `EnforceOutletAssignment` used to run at the `/{tenant}` level before any auth middleware, so
+    they never saw claims and every caller's `X-Outlet-ID` was taken as is. They now run inside each
+    authenticated group (`outletScope` in the router: private routes, the inventory tree and the
+    `/v1` service tree). Aligned with pos-api: admins and the manager tier work in any outlet; other
+    users may name an outlet only if assigned to it (403 `OUTLET_NOT_ASSIGNED` otherwise; a user with
+    no assignment yet is not locked out) and otherwise get the outlet in their token. Anonymous
+    catalogue reads still pick the storefront outlet from the header.
 
 ## Definition of Done
 - [ ] `go build ./...`; Ent+Atlas migration applied to local PG17; `pnpm build` (inventory-ui).

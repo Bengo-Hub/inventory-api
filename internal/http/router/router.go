@@ -123,6 +123,16 @@ func New(
 		http.Redirect(w, r, "/v1/docs/", http.StatusMovedPermanently)
 	})
 
+	// outletScope refuses an outlet a branch user is not assigned to, then sets the request's
+	// outlet (OutletContext). Both read the caller's claims, so each group adds it after its
+	// authentication middleware.
+	outletScope := func(g chi.Router) {
+		if ormClient != nil {
+			g.Use(ratelimitmw.EnforceOutletAssignment(ormClient, log))
+		}
+		g.Use(ratelimitmw.OutletContext)
+	}
+
 	r.Route("/api/v1", func(api chi.Router) {
 		if authMiddleware != nil {
 			// Require auth for mutation and sensitive data, but allow public GET for master data
@@ -208,12 +218,8 @@ func New(
 				Required:     true,
 			}))
 
-			// Optional outlet context for warehouse/inventory filtering
-			tenant.Use(ratelimitmw.OutletContext)
-			// Reject non-HQ users targeting an outlet they are not assigned to.
-			if ormClient != nil {
-				tenant.Use(ratelimitmw.EnforceOutletAssignment(ormClient, log))
-			}
+			// The outlet context is applied inside each group after authentication (outletScope):
+			// at this level no claims exist yet, so branch users would never be held to their outlet.
 
 			// Public PIN/terminal login — this IS the login, so no auth. Registered in its own
 			// group with NO auth middleware; TenantV2 resolves the tenant from the URL.
@@ -241,6 +247,7 @@ func New(
 					// Layer 2: Subscription enforcement — reject expired/cancelled tenants
 					private.Use(authclient.RequireActiveSubscription())
 				}
+				outletScope(private)
 				// Auth sync endpoint — inventory-ui calls this after SSO callback to get local RBAC.
 				// Kept OUTSIDE the module gate below (unlike everything else in this group) so a
 				// tenant whose plan doesn't include inventory at all can still bootstrap identity
@@ -310,6 +317,7 @@ func New(
 					// A signed-in caller may only act in its own tenant (anonymous catalogue reads
 					// carry no token and are scoped by the URL).
 					g.Use(handlers.RequireOwnTenant)
+					outletScope(g)
 					// Subscription gate for mutations (grace period + X-Sub-Grace-Days-Left header)
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					// Module gate: block the WHOLE inventory module for an AUTHENTICATED tenant
@@ -373,12 +381,8 @@ func New(
 				Required:     true,
 			}))
 
-			// Optional outlet context for warehouse/inventory filtering
-			tenant.Use(ratelimitmw.OutletContext)
-			// Reject non-HQ users targeting an outlet they are not assigned to.
-			if ormClient != nil {
-				tenant.Use(ratelimitmw.EnforceOutletAssignment(ormClient, log))
-			}
+			// The outlet context is applied inside each group after authentication (outletScope):
+			// at this level no claims exist yet, so branch users would never be held to their outlet.
 
 			if inventoryHandler != nil {
 				tenant.Group(func(g chi.Router) {
@@ -388,6 +392,7 @@ func New(
 					g.Use(requireInternalKeyOrAuth(internalServiceKey, pinSecret, authMiddleware))
 					// Service-key callers carry no tenant and pass; a user token must be its own tenant's.
 					g.Use(handlers.RequireOwnTenant)
+					outletScope(g)
 					// Subscription gate for mutations
 					g.Use(authclient.RequireActiveSubscriptionForMutationsWithGrace(7))
 					// Module gate — no-op for genuine S2S/API-key callers (HasServiceAccess fails
