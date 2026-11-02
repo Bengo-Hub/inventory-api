@@ -168,14 +168,8 @@ func New(
 						if err == nil {
 							userID, err := uuid.Parse(claims.Subject)
 							if err == nil {
-								_, _ = rbacService.EnsureUserFromToken(
-									r.Context(),
-									tenantID,
-									userID,
-									claims.Email,
-									claims.GetTenantSlug(),
-									claims.Roles...,
-								)
+								// Only for members whose token lets inventory keep them (user_services).
+								_, _ = rbacService.EnsureUserForClaims(r.Context(), tenantID, userID, claims)
 							}
 						}
 					}

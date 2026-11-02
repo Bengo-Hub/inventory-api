@@ -119,7 +119,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	// API before their event is processed still gets provisioned. Skipped when claims carry no
 	// roles so we never assign a spurious default.
 	if h.rbacService != nil && len(claims.Roles) > 0 {
-		if _, perr := h.rbacService.EnsureUserFromToken(r.Context(), *tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...); perr != nil {
+		if _, perr := h.rbacService.EnsureUserForClaims(r.Context(), *tenantID, userID, claims); perr != nil {
 			h.logger.Debug("auth/me: service-role sync failed", zap.Error(perr))
 		}
 	}

@@ -83,7 +83,7 @@ func RequirePermission(svc *rbac.Service, log *zap.Logger, permissionCode string
 			// superuser/admin this grants the explicit inventory_admin role, so the HasRole
 			// check below permits them via REAL RBAC (not a bypass) — no access loss.
 			if svc != nil {
-				_, _ = svc.EnsureUserFromToken(ctx, tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...)
+				_, _ = svc.EnsureUserForClaims(ctx, tenantID, userID, claims)
 			}
 
 			// Check local DB role — inventory_admin bypasses per-route permission checks.
@@ -160,7 +160,7 @@ func RequireAnyPermission(svc *rbac.Service, log *zap.Logger, permissionCodes ..
 			// JIT-provision after auth so claims are always present. For superuser/admin this
 			// grants the explicit inventory_admin role (real RBAC, not a bypass).
 			if svc != nil {
-				_, _ = svc.EnsureUserFromToken(ctx, tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...)
+				_, _ = svc.EnsureUserForClaims(ctx, tenantID, userID, claims)
 			}
 
 			// inventory_admin bypasses per-route permission checks.

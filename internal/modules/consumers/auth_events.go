@@ -136,14 +136,34 @@ func (c *AuthEventsConsumer) relevant(ctx context.Context, evt *sharedevents.Eve
 		Where(entinvuser.TenantID(evt.TenantID), entinvuser.AuthServiceUserID(userID)).Exist(ctx); err == nil && exists {
 		return true
 	}
-	r := sharedevents.UserRelevance{
+	return c.relevance().Relevant(ctx, evt.TenantID, evt.Payload)
+}
+
+// relevance is inventory's reading of an auth.user event: auth-api's services list when the
+// event has one, else the role and outlet rules.
+func (c *AuthEventsConsumer) relevance() sharedevents.UserRelevance {
+	return sharedevents.UserRelevance{
+		Service:      rbac.ServiceTag,
 		ServiceRoles: inventoryServiceRoles,
 		OutletKnown: func(ctx context.Context, tenantID, outletID uuid.UUID) bool {
 			ok, err := c.orm.Warehouse.Query().Where(entwarehouse.TenantID(tenantID), entwarehouse.OutletID(outletID)).Exist(ctx)
 			return err == nil && ok
 		},
 	}
-	return r.Relevant(ctx, evt.TenantID, evt.Payload)
+}
+
+// revoked removes this tenant's local copy of the user when auth-api says the member is not
+// meant to use inventory (the event's services list leaves inventory out). Reports whether the
+// event was handled that way.
+func (c *AuthEventsConsumer) revoked(ctx context.Context, evt *sharedevents.Event, userID uuid.UUID) (bool, error) {
+	if !c.relevance().Revoked(evt.Payload) {
+		return false, nil
+	}
+	tenantID := evt.TenantID
+	if err := c.removeLocalUser(ctx, &tenantID, userID); err != nil {
+		return true, fmt.Errorf("remove user outside inventory: %w", err)
+	}
+	return true, nil
 }
 
 func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharedevents.Event) error {
@@ -157,6 +177,9 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharede
 	}
 	if evt.TenantID == uuid.Nil {
 		return fmt.Errorf("missing tenant_id in auth.user.created event")
+	}
+	if handled, err := c.revoked(ctx, evt, userID); handled {
+		return err
 	}
 	if !c.relevant(ctx, evt, userID) {
 		c.log.Debug("skipping user outside inventory", zap.String("user_id", userID.String()))
@@ -193,6 +216,9 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 	}
 	if evt.TenantID == uuid.Nil {
 		return fmt.Errorf("missing tenant_id in auth.user.updated event")
+	}
+	if handled, err := c.revoked(ctx, evt, userID); handled {
+		return err
 	}
 	if !c.relevant(ctx, evt, userID) {
 		c.log.Debug("skipping user outside inventory", zap.String("user_id", userID.String()))
@@ -232,6 +258,9 @@ func (c *AuthEventsConsumer) handlePinSet(ctx context.Context, evt *sharedevents
 	if evt.TenantID == uuid.Nil || pinHash == "" {
 		return fmt.Errorf("missing tenant_id or pin_hash in pin_set event")
 	}
+	if handled, err := c.revoked(ctx, evt, userID); handled {
+		return err
+	}
 
 	// Ensure the local user exists first (pin_set may arrive before user.created is processed).
 	email, _ := evt.Payload["email"].(string)
@@ -260,48 +289,65 @@ func (c *AuthEventsConsumer) handlePinSet(ctx context.Context, evt *sharedevents
 }
 
 // handleUserDeleted hard-deletes this user's local inventory-api rows after auth-api
-// permanently deletes the account (AdminPurgeUser). user_role_assignments has a real
-// OnDelete:NoAction FK to inventory_users, so it must go first; user_outlets has no DB
-// FK (app-level only) but is cleaned up too, for hygiene, before deleting the user row.
+// permanently deletes the account (AdminPurgeUser).
 func (c *AuthEventsConsumer) handleUserDeleted(ctx context.Context, evt *sharedevents.Event) error {
 	userIDStr, _ := evt.Payload["user_id"].(string)
 	authServiceUserID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		return fmt.Errorf("invalid user_id %q: %w", userIDStr, err)
 	}
+	if err := c.removeLocalUser(ctx, nil, authServiceUserID); err != nil {
+		return err
+	}
+	c.log.Info("user hard-deleted from auth.user.deleted event", zap.String("user_id", userIDStr))
+	return nil
+}
 
+// removeLocalUser hard-deletes the local copy of a user: in one tenant (tenantID set: the member
+// is not meant to use inventory there) or wherever it is (nil: the account was deleted).
+// user_role_assignments has a real OnDelete:NoAction FK to inventory_users, so it goes first;
+// user_outlets has no DB FK (app level only) but goes too. Records that point at the user (stock
+// movements, approvals) keep their user id, as with account deletion. Nothing to remove is fine.
+func (c *AuthEventsConsumer) removeLocalUser(ctx context.Context, tenantID *uuid.UUID, authServiceUserID uuid.UUID) error {
 	tx, err := c.orm.Tx(ctx)
 	if err != nil {
 		return fmt.Errorf("start tx: %w", err)
 	}
-
-	invUser, err := tx.InventoryUser.Query().Where(entinvuser.AuthServiceUserID(authServiceUserID)).Only(ctx)
+	q := tx.InventoryUser.Query().Where(entinvuser.AuthServiceUserID(authServiceUserID))
+	outlets := tx.UserOutlet.Delete().Where(entuseroutlet.UserID(authServiceUserID))
+	if tenantID != nil {
+		q = q.Where(entinvuser.TenantID(*tenantID))
+		outlets = outlets.Where(entuseroutlet.TenantID(*tenantID))
+	}
+	invUsers, err := q.All(ctx)
 	if err != nil {
 		_ = tx.Rollback()
-		if ent.IsNotFound(err) {
-			return nil // never synced locally — nothing to clean up
-		}
 		return fmt.Errorf("query inventory user: %w", err)
 	}
-
-	if _, err := tx.UserRoleAssignment.Delete().Where(userroleassignment.UserID(invUser.ID)).Exec(ctx); err != nil {
+	if len(invUsers) == 0 {
+		_ = tx.Rollback()
+		return nil // never synced locally: nothing to clean up
+	}
+	ids := make([]uuid.UUID, len(invUsers))
+	for i, u := range invUsers {
+		ids[i] = u.ID
+	}
+	if _, err := tx.UserRoleAssignment.Delete().Where(userroleassignment.UserIDIn(ids...)).Exec(ctx); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("delete user role assignments: %w", err)
 	}
-	if _, err := tx.UserOutlet.Delete().Where(entuseroutlet.UserID(authServiceUserID)).Exec(ctx); err != nil {
+	if _, err := outlets.Exec(ctx); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("delete user outlets: %w", err)
 	}
-	if err := tx.InventoryUser.DeleteOne(invUser).Exec(ctx); err != nil {
+	if _, err := tx.InventoryUser.Delete().Where(entinvuser.IDIn(ids...)).Exec(ctx); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("delete inventory user: %w", err)
 	}
-
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit: %w", err)
 	}
-
-	c.log.Info("user hard-deleted from auth.user.deleted event", zap.String("user_id", userIDStr))
+	c.log.Info("local user removed", zap.String("user_id", authServiceUserID.String()), zap.Bool("one_tenant", tenantID != nil))
 	return nil
 }
 

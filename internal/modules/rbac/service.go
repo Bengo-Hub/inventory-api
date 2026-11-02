@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"context"
 	"fmt"
 	"os"
@@ -61,6 +62,21 @@ func strictRBACEnabled() bool {
 // the legacy superuser/admin blanket bypass is restored.
 func (s *Service) StrictRBAC() bool {
 	return s.strictRBAC
+}
+
+// ServiceTag is inventory's service tag in auth-api's member services (user_services claim,
+// services on auth.user events).
+const ServiceTag = "inventory"
+
+// EnsureUserForClaims is EnsureUserFromToken for a signed-in request: it provisions the caller
+// only when their token lets inventory keep a local copy of them (user_services claim; a token
+// without the claim, a terminal PIN token or a service call is allowed). Returns nil, nil when
+// the member is not meant to use inventory.
+func (s *Service) EnsureUserForClaims(ctx context.Context, tenantID, userID uuid.UUID, claims *authclient.Claims) (*InventoryUser, error) {
+	if claims == nil || !claims.AllowsUserService(ServiceTag) {
+		return nil, nil
+	}
+	return s.EnsureUserFromToken(ctx, tenantID, userID, claims.Email, claims.GetTenantSlug(), claims.Roles...)
 }
 
 // EnsureUserFromToken handles JIT provisioning of a user derived from an SSO token.
