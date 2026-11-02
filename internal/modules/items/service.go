@@ -2,6 +2,7 @@ package items
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -807,6 +808,9 @@ type Service struct {
 	// query in this service (single-item lookups, writes, OutletScope) always uses client
 	// (primary), unchanged.
 	readClient *ent.Client
+	// reportDB is the *sql.DB the Deadstock and Fast-Moving reports aggregate stock movement with
+	// (stock_movement.go). Nil leaves those two reports unavailable.
+	reportDB *sql.DB
 	// seq, when set, drives GenerateSKU's numeric-by-default auto-generated SKUs via the shared
 	// document-sequence system. Nil (e.g. unwired scripts/tests) falls back to the legacy
 	// category-prefix algorithm unconditionally — see GenerateSKU.

@@ -42,8 +42,8 @@ type ItemsServicer interface {
 	GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
 	StockValuation(ctx context.Context, tenantID, warehouseID uuid.UUID) (*items.StockValuation, error)
-	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*items.DeadstockReport, error)
-	StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int) (*items.FastMovingReport, error)
+	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.DeadstockReport, error)
+	StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.FastMovingReport, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
@@ -1070,7 +1070,8 @@ func (h *InventoryHandler) StockValuationReport(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, val)
 }
 
-// StockDeadstockReport handles GET /v1/{tenant}/inventory/reports/deadstock?days=90
+// StockDeadstockReport handles GET /v1/{tenant}/inventory/reports/deadstock?days=90&warehouse_id=
+// scoped to one location, or to the selected outlet's own locations (resolveReportScope).
 func (h *InventoryHandler) StockDeadstockReport(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -1083,7 +1084,12 @@ func (h *InventoryHandler) StockDeadstockReport(w http.ResponseWriter, r *http.R
 			days = n
 		}
 	}
-	rep, err := h.itemsSvc.StockDeadstock(r.Context(), tenantID, days)
+	scope, serr := h.resolveReportScope(r, tenantID)
+	if serr != nil {
+		writeError(w, serr.status, serr.code, serr.message)
+		return
+	}
+	rep, err := h.itemsSvc.StockDeadstock(r.Context(), tenantID, days, scope.warehouseIDs)
 	if err != nil {
 		h.log.Error("deadstock report failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute deadstock report")
@@ -1092,7 +1098,8 @@ func (h *InventoryHandler) StockDeadstockReport(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, rep)
 }
 
-// StockFastMovingReport handles GET /v1/{tenant}/inventory/reports/fast-moving?days=90
+// StockFastMovingReport handles GET /v1/{tenant}/inventory/reports/fast-moving?days=90&warehouse_id=
+// scoped like the deadstock report (resolveReportScope).
 func (h *InventoryHandler) StockFastMovingReport(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
@@ -1105,7 +1112,12 @@ func (h *InventoryHandler) StockFastMovingReport(w http.ResponseWriter, r *http.
 			days = n
 		}
 	}
-	rep, err := h.itemsSvc.StockFastMoving(r.Context(), tenantID, days)
+	scope, serr := h.resolveReportScope(r, tenantID)
+	if serr != nil {
+		writeError(w, serr.status, serr.code, serr.message)
+		return
+	}
+	rep, err := h.itemsSvc.StockFastMoving(r.Context(), tenantID, days, scope.warehouseIDs)
 	if err != nil {
 		h.log.Error("fast-moving report failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute fast-moving report")

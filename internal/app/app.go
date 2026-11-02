@@ -265,6 +265,7 @@ func New(ctx context.Context) (*App, error) {
 	// ListItems' heavy catalog fetch routed to a read replica when configured — see readOrmClient.
 	itemsSvc.SetReadClient(readOrmClient)
 	itemsSvc.SetCache(cacheAside)
+	itemsSvc.SetReportDB(sqlDB) // deadstock / fast-moving aggregate movement in SQL
 	// Treasury is the source of truth for tax codes/rates; resolve + cache VAT rates for item
 	// enrichment, and expose the cached tax-code list to inventory-ui for the tax-code picker.
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log)

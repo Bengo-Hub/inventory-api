@@ -20,6 +20,13 @@ import (
 // dropped when the test ends. It skips the test when INVENTORY_TEST_DATABASE_URL is not set.
 func SchemaClient(t *testing.T, prefix string) *ent.Client {
 	t.Helper()
+	client, _ := SchemaDB(t, prefix)
+	return client
+}
+
+// SchemaDB is SchemaClient plus the *sql.DB behind the client, for code that queries in SQL.
+func SchemaDB(t *testing.T, prefix string) (*ent.Client, *sql.DB) {
+	t.Helper()
 	url := os.Getenv("INVENTORY_TEST_DATABASE_URL")
 	if url == "" {
 		t.Skip("INVENTORY_TEST_DATABASE_URL not set")
@@ -50,5 +57,5 @@ func SchemaClient(t *testing.T, prefix string) *ent.Client {
 	if err := client.Schema.Create(context.Background()); err != nil {
 		t.Fatalf("schema: %v", err)
 	}
-	return client
+	return client, db
 }

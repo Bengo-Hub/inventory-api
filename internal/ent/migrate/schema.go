@@ -678,6 +678,11 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{ConsumptionsColumns[7]},
 			},
+			{
+				Name:    "consumption_tenant_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionsColumns[1], ConsumptionsColumns[9]},
+			},
 		},
 	}
 	// ConsumptionLinesColumns holds the columns for the "consumption_lines" table.

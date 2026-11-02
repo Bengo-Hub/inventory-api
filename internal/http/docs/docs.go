@@ -5124,6 +5124,18 @@ const docTemplate = `{
                         "description": "lookback window (default 90)",
                         "name": "days",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "one location; else the selected outlet's own locations",
+                        "name": "warehouse_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "outlet scope (or send X-Outlet-ID)",
+                        "name": "outlet_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {

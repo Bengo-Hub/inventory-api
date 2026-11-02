@@ -241,6 +241,8 @@ func (h *InventoryHandler) StockValuationReportPDF(w http.ResponseWriter, r *htt
 //	@Produce   application/pdf
 //	@Param     format  query  string  false  "pdf | csv"
 //	@Param     days    query  int     false  "lookback window (default 90)"
+//	@Param     warehouse_id  query  string  false  "one location; else the selected outlet's own locations"
+//	@Param     outlet_id     query  string  false  "outlet scope (or send X-Outlet-ID)"
 //	@Success   200  {file}  binary
 //	@Security  bearerAuth
 //	@Router    /{tenant}/inventory/reports/deadstock.pdf [get]
@@ -262,7 +264,12 @@ func (h *InventoryHandler) StockDeadstockReportPDF(w http.ResponseWriter, r *htt
 		}
 	}
 	ctx := r.Context()
-	dead, err := h.itemsSvc.StockDeadstock(ctx, tenantID, days)
+	scope, serr := h.resolveReportScope(r, tenantID)
+	if serr != nil {
+		writeError(w, serr.status, serr.code, serr.message)
+		return
+	}
+	dead, err := h.itemsSvc.StockDeadstock(ctx, tenantID, days, scope.warehouseIDs)
 	if err != nil {
 		h.log.Error("deadstock report pdf failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute deadstock report")
@@ -272,7 +279,7 @@ func (h *InventoryHandler) StockDeadstockReportPDF(w http.ResponseWriter, r *htt
 
 	rep := &docs.Report{
 		Title:       "Deadstock Report",
-		Subtitle:    fmt.Sprintf("No outbound movement in %d days", days),
+		Subtitle:    fmt.Sprintf("No outbound movement in %d days, %s", days, ifBlank(scope.label, "All Locations")),
 		Currency:    cur,
 		GeneratedAt: time.Now().UTC(),
 		Landscape:   true,

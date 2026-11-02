@@ -84,11 +84,11 @@ func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID, warehouseID
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockItemsSvc) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int) (*items.DeadstockReport, error) {
+func (m *mockItemsSvc) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.DeadstockReport, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockItemsSvc) StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int) (*items.FastMovingReport, error) {
+func (m *mockItemsSvc) StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.FastMovingReport, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 

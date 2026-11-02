@@ -70,5 +70,7 @@ func (Consumption) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "order_id"),
 		index.Fields("idempotency_key").Unique(),
+		// Movement reports (deadstock, fast-moving) read one tenant's consumptions since a date.
+		index.Fields("tenant_id", "created_at"),
 	}
 }

@@ -5331,6 +5331,14 @@ paths:
         in: query
         name: days
         type: integer
+      - description: one location; else the selected outlet's own locations
+        in: query
+        name: warehouse_id
+        type: string
+      - description: outlet scope (or send X-Outlet-ID)
+        in: query
+        name: outlet_id
+        type: string
       produces:
       - application/pdf
       responses:

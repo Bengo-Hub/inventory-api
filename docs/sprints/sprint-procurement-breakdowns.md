@@ -35,6 +35,22 @@
 - [ ] Asset dashboard (warranty-expiry alerts, staff allocation) over existing `asset*` schemas.
 - [ ] Stock reports: valuation (purchase vs sale price → potential profit), Most-Profitable,
   Deadstock; CSV/PDF export.
+  - Deadstock and Fast-Moving follow the location (2026-11-02). The top-nav outlet narrows them to
+    the warehouses that outlet owns (not the shared outlet-less ones, which would count a central
+    store at every outlet), and `?warehouse_id=` picks one location, which must belong to the
+    selected outlet. Stock and movement both come from the scoped warehouses, so an item selling at
+    one location is still dead stock where it sits idle. For a user `OutletContext` marks as
+    restricted, the report ignores `?outlet_id=` and keeps their own outlet (see the open item
+    below for why that mark is not set yet). The PDF subtitle names the location. Both reports now aggregate movement in Postgres
+    (`items/stock_movement.go`, consumption lines unnested and grouped per SKU) instead of loading
+    every consumption into memory, backed by the new `consumption_tenant_id_created_at` index
+    (migration `20261102204401`). The Deadstock page has the same location picker as Stock
+    Valuation. inventory-ui has no Fast-Moving page yet; the endpoint takes the same scope.
+  - Open: `OutletContext` runs at the `/api/v1/{tenant}` level, before the auth group sets claims,
+    so on that tree it never sees a branch user's claims and does not pin them to their own outlet
+    (it honours whatever `X-Outlet-ID` is sent). Report scoping is only as strict as that
+    middleware. Moving the outlet context after auth affects every route in the tree, so it needs
+    its own change and test pass.
 
 ## Definition of Done
 - [ ] `go build ./...`; Ent+Atlas migration applied to local PG17; `pnpm build` (inventory-ui).
