@@ -111,7 +111,7 @@ var tenantScopedTables = []string{
 // TenantPurgeConsumer deletes ALL of a tenant's inventory data when subscriptions-api
 // emits a platform-owner-confirmed dormancy purge (subject "tenant.purge"). This is
 // IRREVERSIBLE, so the handler is defensive: it only acts on a well-formed event that is
-// explicitly confirmed=true and reason="dormancy", and it never issues a delete with an
+// explicitly confirmed=true and a known purge reason (shared-events IsTenantPurgeReason), and it never issues a delete with an
 // empty/zero tenant filter.
 type TenantPurgeConsumer struct {
 	log *zap.Logger
@@ -210,7 +210,7 @@ func (c *TenantPurgeConsumer) handleMessage(msg *nats.Msg) {
 	// SAFETY GUARD 2: only act on a platform-owner-confirmed dormancy purge.
 	confirmed, _ := env.Payload["confirmed"].(bool)
 	reason, _ := env.Payload["reason"].(string)
-	if !confirmed || reason != "dormancy" {
+	if !confirmed || !eventslib.IsTenantPurgeReason(reason) {
 		c.log.Warn("tenant purge: not a confirmed dormancy purge — skipping (acking)",
 			zap.String("tenant_id", tenantID.String()),
 			zap.Bool("confirmed", confirmed),
