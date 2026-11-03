@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -19,6 +20,11 @@ func RequireOwnTenant(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := authclient.ClaimsFromContext(r.Context())
 		if ok && !claims.IsPlatformOwner && !tenantMatchesClaims(r, claims.TenantID, claims.GetTenantSlug()) {
+			// Which value disagreed: a refused request otherwise leaves no trace (2026-11-03,
+			// demo sign-in stuck on 403 with no way to tell the cause from the logs).
+			log.Printf("tenant_mismatch path=%s url_tenant=%q ctx_tenant_id=%q ctx_tenant_slug=%q token_tenant_id=%q token_tenant_slug=%q",
+				r.URL.Path, chi.URLParam(r, "tenant"), httpware.GetTenantID(r.Context()), httpware.GetTenantSlug(r.Context()),
+				claims.TenantID, claims.GetTenantSlug())
 			http.Error(w, `{"error":"tenant_mismatch","message":"this session belongs to a different organisation"}`, http.StatusForbidden)
 			return
 		}
