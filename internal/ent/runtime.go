@@ -487,11 +487,11 @@ func init() {
 	// consumption.DefaultStatus holds the default value on creation for the status field.
 	consumption.DefaultStatus = consumptionDescStatus.Default.(string)
 	// consumptionDescProcessedAt is the schema descriptor for processed_at field.
-	consumptionDescProcessedAt := consumptionFields[8].Descriptor()
+	consumptionDescProcessedAt := consumptionFields[9].Descriptor()
 	// consumption.DefaultProcessedAt holds the default value on creation for the processed_at field.
 	consumption.DefaultProcessedAt = consumptionDescProcessedAt.Default.(func() time.Time)
 	// consumptionDescCreatedAt is the schema descriptor for created_at field.
-	consumptionDescCreatedAt := consumptionFields[9].Descriptor()
+	consumptionDescCreatedAt := consumptionFields[10].Descriptor()
 	// consumption.DefaultCreatedAt holds the default value on creation for the created_at field.
 	consumption.DefaultCreatedAt = consumptionDescCreatedAt.Default.(func() time.Time)
 	// consumptionDescID is the schema descriptor for id field.

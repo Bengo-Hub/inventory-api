@@ -19650,6 +19650,7 @@ type ConsumptionMutation struct {
 	reason          *string
 	status          *string
 	idempotency_key *string
+	metadata        *map[string]interface{}
 	processed_at    *time.Time
 	created_at      *time.Time
 	clearedFields   map[string]struct{}
@@ -20055,6 +20056,55 @@ func (m *ConsumptionMutation) ResetIdempotencyKey() {
 	delete(m.clearedFields, consumption.FieldIdempotencyKey)
 }
 
+// SetMetadata sets the "metadata" field.
+func (m *ConsumptionMutation) SetMetadata(value map[string]interface{}) {
+	m.metadata = &value
+}
+
+// Metadata returns the value of the "metadata" field in the mutation.
+func (m *ConsumptionMutation) Metadata() (r map[string]interface{}, exists bool) {
+	v := m.metadata
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMetadata returns the old "metadata" field's value of the Consumption entity.
+// If the Consumption object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsumptionMutation) OldMetadata(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMetadata is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMetadata requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMetadata: %w", err)
+	}
+	return oldValue.Metadata, nil
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (m *ConsumptionMutation) ClearMetadata() {
+	m.metadata = nil
+	m.clearedFields[consumption.FieldMetadata] = struct{}{}
+}
+
+// MetadataCleared returns if the "metadata" field was cleared in this mutation.
+func (m *ConsumptionMutation) MetadataCleared() bool {
+	_, ok := m.clearedFields[consumption.FieldMetadata]
+	return ok
+}
+
+// ResetMetadata resets all changes to the "metadata" field.
+func (m *ConsumptionMutation) ResetMetadata() {
+	m.metadata = nil
+	delete(m.clearedFields, consumption.FieldMetadata)
+}
+
 // SetProcessedAt sets the "processed_at" field.
 func (m *ConsumptionMutation) SetProcessedAt(t time.Time) {
 	m.processed_at = &t
@@ -20161,7 +20211,7 @@ func (m *ConsumptionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ConsumptionMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.tenant_id != nil {
 		fields = append(fields, consumption.FieldTenantID)
 	}
@@ -20182,6 +20232,9 @@ func (m *ConsumptionMutation) Fields() []string {
 	}
 	if m.idempotency_key != nil {
 		fields = append(fields, consumption.FieldIdempotencyKey)
+	}
+	if m.metadata != nil {
+		fields = append(fields, consumption.FieldMetadata)
 	}
 	if m.processed_at != nil {
 		fields = append(fields, consumption.FieldProcessedAt)
@@ -20211,6 +20264,8 @@ func (m *ConsumptionMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case consumption.FieldIdempotencyKey:
 		return m.IdempotencyKey()
+	case consumption.FieldMetadata:
+		return m.Metadata()
 	case consumption.FieldProcessedAt:
 		return m.ProcessedAt()
 	case consumption.FieldCreatedAt:
@@ -20238,6 +20293,8 @@ func (m *ConsumptionMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldStatus(ctx)
 	case consumption.FieldIdempotencyKey:
 		return m.OldIdempotencyKey(ctx)
+	case consumption.FieldMetadata:
+		return m.OldMetadata(ctx)
 	case consumption.FieldProcessedAt:
 		return m.OldProcessedAt(ctx)
 	case consumption.FieldCreatedAt:
@@ -20300,6 +20357,13 @@ func (m *ConsumptionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIdempotencyKey(v)
 		return nil
+	case consumption.FieldMetadata:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMetadata(v)
+		return nil
 	case consumption.FieldProcessedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -20350,6 +20414,9 @@ func (m *ConsumptionMutation) ClearedFields() []string {
 	if m.FieldCleared(consumption.FieldIdempotencyKey) {
 		fields = append(fields, consumption.FieldIdempotencyKey)
 	}
+	if m.FieldCleared(consumption.FieldMetadata) {
+		fields = append(fields, consumption.FieldMetadata)
+	}
 	return fields
 }
 
@@ -20369,6 +20436,9 @@ func (m *ConsumptionMutation) ClearField(name string) error {
 		return nil
 	case consumption.FieldIdempotencyKey:
 		m.ClearIdempotencyKey()
+		return nil
+	case consumption.FieldMetadata:
+		m.ClearMetadata()
 		return nil
 	}
 	return fmt.Errorf("unknown Consumption nullable field %s", name)
@@ -20398,6 +20468,9 @@ func (m *ConsumptionMutation) ResetField(name string) error {
 		return nil
 	case consumption.FieldIdempotencyKey:
 		m.ResetIdempotencyKey()
+		return nil
+	case consumption.FieldMetadata:
+		m.ResetMetadata()
 		return nil
 	case consumption.FieldProcessedAt:
 		m.ResetProcessedAt()

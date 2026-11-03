@@ -121,7 +121,7 @@ func (h *InventoryHandler) GenerateStockHistoryDocument(w http.ResponseWriter, r
 		}
 		items = append(items, documents.StockHistoryDocLine{
 			Date:           mv.OccurredAt.Format("02 Jan 2006 15:04"),
-			Type:           mv.Label,
+			Type:           mv.DisplayLabel(),
 			Reference:      ifEmptyStr(mv.Reference, "—"),
 			Location:       ifEmptyStr(mv.WarehouseName, "—"),
 			Counterparty:   counterparty,
@@ -139,6 +139,7 @@ func (h *InventoryHandler) GenerateStockHistoryDocument(w http.ResponseWriter, r
 			{"Opening Stock", qty(res.Summary.OpeningStock)},
 			{"Total Purchased", qty(res.Summary.TotalPurchased)},
 			{"Total Sold", qty(res.Summary.TotalSold)},
+			{"Voided / Reversed Sales", qty(res.Summary.TotalSaleReversals)},
 			{"Total Sell Returns", qty(res.Summary.TotalSellReturns)},
 			{"Total Purchase Returns", qty(res.Summary.TotalPurchaseReturns)},
 			{"Sent for Repair", qty(res.Summary.SentForRepair)},

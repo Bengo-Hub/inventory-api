@@ -139,6 +139,18 @@ func (_u *ConsumptionUpdate) ClearIdempotencyKey() *ConsumptionUpdate {
 	return _u
 }
 
+// SetMetadata sets the "metadata" field.
+func (_u *ConsumptionUpdate) SetMetadata(v map[string]interface{}) *ConsumptionUpdate {
+	_u.mutation.SetMetadata(v)
+	return _u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (_u *ConsumptionUpdate) ClearMetadata() *ConsumptionUpdate {
+	_u.mutation.ClearMetadata()
+	return _u
+}
+
 // SetProcessedAt sets the "processed_at" field.
 func (_u *ConsumptionUpdate) SetProcessedAt(v time.Time) *ConsumptionUpdate {
 	_u.mutation.SetProcessedAt(v)
@@ -225,6 +237,12 @@ func (_u *ConsumptionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.IdempotencyKeyCleared() {
 		_spec.ClearField(consumption.FieldIdempotencyKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.Metadata(); ok {
+		_spec.SetField(consumption.FieldMetadata, field.TypeJSON, value)
+	}
+	if _u.mutation.MetadataCleared() {
+		_spec.ClearField(consumption.FieldMetadata, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ProcessedAt(); ok {
 		_spec.SetField(consumption.FieldProcessedAt, field.TypeTime, value)
@@ -357,6 +375,18 @@ func (_u *ConsumptionUpdateOne) ClearIdempotencyKey() *ConsumptionUpdateOne {
 	return _u
 }
 
+// SetMetadata sets the "metadata" field.
+func (_u *ConsumptionUpdateOne) SetMetadata(v map[string]interface{}) *ConsumptionUpdateOne {
+	_u.mutation.SetMetadata(v)
+	return _u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (_u *ConsumptionUpdateOne) ClearMetadata() *ConsumptionUpdateOne {
+	_u.mutation.ClearMetadata()
+	return _u
+}
+
 // SetProcessedAt sets the "processed_at" field.
 func (_u *ConsumptionUpdateOne) SetProcessedAt(v time.Time) *ConsumptionUpdateOne {
 	_u.mutation.SetProcessedAt(v)
@@ -473,6 +503,12 @@ func (_u *ConsumptionUpdateOne) sqlSave(ctx context.Context) (_node *Consumption
 	}
 	if _u.mutation.IdempotencyKeyCleared() {
 		_spec.ClearField(consumption.FieldIdempotencyKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.Metadata(); ok {
+		_spec.SetField(consumption.FieldMetadata, field.TypeJSON, value)
+	}
+	if _u.mutation.MetadataCleared() {
+		_spec.ClearField(consumption.FieldMetadata, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ProcessedAt(); ok {
 		_spec.SetField(consumption.FieldProcessedAt, field.TypeTime, value)

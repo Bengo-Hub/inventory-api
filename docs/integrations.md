@@ -111,12 +111,29 @@ publishes that subject. Add a consumer again only when ordering ships returns.)
   `pos-return-<id>` (or `pos-exchange-<id>`) whichever subject delivered it. Tenant comes from the
   shared-events envelope (`DecodeEvent`); gated by `basic_inventory_access` like the sale consumer.
   The outcome (status plus per-SKU warehouse) is published as `inventory.return.restocked`.
-  Stock history labels these rows "Customer Return" (other reversals read "Sale Reversal").
+  Stock history labels these rows "Customer Return".
 - `POST /v1/{tenant}/inventory/consumption/reverse` (S2S, 2026-07-17) — BOM-accurate consumption
   reversal for pos-api's txn-reversal tool: returns the actually-deducted quantities (net of
   recorded shortfall/theoretical/unit-mismatch) to the balance, writes negative compensating
   consumption lines + daily-rollup decrements, capped against prior reversals, idempotent on
   `idempotency_key`. Emits `stock.consumption_reversed`.
+  Optional `kind` (2026-11-03) says why the stock came back: `void` (Delete Sale), `edit` (Edit
+  Sale reduction), `return` (customer return or exchange) or `reversal` (anything else). The kind
+  and reason are stored on the compensating `consumptions` row's `metadata`. Without a kind it is
+  inferred from the idempotency key (`pos-shred-` is a void, `pos-return-`/`pos-exchange-` a
+  return) and then from the reason text pos-api writes ("Delete Sale", "Edit Sale").
+
+**Stock history and undone sales (2026-11-03).** `GET /{tenant}/inventory/items/{sku}/stock-history`
+shows a void as a "Sale Voided" row (type `sale_reversal`; edits read "Sale Edited", other undos
+"Sale Reversal"), and marks the original Sold row with `status` (`voided`, `partially_returned`
+and so on) plus `reversed_quantity`, so a voided receipt number never reads as a standing sale.
+The reversals are read for the sold orders regardless of the date window, so a sale in range
+still shows as voided when the void came later. `total_sold` is net of voids, edits and
+reversals, reported separately as `total_sale_reversals`; only customer returns count in
+`total_sell_returns`. Exports print the same status, e.g. "Sold (Voided)". Reversals written
+before 2026-11-03 through pos-api's reversal engine (fiscalised Delete Sale, Edit Sale) carry no
+stored kind and still read "Sale Reversal"; Delete Sale on a non-fiscalised sale is recognised
+from its `pos-shred-` key, so BOI's 005924 shows as voided.
 
 **Events Published** (inventory-api → pos-api subscribes):
 - `inventory.catalog.updated` — pos-api refreshes `catalog_items` projection (❌ pos-api NATS subscriber not yet wired — Sprint 6 gap)

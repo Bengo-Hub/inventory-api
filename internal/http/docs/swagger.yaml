@@ -2079,6 +2079,10 @@ definitions:
       label:
         description: Human label, e.g. "Adjustment (damaged)".
         type: string
+      note:
+        description: 'Note is the reason recorded with a reversal (e.g. "Delete Sale
+          (shred): wrong customer").'
+        type: string
       occurred_at:
         type: string
       quantity_after:
@@ -2089,10 +2093,23 @@ definitions:
         type: number
       reference:
         type: string
+      reversal_kind:
+        description: 'ReversalKind, on a sale_reversal or customer-return row: void
+          | edit | reversal | return.'
+        type: string
+      reversed_quantity:
+        description: ReversedQuantity is how much of a sale row was undone (positive),
+          alongside Status.
+        type: number
+      status:
+        description: |-
+          Status, on a sale row, says what later happened to it: voided, edited, reversed or returned,
+          prefixed "partially_" when only part of the quantity was undone. Empty for a standing sale.
+        type: string
       type:
         description: |-
-          Type: opening_stock | purchase | sale | sell_return | purchase_return |
-          transfer_in | transfer_out | adjustment.
+          Type: opening_stock | purchase | sale | sale_reversal | sell_return | purchase_return |
+          service_out | service_in | transfer_in | transfer_out | adjustment.
         type: string
       warehouse_id:
         type: string
@@ -2159,9 +2176,14 @@ definitions:
         type: number
       total_purchased:
         type: number
+      total_sale_reversals:
+        type: number
       total_sell_returns:
         type: number
       total_sold:
+        description: |-
+          TotalSold is net of voids, edits and reversals (TotalSaleReversals), which undo a sale
+          rather than bring goods back from a customer.
         type: number
       transfers_in:
         type: number
@@ -3893,7 +3915,7 @@ paths:
         in: query
         name: date_to
         type: string
-      - description: Comma-separated movement types to include (opening_stock,purchase,sale,sell_return,purchase_return,service_out,service_in,transfer_in,transfer_out,adjustment)
+      - description: Comma-separated movement types to include (opening_stock,purchase,sale,sale_reversal,sell_return,purchase_return,service_out,service_in,transfer_in,transfer_out,adjustment)
         in: query
         name: type
         type: string

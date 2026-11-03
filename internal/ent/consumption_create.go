@@ -99,6 +99,12 @@ func (_c *ConsumptionCreate) SetNillableIdempotencyKey(v *string) *ConsumptionCr
 	return _c
 }
 
+// SetMetadata sets the "metadata" field.
+func (_c *ConsumptionCreate) SetMetadata(v map[string]interface{}) *ConsumptionCreate {
+	_c.mutation.SetMetadata(v)
+	return _c
+}
+
 // SetProcessedAt sets the "processed_at" field.
 func (_c *ConsumptionCreate) SetProcessedAt(v time.Time) *ConsumptionCreate {
 	_c.mutation.SetProcessedAt(v)
@@ -289,6 +295,10 @@ func (_c *ConsumptionCreate) createSpec() (*Consumption, *sqlgraph.CreateSpec) {
 		_spec.SetField(consumption.FieldIdempotencyKey, field.TypeString, value)
 		_node.IdempotencyKey = &value
 	}
+	if value, ok := _c.mutation.Metadata(); ok {
+		_spec.SetField(consumption.FieldMetadata, field.TypeJSON, value)
+		_node.Metadata = value
+	}
 	if value, ok := _c.mutation.ProcessedAt(); ok {
 		_spec.SetField(consumption.FieldProcessedAt, field.TypeTime, value)
 		_node.ProcessedAt = value
@@ -442,6 +452,24 @@ func (u *ConsumptionUpsert) UpdateIdempotencyKey() *ConsumptionUpsert {
 // ClearIdempotencyKey clears the value of the "idempotency_key" field.
 func (u *ConsumptionUpsert) ClearIdempotencyKey() *ConsumptionUpsert {
 	u.SetNull(consumption.FieldIdempotencyKey)
+	return u
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ConsumptionUpsert) SetMetadata(v map[string]interface{}) *ConsumptionUpsert {
+	u.Set(consumption.FieldMetadata, v)
+	return u
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ConsumptionUpsert) UpdateMetadata() *ConsumptionUpsert {
+	u.SetExcluded(consumption.FieldMetadata)
+	return u
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ConsumptionUpsert) ClearMetadata() *ConsumptionUpsert {
+	u.SetNull(consumption.FieldMetadata)
 	return u
 }
 
@@ -617,6 +645,27 @@ func (u *ConsumptionUpsertOne) UpdateIdempotencyKey() *ConsumptionUpsertOne {
 func (u *ConsumptionUpsertOne) ClearIdempotencyKey() *ConsumptionUpsertOne {
 	return u.Update(func(s *ConsumptionUpsert) {
 		s.ClearIdempotencyKey()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ConsumptionUpsertOne) SetMetadata(v map[string]interface{}) *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ConsumptionUpsertOne) UpdateMetadata() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ConsumptionUpsertOne) ClearMetadata() *ConsumptionUpsertOne {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.ClearMetadata()
 	})
 }
 
@@ -961,6 +1010,27 @@ func (u *ConsumptionUpsertBulk) UpdateIdempotencyKey() *ConsumptionUpsertBulk {
 func (u *ConsumptionUpsertBulk) ClearIdempotencyKey() *ConsumptionUpsertBulk {
 	return u.Update(func(s *ConsumptionUpsert) {
 		s.ClearIdempotencyKey()
+	})
+}
+
+// SetMetadata sets the "metadata" field.
+func (u *ConsumptionUpsertBulk) SetMetadata(v map[string]interface{}) *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.SetMetadata(v)
+	})
+}
+
+// UpdateMetadata sets the "metadata" field to the value that was provided on create.
+func (u *ConsumptionUpsertBulk) UpdateMetadata() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.UpdateMetadata()
+	})
+}
+
+// ClearMetadata clears the value of the "metadata" field.
+func (u *ConsumptionUpsertBulk) ClearMetadata() *ConsumptionUpsertBulk {
+	return u.Update(func(s *ConsumptionUpsert) {
+		s.ClearMetadata()
 	})
 }
 

@@ -430,6 +430,16 @@ func IdempotencyKeyContainsFold(v string) predicate.Consumption {
 	return predicate.Consumption(sql.FieldContainsFold(FieldIdempotencyKey, v))
 }
 
+// MetadataIsNil applies the IsNil predicate on the "metadata" field.
+func MetadataIsNil() predicate.Consumption {
+	return predicate.Consumption(sql.FieldIsNull(FieldMetadata))
+}
+
+// MetadataNotNil applies the NotNil predicate on the "metadata" field.
+func MetadataNotNil() predicate.Consumption {
+	return predicate.Consumption(sql.FieldNotNull(FieldMetadata))
+}
+
 // ProcessedAtEQ applies the EQ predicate on the "processed_at" field.
 func ProcessedAtEQ(v time.Time) predicate.Consumption {
 	return predicate.Consumption(sql.FieldEQ(FieldProcessedAt, v))

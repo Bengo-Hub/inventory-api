@@ -659,6 +659,7 @@ var (
 		{Name: "reason", Type: field.TypeString, Default: "sale"},
 		{Name: "status", Type: field.TypeString, Default: "processed"},
 		{Name: "idempotency_key", Type: field.TypeString, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "processed_at", Type: field.TypeTime},
 		{Name: "created_at", Type: field.TypeTime},
 	}
@@ -681,7 +682,7 @@ var (
 			{
 				Name:    "consumption_tenant_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ConsumptionsColumns[1], ConsumptionsColumns[9]},
+				Columns: []*schema.Column{ConsumptionsColumns[1], ConsumptionsColumns[10]},
 			},
 		},
 	}

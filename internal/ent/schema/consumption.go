@@ -57,6 +57,10 @@ func (Consumption) Fields() []ent.Field {
 		field.String("idempotency_key").
 			Optional().
 			Nillable(),
+		// Context a compensating (reason "reversal") row carries for the stock history: kind
+		// (void, edit, return, reversal) and the caller's reason text. Absent on sales.
+		field.JSON("metadata", map[string]any{}).
+			Optional(),
 		field.Time("processed_at").
 			Default(time.Now),
 		field.Time("created_at").

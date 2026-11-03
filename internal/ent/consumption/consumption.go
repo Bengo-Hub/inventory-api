@@ -29,6 +29,8 @@ const (
 	FieldStatus = "status"
 	// FieldIdempotencyKey holds the string denoting the idempotency_key field in the database.
 	FieldIdempotencyKey = "idempotency_key"
+	// FieldMetadata holds the string denoting the metadata field in the database.
+	FieldMetadata = "metadata"
 	// FieldProcessedAt holds the string denoting the processed_at field in the database.
 	FieldProcessedAt = "processed_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -47,6 +49,7 @@ var Columns = []string{
 	FieldReason,
 	FieldStatus,
 	FieldIdempotencyKey,
+	FieldMetadata,
 	FieldProcessedAt,
 	FieldCreatedAt,
 }

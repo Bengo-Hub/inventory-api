@@ -34,6 +34,8 @@ type Consumption struct {
 	Status string `json:"status,omitempty"`
 	// IdempotencyKey holds the value of the "idempotency_key" field.
 	IdempotencyKey *string `json:"idempotency_key,omitempty"`
+	// Metadata holds the value of the "metadata" field.
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// ProcessedAt holds the value of the "processed_at" field.
 	ProcessedAt time.Time `json:"processed_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -48,7 +50,7 @@ func (*Consumption) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case consumption.FieldWarehouseID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case consumption.FieldItems:
+		case consumption.FieldItems, consumption.FieldMetadata:
 			values[i] = new([]byte)
 		case consumption.FieldReason, consumption.FieldStatus, consumption.FieldIdempotencyKey:
 			values[i] = new(sql.NullString)
@@ -123,6 +125,14 @@ func (_m *Consumption) assignValues(columns []string, values []any) error {
 				_m.IdempotencyKey = new(string)
 				*_m.IdempotencyKey = value.String
 			}
+		case consumption.FieldMetadata:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field metadata", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Metadata); err != nil {
+					return fmt.Errorf("unmarshal field metadata: %w", err)
+				}
+			}
 		case consumption.FieldProcessedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field processed_at", values[i])
@@ -195,6 +205,9 @@ func (_m *Consumption) String() string {
 		builder.WriteString("idempotency_key=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("metadata=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))
 	builder.WriteString(", ")
 	builder.WriteString("processed_at=")
 	builder.WriteString(_m.ProcessedAt.Format(time.ANSIC))

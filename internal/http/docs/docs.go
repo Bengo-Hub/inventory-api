@@ -3133,7 +3133,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Comma-separated movement types to include (opening_stock,purchase,sale,sell_return,purchase_return,service_out,service_in,transfer_in,transfer_out,adjustment)",
+                        "description": "Comma-separated movement types to include (opening_stock,purchase,sale,sale_reversal,sell_return,purchase_return,service_out,service_in,transfer_in,transfer_out,adjustment)",
                         "name": "type",
                         "in": "query"
                     }
@@ -9522,6 +9522,10 @@ const docTemplate = `{
                     "description": "Human label, e.g. \"Adjustment (damaged)\".",
                     "type": "string"
                 },
+                "note": {
+                    "description": "Note is the reason recorded with a reversal (e.g. \"Delete Sale (shred): wrong customer\").",
+                    "type": "string"
+                },
                 "occurred_at": {
                     "type": "string"
                 },
@@ -9535,8 +9539,20 @@ const docTemplate = `{
                 "reference": {
                     "type": "string"
                 },
+                "reversal_kind": {
+                    "description": "ReversalKind, on a sale_reversal or customer-return row: void | edit | reversal | return.",
+                    "type": "string"
+                },
+                "reversed_quantity": {
+                    "description": "ReversedQuantity is how much of a sale row was undone (positive), alongside Status.",
+                    "type": "number"
+                },
+                "status": {
+                    "description": "Status, on a sale row, says what later happened to it: voided, edited, reversed or returned,\nprefixed \"partially_\" when only part of the quantity was undone. Empty for a standing sale.",
+                    "type": "string"
+                },
                 "type": {
-                    "description": "Type: opening_stock | purchase | sale | sell_return | purchase_return |\ntransfer_in | transfer_out | adjustment.",
+                    "description": "Type: opening_stock | purchase | sale | sale_reversal | sell_return | purchase_return |\nservice_out | service_in | transfer_in | transfer_out | adjustment.",
                     "type": "string"
                 },
                 "warehouse_id": {
@@ -9635,10 +9651,14 @@ const docTemplate = `{
                 "total_purchased": {
                     "type": "number"
                 },
+                "total_sale_reversals": {
+                    "type": "number"
+                },
                 "total_sell_returns": {
                     "type": "number"
                 },
                 "total_sold": {
+                    "description": "TotalSold is net of voids, edits and reversals (TotalSaleReversals), which undo a sale\nrather than bring goods back from a customer.",
                     "type": "number"
                 },
                 "transfers_in": {

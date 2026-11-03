@@ -45,15 +45,27 @@ import (
 //     (transfers_documents.go's effectiveTransferDisplayDate doc comment) —
 //     those are the shipment/receipt paperwork itself, not a reporting view.
 //   - ConsumptionLine   — sales depletion (POS/ordering BOM path); reversal
-//     rows (reason "reversal" / negative qty) surface as sell returns. Rows
+//     rows (reason "reversal" / negative qty) surface by kind: customer returns
+//     as sell returns, voids/edits/other reversals as sale_reversal rows that
+//     net out of Total Sold, and the original Sold row is marked with what
+//     happened to it (see history_reversals.go). Rows
 //     flagged `theoretical` never moved stock and are EXCLUDED. Legacy rows with
 //     reason "purchase_return" are supplier returns, not sales (see below).
 
 // MovementRow is one unified stock-history ledger entry.
 type MovementRow struct {
-	// Type: opening_stock | purchase | sale | sell_return | purchase_return |
-	// transfer_in | transfer_out | adjustment.
+	// Type: opening_stock | purchase | sale | sale_reversal | sell_return | purchase_return |
+	// service_out | service_in | transfer_in | transfer_out | adjustment.
 	Type string `json:"type"`
+	// Status, on a sale row, says what later happened to it: voided, edited, reversed or returned,
+	// prefixed "partially_" when only part of the quantity was undone. Empty for a standing sale.
+	Status string `json:"status,omitempty"`
+	// ReversedQuantity is how much of a sale row was undone (positive), alongside Status.
+	ReversedQuantity float64 `json:"reversed_quantity,omitempty"`
+	// ReversalKind, on a sale_reversal or customer-return row: void | edit | reversal | return.
+	ReversalKind string `json:"reversal_kind,omitempty"`
+	// Note is the reason recorded with a reversal (e.g. "Delete Sale (shred): wrong customer").
+	Note string `json:"note,omitempty"`
 	// Human label, e.g. "Adjustment (damaged)".
 	Label          string  `json:"label"`
 	QuantityChange float64 `json:"quantity_change"`
@@ -78,11 +90,14 @@ type MovementRow struct {
 
 // StockHistorySummary mirrors the Go-Digital quantities-in/out cards.
 type StockHistorySummary struct {
-	OpeningStock         float64 `json:"opening_stock"`
-	TotalPurchased       float64 `json:"total_purchased"`
-	TotalSellReturns     float64 `json:"total_sell_returns"`
-	TransfersIn          float64 `json:"transfers_in"`
+	OpeningStock     float64 `json:"opening_stock"`
+	TotalPurchased   float64 `json:"total_purchased"`
+	TotalSellReturns float64 `json:"total_sell_returns"`
+	TransfersIn      float64 `json:"transfers_in"`
+	// TotalSold is net of voids, edits and reversals (TotalSaleReversals), which undo a sale
+	// rather than bring goods back from a customer.
 	TotalSold            float64 `json:"total_sold"`
+	TotalSaleReversals   float64 `json:"total_sale_reversals"`
 	TotalPurchaseReturns float64 `json:"total_purchase_returns"`
 	TransfersOut         float64 `json:"transfers_out"`
 	// Units sent to a repair provider and units received back repaired. Neither is an adjustment
@@ -187,6 +202,9 @@ func applyToSummary(sum *StockHistorySummary, mvType string, change float64) {
 		sum.TotalPurchased += change
 	case "sale":
 		sum.TotalSold += -change // stored negative (stock out); report positive
+	case "sale_reversal":
+		sum.TotalSold -= change
+		sum.TotalSaleReversals += change
 	case "sell_return":
 		sum.TotalSellReturns += change
 	case "purchase_return":
@@ -521,7 +539,15 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 	if err != nil {
 		return nil, fmt.Errorf("stock: history consumption: %w", err)
 	}
-	customerReturns := s.customerReturnConsumptions(ctx, cls)
+	metas := map[uuid.UUID]reversalMeta{}
+	var reversalIDs []uuid.UUID
+	for _, c := range cls {
+		if c.Reason == reversalReason || c.Quantity < 0 {
+			reversalIDs = append(reversalIDs, c.ConsumptionID)
+		}
+	}
+	s.reversalMetaByConsumption(ctx, tenantID, reversalIDs, metas)
+	saleOrders := map[int]uuid.UUID{}
 	for _, c := range cls {
 		if !f.inRange(c.ConsumedAt) || c.Quantity == 0 {
 			continue
@@ -562,18 +588,20 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			if qty < 0 {
 				qty = -qty
 			}
-			label := "Sale Reversal"
-			if customerReturns[c.ConsumptionID] {
-				label = "Customer Return"
+			meta, ok := metas[c.ConsumptionID]
+			if !ok {
+				meta = reversalMeta{Kind: ReversalKindReversal}
 			}
+			mvType, label := reversalRowType(meta.Kind)
 			rows = append(rows, MovementRow{
-				Type: "sell_return", Label: label,
+				Type: mvType, Label: label, ReversalKind: meta.Kind, Note: meta.Reason,
 				QuantityChange: qty, OccurredAt: c.ConsumedAt,
 				Reference: reference, WarehouseID: wid, Counterparty: counterparty,
 				ActorID: actorID, ActorName: c.ServedByName,
 			})
 			continue
 		}
+		saleOrders[len(rows)] = c.OrderID
 		rows = append(rows, MovementRow{
 			Type: "sale", Label: "Sold",
 			QuantityChange: -c.Quantity, OccurredAt: c.ConsumedAt,
@@ -583,6 +611,7 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 	}
 
 	s.resolvePurchaseReturnRefs(ctx, tenantID, rows, returnRowsByNumber, returnRowsByID)
+	s.annotateSoldRows(ctx, tenantID, it.ID, f.WarehouseID, rows, saleOrders, metas)
 
 	// Summary over the FULL filtered range (not just the page).
 	for _, r := range rows {

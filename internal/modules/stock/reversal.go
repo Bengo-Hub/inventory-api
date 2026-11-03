@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -47,10 +48,47 @@ type ReverseConsumptionItem struct {
 // compensating Consumption row keeps the whole operation idempotent + auditable.
 // Empty Items reverses the entire order consumption.
 type ReverseConsumptionRequest struct {
-	OrderID        uuid.UUID                `json:"order_id"`
-	Items          []ReverseConsumptionItem `json:"items,omitempty"`
-	Reason         string                   `json:"reason,omitempty"`
-	IdempotencyKey string                   `json:"idempotency_key,omitempty"`
+	OrderID uuid.UUID                `json:"order_id"`
+	Items   []ReverseConsumptionItem `json:"items,omitempty"`
+	Reason  string                   `json:"reason,omitempty"`
+	// Kind says why the stock comes back: void (sale deleted or voided), edit (Edit Sale took
+	// quantity off), return (customer return or exchange) or reversal (any other undo). Optional;
+	// inferred from the idempotency key and reason when absent (see ReversalKind).
+	Kind           string `json:"kind,omitempty"`
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
+}
+
+// Reversal kinds stored on the compensating Consumption's metadata.
+const (
+	ReversalKindVoid     = "void"
+	ReversalKindEdit     = "edit"
+	ReversalKindReturn   = "return"
+	ReversalKindReversal = "reversal"
+)
+
+// ReversalKind resolves why a reversal happened: the caller's explicit kind when valid, else the
+// idempotency key prefix pos-api and the return flow use (pos-shred- is Delete Sale, pos-return-
+// and pos-exchange- are customer returns), else the reason text pos-api writes ("Delete Sale",
+// "Edit Sale"). Rows written before kinds were stored resolve the same way. Pure for tests.
+func ReversalKind(kind, idempotencyKey, reason string) string {
+	switch kind {
+	case ReversalKindVoid, ReversalKindEdit, ReversalKindReturn, ReversalKindReversal:
+		return kind
+	}
+	switch {
+	case strings.HasPrefix(idempotencyKey, "pos-return-"), strings.HasPrefix(idempotencyKey, "pos-exchange-"):
+		return ReversalKindReturn
+	case strings.HasPrefix(idempotencyKey, "pos-shred-"):
+		return ReversalKindVoid
+	}
+	r := strings.ToLower(reason)
+	switch {
+	case strings.Contains(r, "delete sale"):
+		return ReversalKindVoid
+	case strings.Contains(r, "edit sale"), strings.Contains(r, "sale_edit"):
+		return ReversalKindEdit
+	}
+	return ReversalKindReversal
 }
 
 // ReversedIngredient reports what one ingredient line's reversal actually did.
@@ -325,7 +363,11 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 		SetItems(compensations).
 		SetReason(reversalReason).
 		SetStatus("processed").
-		SetProcessedAt(now)
+		SetProcessedAt(now).
+		SetMetadata(map[string]any{
+			"kind":   ReversalKind(req.Kind, req.IdempotencyKey, reason),
+			"reason": reason,
+		})
 	if wh := originals[0].WarehouseID; wh != nil {
 		builder.SetWarehouseID(*wh)
 	}

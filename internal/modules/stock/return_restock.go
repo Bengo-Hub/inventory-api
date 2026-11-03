@@ -120,6 +120,7 @@ func (s *Service) RestockReturn(ctx context.Context, tenantID uuid.UUID, req Ret
 			OrderID:        req.OrderID,
 			Items:          reverseItems,
 			Reason:         strings.TrimSpace("Customer return " + req.ReturnNumber),
+			Kind:           ReversalKindReturn,
 			IdempotencyKey: req.IdempotencyKey,
 		})
 		switch {
@@ -426,37 +427,6 @@ func (s *Service) PublishReturnRestockOutcome(ctx context.Context, tenantID, ret
 	}
 	s.writeOutboxEvent(ctx, tx, tenantID, returnID, "inventory", "return.restocked", payload)
 	return tx.Commit()
-}
-
-// customerReturnConsumptions reports which compensating consumptions among these ledger lines
-// came from a customer return or exchange (idempotency key "pos-return-..." or
-// "pos-exchange-..."), as opposed to a sale reversal or edit. One batched query.
-func (s *Service) customerReturnConsumptions(ctx context.Context, lines []*ent.ConsumptionLine) map[uuid.UUID]bool {
-	ids := make([]uuid.UUID, 0)
-	seen := map[uuid.UUID]bool{}
-	for _, l := range lines {
-		if (l.Reason == reversalReason || l.Quantity < 0) && !seen[l.ConsumptionID] {
-			seen[l.ConsumptionID] = true
-			ids = append(ids, l.ConsumptionID)
-		}
-	}
-	out := map[uuid.UUID]bool{}
-	if len(ids) == 0 {
-		return out
-	}
-	rows, err := s.client.Consumption.Query().
-		Where(entconsumption.IDIn(ids...), entconsumption.IdempotencyKeyNotNil()).
-		Select(entconsumption.FieldID, entconsumption.FieldIdempotencyKey).
-		All(ctx)
-	if err != nil {
-		return out
-	}
-	for _, r := range rows {
-		if r.IdempotencyKey != nil && (strings.HasPrefix(*r.IdempotencyKey, "pos-return-") || strings.HasPrefix(*r.IdempotencyKey, "pos-exchange-")) {
-			out[r.ID] = true
-		}
-	}
-	return out
 }
 
 // nameWarehouses fills WarehouseName and OutletID with one batched lookup.
