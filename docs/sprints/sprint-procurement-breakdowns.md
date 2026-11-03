@@ -55,9 +55,17 @@
     they never saw claims and every caller's `X-Outlet-ID` was taken as is. They now run inside each
     authenticated group (`outletScope` in the router: private routes, the inventory tree and the
     `/v1` service tree). Aligned with pos-api: admins and the manager tier work in any outlet; other
-    users may name an outlet only if assigned to it (403 `OUTLET_NOT_ASSIGNED` otherwise; a user with
-    no assignment yet is not locked out) and otherwise get the outlet in their token. Anonymous
-    catalogue reads still pick the storefront outlet from the header.
+    users' outlet header counts only for an outlet they are assigned to (a user with no assignment
+    yet is not restricted); otherwise the header is dropped and the outlet in their token applies.
+    Anonymous catalogue reads still pick the storefront outlet from the header.
+  - Incident the same day (fixed in `9a6370c`): the first version answered 403
+    `OUTLET_NOT_ASSIGNED` for an unassigned outlet. inventory-ui sends the top-nav outlet on every
+    request, `/auth/me` included, so branch users (the codevertex-demo personas) were stuck at
+    initialising. Dropping the header keeps the restriction without blocking the app.
+  - Flagged, not changed: `GET /inventory/recipes` answers 403 `feature_not_available` for outlets
+    whose use case is not hospitality, quick_service, warehouse, manufacturing or retail, and
+    inventory-ui keeps requesting it for such outlets (boi-enterprises, some demo outlets): log
+    noise, the UI should not ask for recipes there.
 
 ## Definition of Done
 - [ ] `go build ./...`; Ent+Atlas migration applied to local PG17; `pnpm build` (inventory-ui).
