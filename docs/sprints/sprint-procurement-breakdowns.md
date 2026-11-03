@@ -66,6 +66,14 @@
     recipes use-case gate (boi-enterprises' outlets are retail and hospitality, both allowed); none
     were logged after `9a6370c`. inventory-ui already skips recipes for pharmacy and services
     outlets, so nothing needed changing there.
+  - Second incident the same day (BOI, "the quantity of products in all outlets appears the same
+    on POS"): moving `OutletContext` after auth made its service-account branch reachable for the
+    first time, and that branch passed through without reading `X-Outlet-ID`. pos-api reads each
+    outlet's `on_hand` on `/v1` with its service key and the outlet header, so every outlet got
+    the tenant-wide quantity (item 10289: 4 at Junior Wholesalers, whose balance is 0). Service
+    calls now keep the outlet they name, unrestricted; without a header they stay tenant-wide.
+    `TestOutletContextRules` covers both. Any S2S caller relying on `X-Outlet-ID` was affected
+    from `f5a4074` until this fix.
 
 ## Definition of Done
 - [ ] `go build ./...`; Ent+Atlas migration applied to local PG17; `pnpm build` (inventory-ui).

@@ -57,7 +57,9 @@ func TestOutletContextRules(t *testing.T) {
 		{"manager tier picks any outlet, as in POS", user("manager"), other, other, false},
 		{"cashier without a header is held to the token's outlet", user("cashier"), "", home, true},
 		{"cashier header passes on once assignment is checked", user("cashier"), other, other, true},
-		{"service call is not scoped", &authclient.Claims{IsService: true}, other, "", false},
+		// pos-api reads each outlet's on_hand with its service key and X-Outlet-ID.
+		{"service call is scoped to the outlet it names", &authclient.Claims{IsService: true}, other, other, false},
+		{"service call without a header is tenant-wide", &authclient.Claims{IsService: true}, "", "", false},
 		{"anonymous catalogue read uses the storefront header", nil, other, other, false},
 	}
 	for _, tc := range cases {

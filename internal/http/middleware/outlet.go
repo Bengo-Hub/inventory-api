@@ -23,7 +23,9 @@ const (
 //   - All-outlet users (CanAccessAllOutletsFor): may pass any X-Outlet-ID or omit it for tenant-wide data
 //   - Other users: the X-Outlet-ID they send (already checked against their assignments), else the
 //     outlet in their token (a terminal's login outlet, a member's home outlet)
-//   - Service accounts (IsService): pass through without outlet restriction
+//   - Service accounts (IsService): never restricted, and scoped to the X-Outlet-ID they send.
+//     pos-api's catalogue reads per-outlet on_hand this way; dropping the header made every
+//     outlet show the tenant-wide quantity (BOI, 2026-11-03). Without a header: tenant-wide.
 //   - No claims (an anonymous public catalogue read): the header picks the storefront's outlet
 func OutletContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +36,10 @@ func OutletContext(next http.Handler) http.Handler {
 
 		if hasClaims && claims != nil {
 			if claims.IsService {
-				next.ServeHTTP(w, r)
+				if headerOutletID != "" {
+					ctx = context.WithValue(ctx, outletIDKey, headerOutletID)
+				}
+				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 
