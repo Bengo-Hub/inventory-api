@@ -62,10 +62,10 @@
     `OUTLET_NOT_ASSIGNED` for an unassigned outlet. inventory-ui sends the top-nav outlet on every
     request, `/auth/me` included, so branch users (the codevertex-demo personas) were stuck at
     initialising. Dropping the header keeps the restriction without blocking the app.
-  - Flagged, not changed: `GET /inventory/recipes` answers 403 `feature_not_available` for outlets
-    whose use case is not hospitality, quick_service, warehouse, manufacturing or retail, and
-    inventory-ui keeps requesting it for such outlets (boi-enterprises, some demo outlets): log
-    noise, the UI should not ask for recipes there.
+  - The `GET /inventory/recipes` 403s seen the same day were the same outlet rejection, not the
+    recipes use-case gate (boi-enterprises' outlets are retail and hospitality, both allowed); none
+    were logged after `9a6370c`. inventory-ui already skips recipes for pharmacy and services
+    outlets, so nothing needed changing there.
 
 ## Definition of Done
 - [ ] `go build ./...`; Ent+Atlas migration applied to local PG17; `pnpm build` (inventory-ui).
