@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/json"
 	"net/http"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
@@ -12,14 +11,16 @@ import (
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
 )
 
-// EnforceOutletAssignment rejects a branch user's request when it targets an
-// outlet (via X-Outlet-ID) the user is not assigned to. Mirrors the POS
-// outlet_context guard. It must run after authentication: it reads the claims.
+// EnforceOutletAssignment drops a branch user's X-Outlet-ID when it names an
+// outlet the user is not assigned to, so OutletContext falls back to the outlet
+// in their token. It must run after authentication: it reads the claims.
+// (Refusing with 403 locked branch users out of the whole app on 2026-11-03:
+// inventory-ui sends the top-nav outlet on every request, /auth/me included.)
 //
 // Progressive rollout: a user with zero UserOutlet rows is treated as
 // unrestricted (pass-through) so existing users aren't locked out before an
-// admin assigns their outlets. Once a user has any assignment, the requested
-// outlet must be among them.
+// admin assigns their outlets. Once a user has any assignment, only an outlet
+// among them is honoured.
 func EnforceOutletAssignment(client *ent.Client, log *zap.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -69,14 +70,13 @@ func EnforceOutletAssignment(client *ent.Client, log *zap.Logger) func(http.Hand
 				}
 			}
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"error": map[string]string{
-					"code":    "OUTLET_NOT_ASSIGNED",
-					"message": "You are not assigned to this outlet",
-				},
-			})
+			// Not assigned: ignore the requested outlet rather than refuse the request, so the
+			// app keeps working (sign-in, /auth/me) while OutletContext falls back to the
+			// outlet in the token. The user still never sees another outlet's data.
+			log.Debug("ignoring X-Outlet-ID the user is not assigned to",
+				zap.String("user_id", userID.String()), zap.String("outlet_id", outletID.String()))
+			r.Header.Del("X-Outlet-ID")
+			next.ServeHTTP(w, r)
 		})
 	}
 }

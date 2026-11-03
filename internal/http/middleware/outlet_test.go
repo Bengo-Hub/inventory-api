@@ -71,8 +71,8 @@ func TestOutletContextRules(t *testing.T) {
 	}
 }
 
-// A branch user may only name an outlet they are assigned to; managers are not checked, and a
-// user with no assignment yet is not locked out (progressive rollout).
+// A branch user's outlet header only counts for an outlet they are assigned to; managers are not
+// checked, and a user with no assignment yet is not locked out (progressive rollout).
 func TestEnforceOutletAssignmentAfterAuth(t *testing.T) {
 	client := testutil.SchemaClient(t, "inv_outlet_mw_")
 	ctx := context.Background()
@@ -88,8 +88,9 @@ func TestEnforceOutletAssignmentAfterAuth(t *testing.T) {
 	if code, outlet, _ := outletChain(t, enforce, claimsFor(cashierID, "cashier"), assigned.String()); code != http.StatusOK || outlet != assigned.String() {
 		t.Fatalf("assigned outlet: status %d outlet %q", code, outlet)
 	}
-	if code, _, _ := outletChain(t, enforce, claimsFor(cashierID, "cashier"), notAssigned.String()); code != http.StatusForbidden {
-		t.Fatalf("unassigned outlet: status %d, want 403", code)
+	// An unassigned outlet is ignored, never refused: the request goes on with the token's outlet.
+	if code, outlet, _ := outletChain(t, enforce, claimsFor(cashierID, "cashier"), notAssigned.String()); code != http.StatusOK || outlet != "" {
+		t.Fatalf("unassigned outlet: status %d outlet %q, want 200 and no outlet from the header", code, outlet)
 	}
 	if code, _, _ := outletChain(t, enforce, claimsFor(cashierID, "manager"), notAssigned.String()); code != http.StatusOK {
 		t.Fatalf("manager: status %d, want 200", code)
