@@ -3377,6 +3377,7 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 			"unit_id":                   i.UnitID,
 			"unit_name":                 unitName,
 			"is_active":                 i.IsActive,
+			"not_for_sale":              i.NotForSale,
 			"image_url":                 s.mediaURL(i.ImageURL), // consumers keep the link
 			"tags":                      i.Tags,
 			"barcode":                   i.Barcode,
