@@ -55,6 +55,9 @@ func OutletContext(next http.Handler) http.Handler {
 			if outlet == "" {
 				outlet = claims.OutletID
 			}
+			if claims.OutletRestricted() && (outlet == "" || !claims.AllowsOutlet(outlet)) {
+				outlet = claims.RestrictedHomeOutlet()
+			}
 			if outlet != "" {
 				ctx = context.WithValue(ctx, outletIDKey, outlet)
 			}
@@ -74,6 +77,9 @@ func OutletContext(next http.Handler) http.Handler {
 // platform owner, admins and HQ sessions (Claims.CanAccessAllOutlets), and the manager tier, which
 // pos-api also treats as tenant-wide (posrole.IsAdminLevel).
 func CanAccessAllOutletsFor(claims *authclient.Claims) bool {
+	if claims.OutletRestricted() {
+		return false // an assigned list outranks the manager tier below
+	}
 	if claims.CanAccessAllOutlets() {
 		return true
 	}

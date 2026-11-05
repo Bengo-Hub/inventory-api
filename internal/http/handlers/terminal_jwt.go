@@ -26,6 +26,7 @@ type terminalClaims struct {
 	Email                string         `json:"email"`
 	Name                 string         `json:"name"`
 	OutletID             string         `json:"outlet_id,omitempty"`
+	OutletIDs            []string       `json:"outlet_ids,omitempty"` // a limited manager's outlets
 	Roles                []string       `json:"roles"`
 	Permissions          []string       `json:"permissions"`
 	IsPlatformOwner      bool           `json:"is_platform_owner,omitempty"`
@@ -94,6 +95,7 @@ func terminalToAuthClaims(tc *terminalClaims) *authclient.Claims {
 		TenantSlug:           tc.TenantSlug,
 		Email:                tc.Email,
 		OutletID:             tc.OutletID,
+		OutletIDs:            tc.OutletIDs,
 		Roles:                tc.Roles,
 		Permissions:          tc.Permissions,
 		IsPlatformOwner:      tc.IsPlatformOwner,

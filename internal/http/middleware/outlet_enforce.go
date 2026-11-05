@@ -34,6 +34,15 @@ func EnforceOutletAssignment(client *ent.Client, log *zap.Logger) func(http.Hand
 				next.ServeHTTP(w, r)
 				return
 			}
+			// A limited manager's list is in the token. Same answer as below: the outlet is ignored
+			// and OutletContext falls back to one they hold.
+			if claims.OutletRestricted() {
+				if !claims.AllowsOutlet(headerOutletID) {
+					r.Header.Del("X-Outlet-ID")
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
 			outletID, err := uuid.Parse(headerOutletID)
 			if err != nil {
 				next.ServeHTTP(w, r)

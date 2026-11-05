@@ -516,6 +516,9 @@ func New(ctx context.Context) (*App, error) {
 
 	// Terminal/PIN login: issues + validates HMAC terminal JWTs for warehouse desk sessions.
 	pinAuthHandler := handlers.NewPINAuthHandler(ormClient, rbacService, subsClient, terminalJWTSecret(cfg), log)
+	pinAuthHandler.SetOutletLimitLookup(func(ctx context.Context, tenantID, userID string) ([]string, error) {
+		return authclient.MemberOutletLimit(ctx, cfg.Auth.ServiceURL, cfg.Auth.APIKey, tenantID, userID)
+	})
 
 	notificationsStreamHandler := handlers.NewNotificationsStreamHandler(log, notifHub)
 

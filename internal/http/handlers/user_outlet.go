@@ -173,6 +173,19 @@ func (h *WarehouseHandler) MyOutlets(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// A limited manager's list comes with the token, so the picker matches what they may open even
+	// before the assignment event reaches this service.
+	if claims.OutletRestricted() {
+		held := make([]outletItem, 0, len(claims.OutletIDs))
+		for _, o := range all {
+			if claims.AllowsOutlet(o.ID) {
+				held = append(held, o)
+			}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"data": held, "is_hq": false})
+		return
+	}
+
 	// HQ / platform owners see everything (inventory-applicable).
 	if claims.CanAccessAllOutlets() {
 		writeJSON(w, http.StatusOK, map[string]any{"data": all, "is_hq": true})

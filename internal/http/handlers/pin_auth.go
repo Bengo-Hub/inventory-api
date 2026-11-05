@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -30,6 +31,14 @@ type PINAuthHandler struct {
 	subs      *subscriptions.Client
 	jwtSecret []byte
 	log       *zap.Logger
+	// outletLimit reads a limited manager's outlets from auth-api for the PIN token.
+	outletLimit func(ctx context.Context, tenantID, userID string) ([]string, error)
+}
+
+// SetOutletLimitLookup wires the auth-api lookup (authclient.MemberOutletLimit). Without it, or when
+// auth cannot be reached, a PIN login carries no limit, so an outage never locks the warehouse out.
+func (h *PINAuthHandler) SetOutletLimitLookup(lookup func(ctx context.Context, tenantID, userID string) ([]string, error)) {
+	h.outletLimit = lookup
 }
 
 // NewPINAuthHandler builds the PIN auth handler.
@@ -117,6 +126,22 @@ func (h *PINAuthHandler) terminalClaimsFor(ctx context.Context, t *ent.Tenant, u
 	}
 	if outletID != uuid.Nil {
 		tc.OutletID = outletID.String()
+	}
+	if h.outletLimit != nil {
+		limit, err := h.outletLimit(ctx, t.ID.String(), u.AuthServiceUserID.String())
+		if err != nil {
+			h.log.Warn("pin login: outlet limit lookup failed", zap.Error(err))
+		}
+		tc.OutletIDs = limit
+		if len(limit) > 0 {
+			held := false
+			for _, id := range limit {
+				held = held || strings.EqualFold(id, tc.OutletID)
+			}
+			if !held {
+				tc.OutletID = limit[0]
+			}
+		}
 	}
 	// Demo/platform bypass by slug so PIN sessions can use feature-gated routes even if the
 	// subscriptions S2S call is unavailable (mirrors pos-api / library-api).
