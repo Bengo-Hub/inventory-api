@@ -33,6 +33,8 @@ type AuthEventsConsumer struct {
 	rbacSvc *rbac.Service
 	orm     *ent.Client
 	cache   *sharedcache.Aside
+	// posPin reads a member's till PIN (SetPOSPinLookup).
+	posPin POSPinLookup
 }
 
 func NewAuthEventsConsumer(log *zap.Logger, rbacSvc *rbac.Service, orm *ent.Client, cache *sharedcache.Aside) *AuthEventsConsumer {
@@ -189,6 +191,7 @@ func (c *AuthEventsConsumer) handleUserCreated(ctx context.Context, evt *sharede
 	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); err != nil {
 		return fmt.Errorf("sync user from auth.user.created: %w", err)
 	}
+	c.adoptPOSPin(ctx, evt.TenantID, userID)
 
 	// Persist the user's service-level inventory role from the global roles carried on the
 	// event, so RBAC (and PIN terminal sessions, which have no SSO JWT to read roles from)
@@ -228,6 +231,7 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 	if _, err := c.rbacSvc.SyncUser(ctx, evt.TenantID, userID, email, name); err != nil {
 		return fmt.Errorf("sync user from auth.user.updated: %w", err)
 	}
+	c.adoptPOSPin(ctx, evt.TenantID, userID)
 
 	// Re-sync the service role so a role change in auth (e.g. cashier → manager) propagates.
 	c.syncServiceRoles(ctx, evt.TenantID, userID, email, evt.Payload)
@@ -246,11 +250,19 @@ func (c *AuthEventsConsumer) handleUserUpdated(ctx context.Context, evt *sharede
 // can authenticate at an inventory terminal. Only acts on events for service "inventory".
 func (c *AuthEventsConsumer) handlePinSet(ctx context.Context, evt *sharedevents.Event) error {
 	service, _ := evt.Payload["service"].(string)
-	if service != "" && service != "inventory" {
-		return nil // PIN provisioned for a different service (pos/library/…)
-	}
 	userIDStr, _ := evt.Payload["user_id"].(string)
 	pinHash, _ := evt.Payload["pin_hash"].(string)
+	if service == "pos" {
+		// One PIN per person across the till and inventory.
+		id, err := uuid.Parse(userIDStr)
+		if err != nil {
+			return fmt.Errorf("invalid user_id %q in pin_set: %w", userIDStr, err)
+		}
+		return c.followPOSPinChange(ctx, evt.TenantID, id, pinHash)
+	}
+	if service != "" && service != "inventory" {
+		return nil // PIN provisioned for a different service (library/…)
+	}
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		return fmt.Errorf("invalid user_id %q in pin_set: %w", userIDStr, err)

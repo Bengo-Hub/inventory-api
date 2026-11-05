@@ -242,7 +242,7 @@ func mapGlobalRoleToInventoryRole(roles []string) string {
 			"tenant-admin", "owner", "account_owner", "org_admin", "orgadmin",
 			"organization_admin", "proprietor", "director":
 			mapped = "inventory_admin"
-		case "staff", "manager", "store_manager", "storemanager", "supervisor", "branch_manager":
+		case "warehouse_manager", "staff", "manager", "store_manager", "storemanager", "supervisor", "branch_manager":
 			mapped = "warehouse_manager"
 		case "accountant", "finance", "finance_manager":
 			mapped = "accountant"

@@ -33,6 +33,21 @@ func TestStrictRBACEnabled(t *testing.T) {
 	}
 }
 
+// An inventory role assigned in Accounts must give that role here, alongside whatever else the member
+// holds: warehouse_manager used to fall through to viewer. A POS-only role still reads as viewer.
+func TestMapGlobalRoleToInventoryRole_AssignableRoles(t *testing.T) {
+	cases := map[string][]string{
+		"warehouse_manager": {"floor_supervisor", "warehouse_manager"},
+		"stock_clerk":       {"floor_supervisor", "stock_clerk"},
+		"viewer":            {"floor_supervisor"},
+	}
+	for want, roles := range cases {
+		if got := mapGlobalRoleToInventoryRole(roles); got != want {
+			t.Errorf("%v: got %s, want %s", roles, got, want)
+		}
+	}
+}
+
 // mapGlobalRoleToInventoryRole is the migration backbone: a global superuser/admin MUST
 // map to the explicit inventory_admin role so that, once the blanket bypass is removed,
 // JIT provisioning grants them real access rather than locking them out.

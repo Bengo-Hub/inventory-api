@@ -248,6 +248,12 @@ func New(ctx context.Context) (*App, error) {
 	rbacRepo := rbac.NewEntRepository(ormClient)
 	tenantSyncer := tenant.NewSyncer(ormClient, cfg.Auth.ServiceURL).WithDB(sqlDB)
 	rbacService := rbac.NewService(rbacRepo, log, tenantSyncer)
+	// Publish the assignable inventory roles to auth so Accounts can list them. Off the startup path.
+	go func() {
+		if err := rbac.PushRolesToAuthRegistry(context.Background(), cfg.Auth.ServiceURL, cfg.Auth.APIKey); err != nil {
+			log.Warn("auth role-registry push failed", zap.Error(err))
+		}
+	}()
 	userHandler := handlers.NewUserHandler(log, rbacService, syncService, rbacRepo)
 	rbacHandler := handlers.NewRBACHandler(log, rbacService, syncService, rbacRepo)
 	authHandler := handlers.NewAuthHandler(log, rbacService, ormClient, cfg.Auth.ServiceURL, cfg.Auth.APIKey)
@@ -364,6 +370,7 @@ func New(ctx context.Context) (*App, error) {
 
 	// Auth events consumer — proactive user sync + UserOutlet assignment projection from auth-service
 	authConsumer := consumers.NewAuthEventsConsumer(log, rbacService, ormClient, cacheAside)
+	authConsumer.SetPOSPinLookup(consumers.NewPOSPinLookup(cfg.Services.POSURL, cfg.Auth.APIKey))
 
 	// Return restock consumer: pos.return.completed + pos.exchange.completed reverse the sale's
 	// consumption back into the warehouse it came from. Gated like the sale consumer.
