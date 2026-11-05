@@ -354,6 +354,7 @@ func New(ctx context.Context) (*App, error) {
 	consumerFeatureGate := func(ctx context.Context, tenantID, feature string) bool {
 		return subsClient.ConsumerHasFeature(ctx, tenantID, feature)
 	}
+	subscriptions.SetLiveLimitLookup(subsClient.LiveLimit)
 
 	// POS sale events consumer — consume stock on pos.sale.finalized (with BOM explosion)
 	posSaleConsumer := consumers.NewPOSSaleEventsConsumer(log, stockSvc, ormClient)

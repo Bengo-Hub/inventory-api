@@ -1,8 +1,10 @@
 package subscriptions
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"sync/atomic"
 
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 )
@@ -45,10 +47,32 @@ func CheckLimit(r *http.Request, limitKey string, currentValue int) bool {
 		return true
 	}
 	limit := claims.GetLimit(limitKey)
-	if limit <= 0 {
+	if limit <= 0 || currentValue < limit {
 		return true
 	}
-	return currentValue < limit
+	// The token says the cap is reached, but it was minted up to 8 hours ago: an upgrade since then
+	// must not stay blocked until the next sign-in. Only a refusal asks, so a normal request costs
+	// nothing. A lookup that fails keeps the token's answer.
+	if live, ok := liveLimit(r.Context(), claims.TenantID, limitKey); ok {
+		return live <= 0 || currentValue < live
+	}
+	return false
+}
+
+// liveLimitLookup answers the tenant's current plan limit (SetLiveLimitLookup).
+var liveLimitLookup atomic.Pointer[func(ctx context.Context, tenantID, limitKey string) (int, bool)]
+
+// SetLiveLimitLookup wires the live plan limit CheckLimit consults before refusing.
+func SetLiveLimitLookup(fn func(ctx context.Context, tenantID, limitKey string) (int, bool)) {
+	liveLimitLookup.Store(&fn)
+}
+
+func liveLimit(ctx context.Context, tenantID, limitKey string) (int, bool) {
+	fn := liveLimitLookup.Load()
+	if fn == nil || tenantID == "" {
+		return 0, false
+	}
+	return (*fn)(ctx, tenantID, limitKey)
 }
 
 // HasFeature reports whether the tenant is entitled to featureCode. Returns true (allowed)
@@ -137,6 +161,9 @@ func AssertLimit(w http.ResponseWriter, r *http.Request, metric, limitKey string
 	limit := 0
 	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
 		limit = claims.GetLimit(limitKey)
+		if live, ok := liveLimit(r.Context(), claims.TenantID, limitKey); ok {
+			limit = live // the figure the refusal was decided on, not a stale token's
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusPaymentRequired)

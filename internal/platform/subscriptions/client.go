@@ -152,6 +152,17 @@ func (c *Client) ConsumerHasFeature(ctx context.Context, tenantID, featureCode s
 	return false
 }
 
+// LiveLimit is the tenant's current limit for limitKey from subscriptions-api, cached like the
+// feature checks. ok is false when it cannot be read or the plan does not set that key.
+func (c *Client) LiveLimit(ctx context.Context, tenantID, limitKey string) (int, bool) {
+	e := c.cachedEntitlements(ctx, tenantID)
+	if e == nil {
+		return 0, false
+	}
+	limit, ok := e.Limits[limitKey]
+	return limit, ok
+}
+
 func (c *Client) cachedEntitlements(ctx context.Context, tenantID string) *Entitlements {
 	entCacheMu.Lock()
 	if hit, ok := entCache[tenantID]; ok && time.Since(hit.fetched) < entitlementCacheTTL {
