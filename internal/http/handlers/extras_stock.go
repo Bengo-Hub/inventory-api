@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	entsql "entgo.io/ent/dialect/sql"
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -82,7 +84,8 @@ type stockLevelFilters struct {
 func parseStockLevelFilters(r *http.Request, explicitOutletParam string) stockLevelFilters {
 	q := r.URL.Query()
 	f := stockLevelFilters{
-		Search:        q.Get("search"),
+		// Trimmed, whitespace-collapsed and capped (shared rule with the UI).
+		Search:        pagination.NormalizeSearch(q.Get("search")),
 		LowStock:      q.Get("low_stock") == "true",
 		OutOfStock:    q.Get("out_of_stock") == "true",
 		Negative:      q.Get("negative") == "true",
@@ -150,6 +153,31 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 	if f.ItemID != nil {
 		balQuery = balQuery.Where(entinventorybalance.ItemID(*f.ItemID))
 	}
+	// Search and the status filters run in SQL so only matching balances are loaded; they
+	// used to be applied in Go after loading every balance of the tenant. The item name and
+	// SKU predicates are served by the items trigram indexes.
+	if f.Search != "" {
+		balQuery = balQuery.Where(entinventorybalance.Or(
+			entinventorybalance.HasItemWith(entitem.Or(
+				entitem.NameContainsFold(f.Search),
+				entitem.SkuContainsFold(f.Search),
+			)),
+			entinventorybalance.HasWarehouseWith(entwarehouse.NameContainsFold(f.Search)),
+		))
+	}
+	if f.OutOfStock {
+		balQuery = balQuery.Where(entinventorybalance.AvailableLTE(0))
+	}
+	if f.LowStock {
+		// Low = a reorder level is set, something is available, and available <= that level.
+		balQuery = balQuery.Where(
+			entinventorybalance.ReorderLevelGT(0),
+			entinventorybalance.AvailableGT(0),
+			func(s *entsql.Selector) {
+				s.Where(entsql.ColumnsLTE(s.C(entinventorybalance.FieldAvailable), s.C(entinventorybalance.FieldReorderLevel)))
+			},
+		)
+	}
 	if f.WarehouseID != nil {
 		balQuery = balQuery.Where(entinventorybalance.WarehouseID(*f.WarehouseID))
 	} else if f.OutletID != nil {
@@ -191,14 +219,6 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 		locationName := ""
 		if b.Edges.Location != nil {
 			locationName = b.Edges.Location.Name
-		}
-		if f.Search != "" {
-			needle := strings.ToLower(f.Search)
-			if !strings.Contains(strings.ToLower(itemName), needle) &&
-				!strings.Contains(strings.ToLower(sku), needle) &&
-				!strings.Contains(strings.ToLower(warehouseName), needle) {
-				continue
-			}
 		}
 		var reorderPoint *int
 		if b.ReorderLevel > 0 {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
@@ -17,7 +18,6 @@ import (
 	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
 	"github.com/bengobox/inventory-service/internal/ent/item"
 	"github.com/bengobox/inventory-service/internal/ent/itemvariant"
-	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/reservation"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
@@ -644,21 +644,25 @@ func (s *Service) ListAdjustments(ctx context.Context, tenantID uuid.UUID, req L
 		q = q.Where(stockadjustment.AdjustedAtLTE(req.DateTo))
 	}
 	if search := strings.TrimSpace(req.Search); search != "" {
-		// StockAdjustment only stores item_id/warehouse_id, not their names, so a name match has
-		// to be resolved via a separate lookup first — same idea as TransferNumberContainsFold,
-		// just one join short of being a native column search.
-		searchPreds := []predicate.StockAdjustment{stockadjustment.ReferenceContainsFold(search)}
-		if itemIDs, ierr := s.client.Item.Query().
-			Where(item.TenantID(tenantID), item.NameContainsFold(search)).
-			IDs(ctx); ierr == nil && len(itemIDs) > 0 {
-			searchPreds = append(searchPreds, stockadjustment.ItemIDIn(itemIDs...))
-		}
-		if whIDs, werr := s.client.Warehouse.Query().
-			Where(warehouse.TenantID(tenantID), warehouse.NameContainsFold(search)).
-			IDs(ctx); werr == nil && len(whIDs) > 0 {
-			searchPreds = append(searchPreds, stockadjustment.WarehouseIDIn(whIDs...))
-		}
-		q = q.Where(stockadjustment.Or(searchPreds...))
+		// StockAdjustment only stores item_id/warehouse_id, not their names, so a name match is a
+		// subquery (item_id IN (SELECT id FROM items WHERE ...)). It used to load every matching
+		// id into Go and send them back as a literal IN list, which a short term on a large
+		// catalogue turned into thousands of parameters.
+		q = q.Where(stockadjustment.Or(
+			stockadjustment.ReferenceContainsFold(search),
+			func(sel *entsql.Selector) {
+				t := entsql.Table(item.Table)
+				sub := entsql.Select(t.C(item.FieldID)).From(t).
+					Where(entsql.And(entsql.EQ(t.C(item.FieldTenantID), tenantID), entsql.ContainsFold(t.C(item.FieldName), search)))
+				sel.Where(entsql.In(sel.C(stockadjustment.FieldItemID), sub))
+			},
+			func(sel *entsql.Selector) {
+				t := entsql.Table(warehouse.Table)
+				sub := entsql.Select(t.C(warehouse.FieldID)).From(t).
+					Where(entsql.And(entsql.EQ(t.C(warehouse.FieldTenantID), tenantID), entsql.ContainsFold(t.C(warehouse.FieldName), search)))
+				sel.Where(entsql.In(sel.C(stockadjustment.FieldWarehouseID), sub))
+			},
+		))
 	}
 
 	// Count the full matching set BEFORE Limit/Offset — this is the real total the frontend

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
@@ -111,22 +112,21 @@ func (h *InventoryExtrasHandler) ListWarranties(w http.ResponseWriter, r *http.R
 	if from, to, ok := parseCreatedAtRange(r); ok {
 		q = q.Where(entwarranty.CreatedAtGTE(from), entwarranty.CreatedAtLTE(to))
 	}
+	// Search runs in SQL (it used to filter every warranty of the tenant in Go after loading them).
+	if search := pagination.NormalizeSearch(r.URL.Query().Get("search")); search != "" {
+		q = q.Where(entwarranty.Or(
+			entwarranty.SerialNumberContainsFold(search),
+			entwarranty.HasItemWith(entitem.Or(entitem.NameContainsFold(search), entitem.SkuContainsFold(search))),
+		))
+	}
 	rows, err := q.All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list warranties")
 		return
 	}
-	search := strings.ToLower(r.URL.Query().Get("search"))
 	result := make([]warrantyDTO, 0, len(rows))
 	for _, wt := range rows {
-		dto := warrantyToDTO(wt)
-		if search != "" &&
-			!strings.Contains(strings.ToLower(dto.SerialNumber), search) &&
-			!strings.Contains(strings.ToLower(dto.ItemName), search) &&
-			!strings.Contains(strings.ToLower(dto.ItemSKU), search) {
-			continue
-		}
-		result = append(result, dto)
+		result = append(result, warrantyToDTO(wt))
 	}
 	writeJSON(w, http.StatusOK, result)
 }

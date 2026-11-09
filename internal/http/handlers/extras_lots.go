@@ -3,15 +3,16 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/Bengo-Hub/pagination"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorylot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 )
 
 // ─── Lots ─────────────────────────────────────────────────────────────────────
@@ -77,7 +78,7 @@ func (h *InventoryExtrasHandler) ListLots(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
-	search := r.URL.Query().Get("search")
+	search := pagination.NormalizeSearch(r.URL.Query().Get("search"))
 	// Cost layers (internal, auto-created for non-lot-tracked items — see is_cost_layer) are
 	// excluded by default: a merchant managing "Lots & Batches" shouldn't see synthetic rows for
 	// items they never opted into lot tracking. Pass ?include_cost_layers=true to see everything
@@ -94,6 +95,13 @@ func (h *InventoryExtrasHandler) ListLots(w http.ResponseWriter, r *http.Request
 	if from, to, ok := parseCreatedAtRange(r); ok {
 		query = query.Where(entinventorylot.ReceivedAtGTE(from), entinventorylot.ReceivedAtLTE(to))
 	}
+	// Search runs in SQL (it used to filter every lot of the tenant in Go after loading them).
+	if search != "" {
+		query = query.Where(entinventorylot.Or(
+			entinventorylot.LotNumberContainsFold(search),
+			entinventorylot.HasItemWith(entitem.Or(entitem.NameContainsFold(search), entitem.SkuContainsFold(search))),
+		))
+	}
 	lots, err := query.All(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list lots")
@@ -102,16 +110,7 @@ func (h *InventoryExtrasHandler) ListLots(w http.ResponseWriter, r *http.Request
 
 	result := make([]lotDTO, 0, len(lots))
 	for _, l := range lots {
-		dto := lotToDTO(l)
-		if search != "" {
-			needle := strings.ToLower(search)
-			if !strings.Contains(strings.ToLower(dto.LotNumber), needle) &&
-				!strings.Contains(strings.ToLower(dto.ItemName), needle) &&
-				!strings.Contains(strings.ToLower(dto.ItemSKU), needle) {
-				continue
-			}
-		}
-		result = append(result, dto)
+		result = append(result, lotToDTO(l))
 	}
 	writeJSON(w, http.StatusOK, result)
 }
