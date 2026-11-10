@@ -143,10 +143,9 @@ func (h *PINAuthHandler) terminalClaimsFor(ctx context.Context, t *ent.Tenant, u
 			}
 		}
 	}
-	// Demo/platform bypass by slug so PIN sessions can use feature-gated routes even if the
-	// subscriptions S2S call is unavailable (mirrors pos-api / library-api).
-	tc.IsDemo = t.Slug == "codevertex-demo"
-	tc.IsPlatformOwner = t.Slug == "codevertex"
+	// A demo terminal keeps feature-gated routes when the subscriptions S2S call is unavailable.
+	// A terminal is never platform owner, not even in the codevertex tenant (audit 2026-11-11).
+	tc.IsDemo, tc.IsPlatformOwner = terminalSessionFlags(t.Slug)
 	if h.subs != nil {
 		if e := h.subs.GetEntitlements(ctx, t.ID.String()); e != nil {
 			tc.SubscriptionStatus = e.Status
@@ -434,4 +433,11 @@ func (h *PINAuthHandler) registerPINFailure(ctx context.Context, u *ent.Inventor
 		upd = upd.SetPinLockedUntil(time.Now().Add(pinLockoutDuration)).SetPinFailedAttempts(0)
 	}
 	_, _ = upd.Save(ctx)
+}
+
+// terminalSessionFlags are the demo and platform-owner flags a terminal PIN session gets from its
+// tenant. Never platform owner: platform authority comes only from auth-api's signed claim for an
+// admin-tier person, never from a terminal in the platform tenant (security audit 2026-11-11).
+func terminalSessionFlags(tenantSlug string) (isDemo, isPlatformOwner bool) {
+	return tenantSlug == "codevertex-demo", false
 }
