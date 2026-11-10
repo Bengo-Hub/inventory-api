@@ -49,7 +49,7 @@ func (h *InventoryExtrasHandler) StockExportPDF(w http.ResponseWriter, r *http.R
 	}
 
 	ctx := r.Context()
-	rows, err := h.queryStockLevels(ctx, tenantID, parseStockLevelFilters(r, "outlet_id"))
+	rows, _, err := h.queryStockLevels(ctx, tenantID, parseStockLevelFilters(r, "outlet_id"))
 	if err != nil {
 		h.log.Error("stock export: query failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list stock")

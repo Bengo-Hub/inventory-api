@@ -70,6 +70,9 @@ type stockLevelFilters struct {
 	// OutletID scopes to an outlet's own warehouses (+ shared/HQ warehouses with no outlet
 	// link) when no explicit WarehouseID is given — mirrors the ListItems outlet separation.
 	OutletID *uuid.UUID
+	// Paging, when set, returns one page (ordered by item name) plus the total. Nil keeps the
+	// full list for the PDF/CSV export and callers that predate paging.
+	Paging *pagination.Params
 	// IncludeHidden lifts the default RemovedFromLocation(false) exclusion so a caller can see
 	// EVERY warehouse an item has ever had a balance at, hidden ones included (with
 	// RemovedFromLocation=true on those rows) — used by the item drawer's outlet breakdown, not
@@ -119,7 +122,17 @@ func parseStockLevelFilters(r *http.Request, explicitOutletParam string) stockLe
 // queryStockLevels builds and runs the InventoryBalance query for the given filters,
 // returning the enriched DTOs. Single source of truth for "what counts as stock" reused by
 // ListStock (JSON) and StockExportPDF (branded PDF/CSV) — see [[feedback_workflow_rules]].
-func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID uuid.UUID, f stockLevelFilters) ([]stockLevelDTO, error) {
+func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID uuid.UUID, f stockLevelFilters) ([]stockLevelDTO, int, error) {
+	balQuery := h.stockBalanceQuery(tenantID, f).
+		WithItem(func(iq *ent.ItemQuery) { iq.WithItemCategory() }).
+		WithWarehouse().
+		WithLocation()
+	return h.runStockLevels(ctx, balQuery, f)
+}
+
+// stockBalanceQuery applies every stock-list filter (scope, search, status) without eager
+// loads, so the list, its page and the status counts all share one definition.
+func (h *InventoryExtrasHandler) stockBalanceQuery(tenantID uuid.UUID, f stockLevelFilters) *ent.InventoryBalanceQuery {
 	// Always constrain to stockable item types so non-stock catalog items
 	// (services, vouchers, recipes) never surface on the stock levels list.
 	itemPreds := []predicate.Item{entitem.TypeIn(stockableTypes...)}
@@ -133,10 +146,7 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 
 	balQuery := h.orm.InventoryBalance.Query().
 		Where(entinventorybalance.TenantID(tenantID)).
-		Where(entinventorybalance.HasItemWith(itemPreds...)).
-		WithItem(func(iq *ent.ItemQuery) { iq.WithItemCategory() }).
-		WithWarehouse().
-		WithLocation()
+		Where(entinventorybalance.HasItemWith(itemPreds...))
 	if !f.IncludeHidden {
 		// A balance explicitly hidden from this warehouse (Set Outlets, or Move Stock shipping
 		// the last unit out) is not a location the item is "in" any more — unlike an organic
@@ -169,14 +179,7 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 		balQuery = balQuery.Where(entinventorybalance.AvailableLTE(0))
 	}
 	if f.LowStock {
-		// Low = a reorder level is set, something is available, and available <= that level.
-		balQuery = balQuery.Where(
-			entinventorybalance.ReorderLevelGT(0),
-			entinventorybalance.AvailableGT(0),
-			func(s *entsql.Selector) {
-				s.Where(entsql.ColumnsLTE(s.C(entinventorybalance.FieldAvailable), s.C(entinventorybalance.FieldReorderLevel)))
-			},
-		)
+		balQuery = balQuery.Where(lowStockPredicate())
 	}
 	if f.WarehouseID != nil {
 		balQuery = balQuery.Where(entinventorybalance.WarehouseID(*f.WarehouseID))
@@ -192,10 +195,63 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 			),
 		))
 	}
+	return balQuery
+}
+
+// lowStockPredicate: a reorder level is set, something is available, and available <= that level.
+func lowStockPredicate() predicate.InventoryBalance {
+	return entinventorybalance.And(
+		entinventorybalance.ReorderLevelGT(0),
+		entinventorybalance.AvailableGT(0),
+		func(s *entsql.Selector) {
+			s.Where(entsql.ColumnsLTE(s.C(entinventorybalance.FieldAvailable), s.C(entinventorybalance.FieldReorderLevel)))
+		},
+	)
+}
+
+// stockStatusCounts returns how many balances in scope are low, out of stock and below zero,
+// ignoring the status filter itself, for the stock page's banners when the list is paged.
+func (h *InventoryExtrasHandler) stockStatusCounts(ctx context.Context, tenantID uuid.UUID, f stockLevelFilters) (stockCounts, error) {
+	f.LowStock, f.OutOfStock, f.Negative = false, false, false
+	base := h.stockBalanceQuery(tenantID, f)
+	var c stockCounts
+	var err error
+	if c.Low, err = base.Clone().Where(lowStockPredicate()).Count(ctx); err != nil {
+		return c, err
+	}
+	if c.Out, err = base.Clone().Where(entinventorybalance.AvailableLTE(0)).Count(ctx); err != nil {
+		return c, err
+	}
+	c.Negative, err = base.Clone().Where(entinventorybalance.OnHandLT(0)).Count(ctx)
+	return c, err
+}
+
+type stockCounts struct {
+	Low      int `json:"low"`
+	Out      int `json:"out"`
+	Negative int `json:"negative"`
+}
+
+// runStockLevels orders, optionally pages, loads and maps a prepared balance query.
+func (h *InventoryExtrasHandler) runStockLevels(ctx context.Context, balQuery *ent.InventoryBalanceQuery, f stockLevelFilters) ([]stockLevelDTO, int, error) {
+	// A stable order so pages never overlap or skip rows: item name, then the balance id.
+	balQuery = balQuery.Order(
+		entinventorybalance.ByItemField(entitem.FieldName),
+		entinventorybalance.ByID(),
+	)
+	total := -1
+	if f.Paging != nil {
+		n, err := balQuery.Clone().Count(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+		total = n
+		balQuery = balQuery.Limit(f.Paging.Limit).Offset(f.Paging.Offset)
+	}
 
 	balances, err := balQuery.All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	result := make([]stockLevelDTO, 0, len(balances))
@@ -256,7 +312,10 @@ func (h *InventoryExtrasHandler) queryStockLevels(ctx context.Context, tenantID 
 			RemovedFromLocation: b.RemovedFromLocation,
 		})
 	}
-	return result, nil
+	if total < 0 {
+		total = len(result)
+	}
+	return result, total, nil
 }
 
 func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Request) {
@@ -266,9 +325,30 @@ func (h *InventoryExtrasHandler) ListStock(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := h.queryStockLevels(r.Context(), tenantID, parseStockLevelFilters(r, ""))
+	f := parseStockLevelFilters(r, "")
+	// Opt-in paging: ?page= returns the standard paged envelope ({data,total,limit,page,hasMore});
+	// without it the bare list is kept for callers that predate paging.
+	paged := r.URL.Query().Has("page")
+	if paged {
+		p := pagination.Parse(r)
+		f.Paging = &p
+	}
+	result, total, err := h.queryStockLevels(r.Context(), tenantID, f)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to list stock")
+		return
+	}
+	if paged {
+		// The banners (low / out / below zero) count the whole scope, not just this page.
+		counts, cerr := h.stockStatusCounts(r.Context(), tenantID, f)
+		if cerr != nil {
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to count stock")
+			return
+		}
+		writeJSON(w, http.StatusOK, struct {
+			pagination.Response[stockLevelDTO]
+			Counts stockCounts `json:"counts"`
+		}{pagination.NewResponse(result, total, *f.Paging), counts})
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
