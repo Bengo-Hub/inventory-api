@@ -268,7 +268,13 @@ func New(
 					// expires). No-ops for every tenant without a support-fee obligation at all.
 					inv.Use(authclient.RequireSupportFeeCurrentForMutations(7))
 
-					userHandler.RegisterRoutes(inv)
+					// Creating a user (an auth-api member add) needs the users-manage permission: it was open to
+					// any signed-in member, who could make themselves admin (security audit 2026-11-11).
+					if rbacService != nil {
+						inv.With(ratelimitmw.RequirePermission(rbacService, log, rbac.PermUsersManage)).Post("/users", userHandler.CreateUser)
+					}
+					inv.Get("/users", userHandler.ListUsers)
+					inv.Get("/users/{userID}", userHandler.GetUser)
 					if rbacHandler != nil {
 						rbacHandler.RegisterRBACRoutes(inv)
 					}
