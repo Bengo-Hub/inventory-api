@@ -31,23 +31,41 @@ const backdatedAfter = 12 * time.Hour
 // keeps its real clock time. An earlier day is stored as the start of that day (UTC), the same
 // convention transfer_date uses (inventory-api has no per-tenant timezone).
 func ResolveAdjustmentDate(dateStr string, now time.Time) (time.Time, error) {
+	return resolveBackdate(dateStr, now, "an adjustment", ErrInvalidAdjustmentDate)
+}
+
+// ErrInvalidReceivedDate is returned when a goods receipt's optional received_date is malformed,
+// in the future, or older than maxAdjustmentBackDays. Handlers map it to 400.
+var ErrInvalidReceivedDate = errors.New("invalid received_date")
+
+// ResolveReceivedDate turns a goods receipt's optional "YYYY-MM-DD" received_date (the day the
+// goods actually arrived) into the received_date to store, by the same rules as an adjustment:
+// blank or today keeps the real time, an earlier day is the start of that day (UTC), the future and
+// more than a year back are refused. Goods received on 7 Nov and entered on 9 Nov then sit on
+// 7 Nov in stock history, the lot and the vendor bill; created_at keeps the real entry time.
+func ResolveReceivedDate(dateStr string, now time.Time) (time.Time, error) {
+	return resolveBackdate(dateStr, now, "a goods receipt", ErrInvalidReceivedDate)
+}
+
+// resolveBackdate is the shared rule behind ResolveAdjustmentDate and ResolveReceivedDate.
+func resolveBackdate(dateStr string, now time.Time, what string, invalid error) (time.Time, error) {
 	dateStr = strings.TrimSpace(dateStr)
 	if dateStr == "" {
 		return now, nil
 	}
 	d, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("%w: must be YYYY-MM-DD", ErrInvalidAdjustmentDate)
+		return time.Time{}, fmt.Errorf("%w: must be YYYY-MM-DD", invalid)
 	}
 	n := now.UTC()
 	today := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, time.UTC)
 	switch {
 	case d.After(today):
-		return time.Time{}, fmt.Errorf("%w: an adjustment cannot be dated in the future", ErrInvalidAdjustmentDate)
+		return time.Time{}, fmt.Errorf("%w: %s cannot be dated in the future", invalid, what)
 	case d.Equal(today):
 		return now, nil
 	case d.Before(today.AddDate(0, 0, -maxAdjustmentBackDays)):
-		return time.Time{}, fmt.Errorf("%w: more than %d days before today", ErrInvalidAdjustmentDate, maxAdjustmentBackDays)
+		return time.Time{}, fmt.Errorf("%w: more than %d days before today", invalid, maxAdjustmentBackDays)
 	}
 	return d, nil
 }

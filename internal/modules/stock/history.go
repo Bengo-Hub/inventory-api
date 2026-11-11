@@ -452,13 +452,20 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			if reference == "" {
 				reference = rec.GrnNumber
 			}
-			rows = append(rows, MovementRow{
+			row := MovementRow{
 				Type: "purchase", Label: "Purchase (GRN)",
 				QuantityChange: l.QuantityAccepted,
 				OccurredAt:     rec.ReceivedDate, Reference: reference,
 				WarehouseID: rec.WarehouseID, ActorID: rec.ReceivedBy,
 				Counterparty: counterparty,
-			})
+			}
+			// A receipt back-dated to the day the goods arrived shows its real entry time too, and
+			// counts as a late entry for the running balance (shiftStaleAnchors).
+			if IsBackdatedAdjustment(rec.ReceivedDate, rec.CreatedAt) {
+				entered := rec.CreatedAt
+				row.EnteredAt = &entered
+			}
+			rows = append(rows, row)
 		}
 	}
 

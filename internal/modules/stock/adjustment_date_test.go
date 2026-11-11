@@ -2,11 +2,39 @@ package stock
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+// TestResolveReceivedDate: a goods receipt follows the adjustment rules with its own error. The
+// boi-enterprises case: goods received 7 Nov, entered 9 Nov, must sit on 7 Nov and read as
+// back-dated so stock history shows the entry time too.
+func TestResolveReceivedDate(t *testing.T) {
+	now := time.Date(2026, 11, 9, 10, 15, 0, 0, time.UTC)
+	got, err := ResolveReceivedDate("2026-11-07", now)
+	if err != nil || !got.Equal(time.Date(2026, 11, 7, 0, 0, 0, 0, time.UTC)) {
+		t.Fatalf("7 Nov receipt entered 9 Nov: got %v, %v", got, err)
+	}
+	if !IsBackdatedAdjustment(got, now) {
+		t.Error("a receipt dated two days before entry must read as back-dated")
+	}
+	if got, err := ResolveReceivedDate("", now); err != nil || !got.Equal(now) {
+		t.Errorf("blank keeps the entry time: %v, %v", got, err)
+	}
+	if IsBackdatedAdjustment(now, now) {
+		t.Error("a receipt entered on the day is not back-dated")
+	}
+	_, err = ResolveReceivedDate("2026-11-10", now)
+	if !errors.Is(err, ErrInvalidReceivedDate) || errors.Is(err, ErrInvalidAdjustmentDate) {
+		t.Errorf("future receipt date: err = %v, want ErrInvalidReceivedDate only", err)
+	}
+	if err != nil && !strings.Contains(err.Error(), "a goods receipt") {
+		t.Errorf("message should name the goods receipt: %v", err)
+	}
+}
 
 func TestResolveAdjustmentDate(t *testing.T) {
 	now := time.Date(2026, 10, 20, 15, 30, 0, 0, time.UTC)

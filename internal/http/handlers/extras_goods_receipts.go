@@ -74,10 +74,14 @@ type grnLinePayload struct {
 }
 
 type grnPayload struct {
-	WarehouseID *uuid.UUID       `json:"warehouse_id"`
-	ReceivedBy  *uuid.UUID       `json:"received_by"`
-	Notes       string           `json:"notes"`
-	Lines       []grnLinePayload `json:"lines"`
+	WarehouseID *uuid.UUID `json:"warehouse_id"`
+	ReceivedBy  *uuid.UUID `json:"received_by"`
+	// ReceivedDate is the day the goods actually arrived ("YYYY-MM-DD", optional). Blank or today
+	// means now; an earlier day back-dates the receipt (stock.ResolveReceivedDate) so stock history,
+	// the lot and the vendor bill sit on that day while created_at keeps the entry time.
+	ReceivedDate string           `json:"received_date"`
+	Notes        string           `json:"notes"`
+	Lines        []grnLinePayload `json:"lines"`
 }
 
 type grnLineDTO struct {
@@ -424,6 +428,11 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "At least one received line is required")
 		return
 	}
+	receivedDate, derr := stock.ResolveReceivedDate(req.ReceivedDate, time.Now())
+	if derr != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_RECEIVED_DATE", derr.Error())
+		return
+	}
 	grnNumber := "GRN-" + strings.ToUpper(uuid.New().String()[:8])
 	if h.docSvc != nil {
 		if n, derr := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypeGRN); derr == nil && n != "" {
@@ -436,7 +445,8 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 	}
 	create := h.orm.GoodsReceipt.Create().
 		SetTenantID(tenantID).SetGrnNumber(grnNumber).SetPurchaseOrderID(poID).
-		SetNillableSupplierID(po.SupplierID).SetNillableWarehouseID(warehouseID).SetNotes(req.Notes)
+		SetNillableSupplierID(po.SupplierID).SetNillableWarehouseID(warehouseID).SetNotes(req.Notes).
+		SetReceivedDate(receivedDate)
 	if req.ReceivedBy != nil {
 		create = create.SetReceivedBy(*req.ReceivedBy)
 	}
@@ -868,6 +878,8 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 		"total_rebate_accrued": totalRebate,
 		"pay_term_days":        derefInt(po.PayTermDays),
 		"lines":                grLineArr,
+		// The day the goods arrived (may be back-dated at entry); treasury dates the vendor bill by it.
+		"received_date": g.ReceivedDate.UTC().Format(time.RFC3339),
 	}
 	// The receiving warehouse's own outlet — lets treasury attribute the resulting vendor bill's
 	// GL entry to the receiving outlet (previously dropped entirely, leaving every inventory-
