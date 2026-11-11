@@ -468,9 +468,14 @@ type ItemDTO struct {
 	ReorderQuantity       int            `json:"reorder_quantity"`
 	SuggestedPrice        *float64       `json:"suggested_price,omitempty"`
 	AddToAllOutlets       bool           `json:"add_to_all_outlets,omitempty"`
-	CategoryName          string         `json:"category_name,omitempty"`
-	BrandName             string         `json:"brand_name,omitempty"`
-	BrandCode             string         `json:"brand_code,omitempty"`
+
+	// OperatingOutletID is the outlet the request runs under (X-Outlet-ID, set by the handler,
+	// never read from the body). A new item's opening balance goes to that outlet's own warehouse.
+	OperatingOutletID uuid.UUID `json:"-"`
+
+	CategoryName string `json:"category_name,omitempty"`
+	BrandName    string `json:"brand_name,omitempty"`
+	BrandCode    string `json:"brand_code,omitempty"`
 	// Item-attribute fields (retail / pharmacy)
 	Manufacturer string `json:"manufacturer,omitempty"` // retail/pharmacy
 	Model        string `json:"model,omitempty"`        // retail only
@@ -3247,14 +3252,10 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 	}
 	reorderLevel := resolveReorderLevel(ctx, s.client, tenantID, unitAbbr, dto.ReorderLevel)
 
-	// Resolve default warehouse
-	wh, whErr := s.client.Warehouse.Query().
-		Where(
-			warehouse.TenantID(tenantID),
-			warehouse.IsDefault(true),
-			warehouse.IsActive(true),
-		).
-		First(ctx)
+	// The opening balance goes to the operating outlet's own warehouse, else the tenant default.
+	// It used to go to the tenant default always, so an item created at a branch (e.g. Demo City
+	// Supermarket) landed at HQ and never showed on that branch's catalogue, till or eTIMS Items.
+	wh, whErr := stockcalc.OutletWarehouse(ctx, s.client, tenantID, dto.OperatingOutletID)
 	if whErr == nil && IsStockTracked(i.Type) {
 		// Resolve unit of measure name for the balance
 		uom := "PIECE"
@@ -3302,7 +3303,7 @@ func (s *Service) createItemOnce(ctx context.Context, tenantID uuid.UUID, dto It
 				Where(
 					warehouse.TenantID(tenantID),
 					warehouse.IsActive(true),
-					warehouse.IDNEQ(wh.ID), // skip the default warehouse (already created above)
+					warehouse.IDNEQ(wh.ID), // skip the warehouse that got the opening balance above
 				).
 				All(ctx)
 			if whsErr == nil {

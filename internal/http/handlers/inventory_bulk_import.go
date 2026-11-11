@@ -147,6 +147,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 				}
 			}
 		} else {
+			dto.OperatingOutletID = operatingOutletID(r)
 			if created, cErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); cErr != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, "sku="+sku+": "+cErr.Error())

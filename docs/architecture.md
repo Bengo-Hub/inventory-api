@@ -283,6 +283,26 @@ index through the Ent and Atlas versioned migration workflow.
 
 ---
 
+## Which warehouse stock lands in
+
+Outlet-scoped screens (the POS till, the catalogue and treasury's eTIMS Items page with an outlet
+picked) list only items stocked in that outlet's own warehouses. So every write that has no
+explicit warehouse resolves one the same way, through `stockcalc.OutletWarehouse`:
+
+1. An explicit `warehouse_id` on the request wins.
+2. Otherwise the operating outlet's own active warehouse (the `X-Outlet-ID` header, read by the
+   `OutletContext` middleware).
+3. Otherwise the tenant's active default warehouse.
+
+Stock movements (adjustments, receipts, counts) and every item-creating path (the item form, bulk
+import, recipe and composite ingredient creation) follow this. Since 2026-11-11 a new item's
+opening balance goes to the outlet the person is working in; before, it always went to the tenant
+default, so an item created at a branch never showed there. The outlet only comes from the request
+context, never from the request body, and an outlet that belongs to another tenant resolves to the
+tenant default. Variant child items still open at the tenant default (open item).
+
+---
+
 ## Data Flow: Order Placement
 
 ```

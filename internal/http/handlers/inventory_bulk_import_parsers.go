@@ -153,6 +153,7 @@ func (h *InventoryHandler) parseXLSXItems(
 				}
 			}
 		} else {
+			dto.OperatingOutletID = operatingOutletID(r)
 			if created, err := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); err != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, err.Error()))

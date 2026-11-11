@@ -1509,6 +1509,8 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 		req.Type = "GOODS"
 	}
 	req.IsActive = true
+	// Opening stock lands at the outlet the person is working in (X-Outlet-ID), not HQ.
+	req.OperatingOutletID = operatingOutletID(r)
 
 	if err := items.ValidateTicketTiers(&req); err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "TIER_CAPACITY", err.Error())
@@ -1758,8 +1760,9 @@ func (h *InventoryHandler) SetItemDescription(w http.ResponseWriter, r *http.Req
 }
 
 // operatingOutletID returns the outlet the request is acting under (from the X-Outlet-ID context),
-// or uuid.Nil when none is set (S2S / platform-wide requests). Stock movements use it to default
-// their warehouse to the operating outlet's own warehouse.
+// or uuid.Nil when none is set (S2S / platform-wide requests). Stock movements and every
+// item-creating path use it so stock (and a new item's opening balance) defaults to the operating
+// outlet's own warehouse (stockcalc.OutletWarehouse).
 func operatingOutletID(r *http.Request) uuid.UUID {
 	if outletStr := invmiddleware.GetOutletID(r.Context()); outletStr != "" {
 		if oid, err := uuid.Parse(outletStr); err == nil {
@@ -2914,6 +2917,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 				result.Updated++
 			}
 		} else {
+			dto.OperatingOutletID = operatingOutletID(r)
 			if created, createErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); createErr != nil {
 				result.Failed++
 				result.Errors = append(result.Errors, "sku="+sku+": "+createErr.Error())

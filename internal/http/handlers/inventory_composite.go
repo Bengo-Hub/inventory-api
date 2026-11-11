@@ -402,6 +402,7 @@ func (h *InventoryHandler) createOrUpdateMenuItemByName(r *http.Request, tenantI
 		}
 	}
 	// Create new.
+	dto.OperatingOutletID = operatingOutletID(r)
 	return h.itemsSvc.CreateItem(r.Context(), tenantID, dto)
 }
 
@@ -490,6 +491,7 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 	}
 
 	// Create new ingredient.
+	dto.OperatingOutletID = operatingOutletID(r)
 	created, err := h.itemsSvc.CreateItem(r.Context(), tenantID, dto)
 	if err != nil {
 		return nil, err

@@ -24,6 +24,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/stockadjustment"
 	"github.com/bengobox/inventory-service/internal/ent/stocklevelevent"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
+	"github.com/bengobox/inventory-service/internal/modules/stockcalc"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 	platformevents "github.com/bengobox/inventory-service/internal/platform/events"
 )
@@ -1170,29 +1171,7 @@ func (s *Service) resolveWarehouseIDForOutlet(ctx context.Context, tenantID, war
 	if warehouseID != uuid.Nil {
 		return warehouseID, nil
 	}
-	if outletID != uuid.Nil {
-		wh, err := s.client.Warehouse.Query().
-			Where(
-				warehouse.TenantID(tenantID),
-				warehouse.OutletIDEQ(outletID),
-				warehouse.IsActive(true),
-			).
-			First(ctx)
-		if err == nil {
-			return wh.ID, nil
-		}
-		if !ent.IsNotFound(err) {
-			return uuid.Nil, fmt.Errorf("stock: query outlet warehouse: %w", err)
-		}
-		// Outlet has no warehouse of its own → fall through to the tenant default.
-	}
-	wh, err := s.client.Warehouse.Query().
-		Where(
-			warehouse.TenantID(tenantID),
-			warehouse.IsDefault(true),
-			warehouse.IsActive(true),
-		).
-		First(ctx)
+	wh, err := stockcalc.OutletWarehouse(ctx, s.client, tenantID, outletID)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			// Include the resolved tenant so callers can see when an S2S request
