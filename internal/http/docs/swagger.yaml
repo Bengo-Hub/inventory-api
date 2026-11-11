@@ -2272,6 +2272,43 @@ paths:
       summary: List approval requests
       tags:
       - Approvals
+  /{tenant}/inventory/approval-requests/{reqID}:
+    delete:
+      parameters:
+      - description: Approval request ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      - description: Also delete the draft goods receipt
+        in: query
+        name: with_object
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Permanently delete an approval request (platform owners only)
+      tags:
+      - Approvals
   /{tenant}/inventory/approval-rules:
     get:
       parameters:
@@ -3698,6 +3735,32 @@ paths:
       summary: Get a goods receipt with its lines
       tags:
       - Procurement
+  /{tenant}/inventory/goods-receipts/{grnID}/cancel:
+    post:
+      parameters:
+      - description: GRN ID
+        in: path
+        name: grnID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.grnDTO'
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Cancel a draft goods receipt
+      tags:
+      - Procurement
   /{tenant}/inventory/goods-receipts/{grnID}/pdf:
     get:
       parameters:
@@ -4759,6 +4822,47 @@ paths:
       tags:
       - Procurement
   /{tenant}/inventory/purchase-orders/{poID}:
+    delete:
+      parameters:
+      - description: Purchase order ID
+        in: path
+        name: poID
+        required: true
+        type: string
+      - description: Must be true
+        in: query
+        name: hard
+        required: true
+        type: boolean
+      - description: Why, kept on the audit row
+        in: query
+        name: reason
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Permanently delete a purchase order (platform owners only)
+      tags:
+      - Procurement
     get:
       parameters:
       - description: Purchase order ID

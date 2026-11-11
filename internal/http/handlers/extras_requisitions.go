@@ -121,6 +121,14 @@ func requisitionToDTO(rq *ent.Requisition, lines []*ent.RequisitionLine) requisi
 
 // publishOutbox writes a generic domain event to the outbox (reused by procurement/mfg/assets handlers).
 func (h *InventoryExtrasHandler) publishOutbox(ctx context.Context, tenantID uuid.UUID, aggregateType string, aggregateID uuid.UUID, eventType string, payload map[string]any) {
+	if err := createOutboxEvent(ctx, h.orm, tenantID, aggregateType, aggregateID, eventType, payload); err != nil {
+		h.log.Warn("outbox write failed", zap.String("event", eventType), zap.Error(err))
+	}
+}
+
+// createOutboxEvent writes one outbox row through c, which may be a transaction's client. It is
+// the single envelope builder for publishOutbox and for writes that must commit with a delete.
+func createOutboxEvent(ctx context.Context, c *ent.Client, tenantID uuid.UUID, aggregateType string, aggregateID uuid.UUID, eventType string, payload map[string]any) error {
 	// The NATS subject the relay publishes on is Event.Subject() == AggregateType + "." +
 	// EventType (shared-events convention). Callers that pass the FULL subject as eventType
 	// (e.g. "inventory.purchase_return.approved") together with a resource aggregateType
@@ -139,17 +147,15 @@ func (h *InventoryExtrasHandler) publishOutbox(ctx context.Context, tenantID uui
 	evt := events.NewEvent(eventType, aggregateType, aggregateID, tenantID, payload)
 	raw, err := evt.ToJSON()
 	if err != nil {
-		h.log.Warn("outbox marshal failed", zap.String("event", eventType), zap.Error(err))
-		return
+		return err
 	}
-	if _, err := h.orm.OutboxEvent.Create().
+	_, err = c.OutboxEvent.Create().
 		SetID(evt.ID).SetTenantID(tenantID).
 		SetAggregateType(aggregateType).SetAggregateID(aggregateID.String()).
 		SetEventType(eventType).SetPayload(json.RawMessage(raw)).
 		SetStatus("PENDING").SetCreatedAt(evt.Timestamp).
-		Save(ctx); err != nil {
-		h.log.Warn("outbox write failed", zap.String("event", eventType), zap.Error(err))
-	}
+		Save(ctx)
+	return err
 }
 
 func (h *InventoryExtrasHandler) registerRequisitionRoutes(r chi.Router, perm func(string) func(http.Handler) http.Handler, add, change string) {
@@ -348,7 +354,23 @@ func (h *InventoryExtrasHandler) SubmitRequisition(w http.ResponseWriter, r *htt
 	if !ok {
 		return
 	}
-	updated, err := h.orm.Requisition.UpdateOneID(rq.ID).SetStatus(entreq.StatusSubmitted).Save(r.Context())
+	// Only a draft (or a rejected one being resubmitted) can be submitted. Resubmitting an
+	// approved requisition would park it in "submitted" with its approval already used.
+	if rq.Status != entreq.StatusDraft && rq.Status != entreq.StatusRejected {
+		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Only draft or rejected requisitions can be submitted")
+		return
+	}
+	n, err := h.orm.Requisition.Update().
+		Where(entreq.ID(rq.ID), entreq.StatusIn(entreq.StatusDraft, entreq.StatusRejected)).
+		SetStatus(entreq.StatusSubmitted).Save(r.Context())
+	if err == nil && n == 0 {
+		writeError(w, http.StatusConflict, "INVALID_STATUS", "The requisition changed status; reload it")
+		return
+	}
+	var updated *ent.Requisition
+	if err == nil {
+		updated, err = h.orm.Requisition.Get(r.Context(), rq.ID)
+	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to submit requisition")
 		return
@@ -362,7 +384,7 @@ func (h *InventoryExtrasHandler) SubmitRequisition(w http.ResponseWriter, r *htt
 	if uid, ok := actingUserID(r); ok {
 		submittedBy = &uid
 	}
-	if req, required, aerr := h.approvals().Submit(r.Context(), tenantID, "requisition", rq.ID, rq.ReferenceNumber, amount, submittedBy); aerr == nil && required {
+	if req, required, reused, aerr := h.approvals().SubmitOnce(r.Context(), tenantID, "requisition", rq.ID, rq.ReferenceNumber, amount, submittedBy, nil); aerr == nil && required && !reused {
 		h.publishOutbox(r.Context(), tenantID, "approval_request", req.ID, "inventory.approval.submitted", map[string]any{
 			"id": req.ID, "module": "requisition", "object_id": rq.ID, "amount": amount,
 		})

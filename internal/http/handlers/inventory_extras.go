@@ -220,6 +220,9 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
 	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/amend", h.AmendPurchaseOrder)
 	r.With(feat, perm(rbac.PermProcurementChange)).Post("/inventory/purchase-orders/{poID}/submit-for-approval", h.SubmitPurchaseOrderForApproval)
+	// Permanent delete (?hard=true): platform owners only, checked in the handler against the
+	// signed is_platform_owner claim. No feature or permission gate: neither applies to the owner.
+	r.Delete("/inventory/purchase-orders/{poID}", h.HardDeletePurchaseOrder)
 
 	// Activity
 	r.Get("/inventory/activity", h.ListActivity)

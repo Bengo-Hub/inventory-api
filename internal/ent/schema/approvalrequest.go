@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -62,5 +63,13 @@ func (ApprovalRequest) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("tenant_id", "module", "object_id"),
 		index.Fields("tenant_id", "status"),
+		// One live workflow per document: at most one PENDING request per tenant, module and
+		// object. Submit returns the open request instead of creating another; this index is the
+		// backstop for any path (or race) that would still write a second one. Explicit
+		// StorageKey so it never collides with the plain lookup index on the same fields.
+		index.Fields("tenant_id", "module", "object_id").
+			Unique().
+			StorageKey("approvalrequest_pending_unique").
+			Annotations(entsql.IndexWhere("status = 'pending'")),
 	}
 }

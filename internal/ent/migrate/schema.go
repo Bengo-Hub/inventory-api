@@ -83,6 +83,14 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{ApprovalRequestsColumns[1], ApprovalRequestsColumns[7]},
 			},
+			{
+				Name:    "approvalrequest_pending_unique",
+				Unique:  true,
+				Columns: []*schema.Column{ApprovalRequestsColumns[1], ApprovalRequestsColumns[2], ApprovalRequestsColumns[3]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "status = 'pending'",
+				},
+			},
 		},
 	}
 	// ApprovalRulesColumns holds the columns for the "approval_rules" table.

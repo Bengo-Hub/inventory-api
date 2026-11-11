@@ -215,6 +215,9 @@ func New(ctx context.Context) (*App, error) {
 	// closed), and a dev testing locally with RunMigrations=true should see the same drop behavior
 	// production's real migrate job does.
 	if cfg.Postgres.RunMigrations {
+		if err := migrate.PreMigrate(ctx, sqlDB); err != nil {
+			return nil, fmt.Errorf("pre-migrate: %w", err)
+		}
 		if err := ormClient.Schema.Create(ctx,
 			schema.WithDir(migrate.Dir),
 			schema.WithDropColumn(true),

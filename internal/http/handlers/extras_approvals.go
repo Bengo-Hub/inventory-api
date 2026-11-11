@@ -169,6 +169,9 @@ func (h *InventoryExtrasHandler) registerApprovalRoutes(r chi.Router, perm func(
 	r.Get("/inventory/approval-requests/{reqID}", h.GetApprovalRequest)
 	r.Post("/inventory/approval-requests/{reqID}/approve", h.ApproveApprovalRequest)
 	r.Post("/inventory/approval-requests/{reqID}/reject", h.RejectApprovalRequest)
+	// Permanent delete: platform owners only, checked in the handler against the signed
+	// is_platform_owner claim (never a role or the tenant slug).
+	r.Delete("/inventory/approval-requests/{reqID}", h.HardDeleteApprovalRequest)
 }
 
 // ─── Rule CRUD ───────────────────────────────────────────────────────────────
@@ -781,7 +784,7 @@ func (h *InventoryExtrasHandler) SubmitPurchaseOrderForApproval(w http.ResponseW
 	if uid, ok := actingUserID(r); ok {
 		submittedBy = &uid
 	}
-	req, required, err := h.approvals().Submit(r.Context(), tenantID, string(arule.ModulePurchaseOrder), po.ID, po.PoNumber, po.TotalAmount, submittedBy)
+	req, required, reused, err := h.approvals().SubmitOnce(r.Context(), tenantID, string(arule.ModulePurchaseOrder), po.ID, po.PoNumber, po.TotalAmount, submittedBy, nil)
 	if err != nil {
 		h.log.Error("submit PO for approval failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "SUBMIT_FAILED", "Failed to submit for approval")
@@ -791,11 +794,14 @@ func (h *InventoryExtrasHandler) SubmitPurchaseOrderForApproval(w http.ResponseW
 		writeJSON(w, http.StatusOK, map[string]any{"approval_required": false, "message": "No approval rule matches this amount; the order can be sent directly."})
 		return
 	}
-	h.publishOutbox(r.Context(), tenantID, "approval_request", req.ID, "inventory.approval.submitted", map[string]any{
-		"id": req.ID, "module": "purchase_order", "object_id": po.ID, "amount": po.TotalAmount,
-	})
+	// A repeat submit gets the open request back (already_submitted) and notifies nobody again.
+	if !reused {
+		h.publishOutbox(r.Context(), tenantID, "approval_request", req.ID, "inventory.approval.submitted", map[string]any{
+			"id": req.ID, "module": "purchase_order", "object_id": po.ID, "amount": po.TotalAmount,
+		})
+	}
 	full, _ := h.orm.ApprovalRequest.Query().Where(areq.ID(req.ID)).WithActions().Only(r.Context())
-	writeJSON(w, http.StatusOK, map[string]any{"approval_required": true, "request": approvalRequestToDTO(full)})
+	writeJSON(w, http.StatusOK, map[string]any{"approval_required": true, "already_submitted": reused, "request": approvalRequestToDTO(full)})
 }
 
 // gateApproval enforces the approval matrix on ANY effecting action across the

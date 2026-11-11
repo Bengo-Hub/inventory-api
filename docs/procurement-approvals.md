@@ -40,3 +40,35 @@ Cancelling an order with an open receipt also answers `409 RECEIPT_OPEN`.
 ## Other gated modules
 
 Stock adjustments, write-offs and stock counts post when approved (payload replay or variance posting). Transfers, purchase returns, production batches, contracts, RFQ awards and the asset modules are "approve, then press the action again": the gate is keyed on the existing document, so repeating the action after approval goes through.
+
+## One live approval per document
+
+Submitting a document for approval never opens a second workflow for it. When a pending request already exists for the same tenant, module and document at the same amount, or an approved request whose effect has not run yet (`executed_at` empty), the submit returns that request. The purchase order submit endpoint then answers `already_submitted: true` and no second "submitted" event goes out. If the amount changed, the old live request (pending, or approved and not executed) is cancelled and a new one is created, because the approver signed off on a different figure; an old approval can then never come back into force. Executed requests are history and are not touched. A reused pending request keeps the rule and steps it was created with, even if the rule was edited since; reject it and resubmit to pick up the new steps. A requisition can only be submitted from draft or rejected (400 otherwise), so an approved requisition is never sent round again.
+
+The database backs this up with the partial unique index `approvalrequest_pending_unique` on `approval_requests (tenant_id, module, object_id) WHERE status = 'pending'`. If two submits race, the second insert hits the index and gets the first request back.
+
+The index cannot be built while older duplicates exist, so `cmd/migrate` runs `migrate.PreMigrate` before the schema diff. It keeps the newest pending request per tenant, module and document and cancels the older ones (the same supersede rule Submit always applied). Checking for duplicates by hand:
+
+```sql
+SELECT tenant_id, module, object_id, count(*) AS pending, min(created_at), max(created_at)
+FROM approval_requests WHERE status = 'pending'
+GROUP BY tenant_id, module, object_id HAVING count(*) > 1;
+```
+
+## Permanent delete (platform owners only)
+
+Two endpoints replace deleting rows by hand in SQL. Both require the signed `is_platform_owner` claim; a tenant admin or the superuser role gets 403, and the tenant slug is never consulted. Each runs in one transaction and writes an `audit_logs` row with a `before_json` snapshot of what was removed.
+
+`DELETE /{tenant}/inventory/approval-requests/{reqID}` deletes the request and its actions (approval steps belong to rules and are not touched). It answers 409 when:
+
+- the request was executed (`executed_at` set), `APPROVAL_EXECUTED`;
+- the request is for a goods receipt that is posted, `OBJECT_POSTED`;
+- the request is approved and is not a goods receipt request, `APPROVAL_APPLIED`, because an approved request elsewhere may already have been acted on.
+
+For a goods receipt request, `?with_object=true` also deletes the receipt, its lines and every other approval request for that receipt, but only while the receipt is a draft (`RECEIPT_NOT_DRAFT` otherwise) and nothing else points at it (no lots, serials, pending price changes or purchase returns). The audit action is `approval.hard_deleted`.
+
+`DELETE /{tenant}/inventory/purchase-orders/{poID}?hard=true` deletes a purchase order, its lines, its draft and cancelled receipts with their lines, every approval request for the order and those receipts, and its contract links, and clears the order from RFQ awards. It answers 409 `RECEIPT_POSTED` when stock came in against the order: a posted receipt, a received or partially received status, or any line with a received quantity (older orders were partly received and then cancelled before goods receipts existed). It also answers 409 when a purchase return exists (`HAS_PURCHASE_RETURN`) or when one of its approvals was executed. Inventory cannot see treasury bills; bills come from received stock, which these rules cover. The delete queues `inventory.purchase_order.cancelled` with ids only (`tenant_id`, `po_id`, `status`, `hard_deleted`, `deleted_at`), so treasury releases any budget commitment. The audit action is `purchase_order.hard_deleted`, and its snapshot lists each line as item id, quantity and unit price. Both endpoints accept an optional `?reason=` that is kept on the audit row. Without `hard=true` the endpoint answers 400; cancel is the normal way to stop an order.
+
+Each guard is checked twice. The handler reads it first to give a clear message, and then every delete statement carries the same condition (request not executed, receipt still draft or cancelled, order not received, line with nothing received) and compares the number of rows it removed. If an approval or a post commits between the read and the delete, the count comes up short and the whole transaction rolls back with a 409.
+
+In the app, "Delete permanently" appears on the approval detail and on the purchase order drawer only for platform owners, behind a confirmation that says it cannot be undone.

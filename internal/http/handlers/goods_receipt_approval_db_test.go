@@ -77,7 +77,7 @@ func (e *grnApprovalEnv) sentPO(qty float64) (*ent.PurchaseOrder, *ent.Item) {
 	e.t.Helper()
 	ctx := context.Background()
 	it := e.client.Item.Create().SetTenantID(e.tenant).SetSku("BRK-" + uuid.NewString()[:6]).SetName("Brake pad").SetCostPrice(100).SaveX(ctx)
-	po := e.client.PurchaseOrder.Create().SetTenantID(e.tenant).SetPoNumber("000021").
+	po := e.client.PurchaseOrder.Create().SetTenantID(e.tenant).SetPoNumber("PO-" + uuid.NewString()[:8]). // unique: some tests make two orders
 		SetSupplierID(e.supplier).SetWarehouseID(e.wh).SetStatus(entpo.StatusSent).SetTotalAmount(qty * 100).SaveX(ctx)
 	e.client.PurchaseOrderLine.Create().SetPoID(po.ID).SetItemID(it.ID).SetQuantityOrdered(qty).
 		SetUnitPrice(100).SetTotalPrice(qty * 100).SaveX(ctx)

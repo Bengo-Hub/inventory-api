@@ -90,37 +90,123 @@ func (s *Service) Submit(ctx context.Context, tenantID uuid.UUID, module string,
 // adjustment stashes its sku/qty/warehouse here so approving actually posts the
 // stock). Pass nil for documents that persist their own state.
 func (s *Service) SubmitWithPayload(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, objectRef string, amount float64, submittedBy *uuid.UUID, payload map[string]any) (*ent.ApprovalRequest, bool, error) {
+	req, required, _, err := s.SubmitOnce(ctx, tenantID, module, objectID, objectRef, amount, submittedBy, payload)
+	return req, required, err
+}
+
+// OpenRequest returns the live request for (tenant, module, object): the pending one, or an
+// approved one whose effect has not been executed yet. Nil when there is none.
+func (s *Service) OpenRequest(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID) (*ent.ApprovalRequest, error) {
+	req, err := s.orm.ApprovalRequest.Query().
+		Where(
+			entreq.TenantID(tenantID),
+			entreq.ModuleEQ(entreq.Module(module)),
+			entreq.ObjectID(objectID),
+			entreq.Or(
+				entreq.StatusEQ(entreq.StatusPending),
+				entreq.And(entreq.StatusEQ(entreq.StatusApproved), entreq.ExecutedAtIsNil()),
+			),
+		).
+		Order(ent.Desc(entreq.FieldCreatedAt)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	return req, err
+}
+
+// SubmitOnce is SubmitWithPayload that never opens a second live workflow for a document. When
+// a pending request (or an approved one not yet executed) already exists for the same tenant,
+// module and object at the same amount, it is returned with reused=true and nothing is written.
+// A live request (pending, or approved and not executed) at a different amount belongs to a
+// different document state, so it is cancelled and a fresh request is created; an old approval
+// can then never come back into force. Executed requests are history and are never touched.
+// The partial unique index approvalrequest_pending_unique backs this up: if a racing submit
+// wins the insert, the constraint error is answered with the racer's request (reused is true
+// only when the racer is for the same amount).
+func (s *Service) SubmitOnce(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, objectRef string, amount float64, submittedBy *uuid.UUID, payload map[string]any) (*ent.ApprovalRequest, bool, bool, error) {
 	rule, err := s.MatchRule(ctx, tenantID, module, amount)
 	if err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 	if rule == nil {
-		return nil, false, nil
+		return nil, false, false, nil
 	}
 	steps := append([]*ent.ApprovalStep(nil), rule.Edges.Steps...)
 	if len(steps) == 0 {
-		return nil, false, nil // a rule with no steps imposes no gate
+		return nil, false, false, nil // a rule with no steps imposes no gate
 	}
 	sort.Slice(steps, func(i, j int) bool { return steps[i].Sequence < steps[j].Sequence })
 
-	// Supersede any prior open request for this object so there is a single live workflow.
-	_, _ = s.orm.ApprovalRequest.Update().
+	open, err := s.OpenRequest(ctx, tenantID, module, objectID)
+	if err != nil {
+		return nil, false, false, err
+	}
+	if open != nil && open.Amount == amount {
+		return open, true, true, nil
+	}
+
+	req, err := s.createRequest(ctx, tenantID, module, objectID, objectRef, amount, submittedBy, payload, rule.ID, steps)
+	if err != nil && ent.IsConstraintError(err) {
+		// A concurrent submit created the pending request first; hand that one back.
+		if racer, rerr := s.OpenRequest(ctx, tenantID, module, objectID); rerr == nil && racer != nil {
+			return racer, true, racer.Amount == amount, nil
+		}
+	}
+	if err != nil {
+		return nil, false, false, err
+	}
+	return req, true, false, nil
+}
+
+// createRequest supersedes live requests at another amount and writes the new request with one
+// pending action per step, all in one transaction.
+func (s *Service) createRequest(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, objectRef string, amount float64, submittedBy *uuid.UUID, payload map[string]any, ruleID uuid.UUID, steps []*ent.ApprovalStep) (*ent.ApprovalRequest, error) {
+	tx, err := s.orm.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req, err := createRequestTx(ctx, tx.Client(), tenantID, module, objectID, objectRef, amount, submittedBy, payload, ruleID, steps)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+func createRequestTx(ctx context.Context, c *ent.Client, tenantID uuid.UUID, module string, objectID uuid.UUID, objectRef string, amount float64, submittedBy *uuid.UUID, payload map[string]any, ruleID uuid.UUID, steps []*ent.ApprovalStep) (*ent.ApprovalRequest, error) {
+	// Supersede every live request for this object at a different amount (pending, or approved
+	// and not executed) so there is a single live workflow and an old approval cannot return.
+	// Requests at the SAME amount are left alone: SubmitOnce only gets here when none was found,
+	// so one that exists now was written by a concurrent submit, and our insert must lose to it on
+	// the unique index instead of cancelling it.
+	if _, err := c.ApprovalRequest.Update().
 		Where(
 			entreq.TenantID(tenantID),
+			entreq.ModuleEQ(entreq.Module(module)),
 			entreq.ObjectID(objectID),
-			entreq.StatusEQ(entreq.StatusPending),
+			entreq.AmountNEQ(amount),
+			entreq.Or(
+				entreq.StatusEQ(entreq.StatusPending),
+				entreq.And(entreq.StatusEQ(entreq.StatusApproved), entreq.ExecutedAtIsNil()),
+			),
 		).
 		SetStatus(entreq.StatusCancelled).
 		SetDecidedAt(time.Now()).
-		Save(ctx)
+		Save(ctx); err != nil {
+		return nil, err
+	}
 
-	rc := s.orm.ApprovalRequest.Create().
+	rc := c.ApprovalRequest.Create().
 		SetTenantID(tenantID).
 		SetModule(entreq.Module(module)).
 		SetObjectID(objectID).
 		SetObjectReference(objectRef).
 		SetAmount(amount).
-		SetRuleID(rule.ID).
+		SetRuleID(ruleID).
 		SetCurrentSequence(steps[0].Sequence)
 	if submittedBy != nil {
 		rc = rc.SetSubmittedBy(*submittedBy)
@@ -130,20 +216,20 @@ func (s *Service) SubmitWithPayload(ctx context.Context, tenantID uuid.UUID, mod
 	}
 	req, err := rc.Save(ctx)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	for _, st := range steps {
-		if _, err := s.orm.ApprovalAction.Create().
+		if _, err := c.ApprovalAction.Create().
 			SetTenantID(tenantID).
 			SetRequestID(req.ID).
 			SetSequence(st.Sequence).
 			SetName(st.Name).
 			SetApproverRole(st.ApproverRole).
 			Save(ctx); err != nil {
-			return nil, false, err
+			return nil, err
 		}
 	}
-	return req, true, nil
+	return req, nil
 }
 
 // Act records a decision on the request's current step. roleCheck reports whether

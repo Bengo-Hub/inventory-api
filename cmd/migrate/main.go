@@ -95,6 +95,12 @@ func main() {
 	client := ent.NewClient(ent.Driver(drv))
 	defer client.Close()
 
+	// Data fixes the schema diff depends on (e.g. duplicate pending approvals must be closed
+	// before the partial unique index on approval_requests can be built).
+	if err := migrate.PreMigrate(ctx, sqlDB); err != nil {
+		log.Fatalf("pre-migrate: %v", err)
+	}
+
 	// WithDropColumn/WithDropIndex must be explicit — without them, ent's live diff (schema.WithDir
 	// here compares the CURRENT ent/schema/*.go structs against the live DB; there is no schema-
 	// revisions table, it does not replay checked-in .sql files verbatim) silently SKIPS any

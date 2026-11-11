@@ -294,6 +294,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/approval-requests/{reqID}": {
+            "delete": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Permanently delete an approval request (platform owners only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Approval request ID",
+                        "name": "reqID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Also delete the draft goods receipt",
+                        "name": "with_object",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/approval-rules": {
             "get": {
                 "security": [
@@ -2535,6 +2593,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/{tenant}/inventory/goods-receipts/{grnID}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Cancel a draft goods receipt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "GRN ID",
+                        "name": "grnID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.grnDTO"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/goods-receipts/{grnID}/pdf": {
             "get": {
                 "security": [
@@ -4223,6 +4323,69 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Procurement"
+                ],
+                "summary": "Permanently delete a purchase order (platform owners only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Purchase order ID",
+                        "name": "poID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Must be true",
+                        "name": "hard",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Why, kept on the audit row",
+                        "name": "reason",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
