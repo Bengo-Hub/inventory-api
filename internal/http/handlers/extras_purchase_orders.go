@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	events "github.com/Bengo-Hub/shared-events"
 	"github.com/bengobox/inventory-service/internal/ent"
+	areq "github.com/bengobox/inventory-service/internal/ent/approvalrequest"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entpurchaseorder "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
@@ -310,6 +312,9 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 	type poDetailDTO struct {
 		purchaseOrderDTO
 		LineItems []lineDTO `json:"line_items"`
+		// OpenReceipt is the order's unposted goods receipt, if any. While it is set the screen
+		// shows "Awaiting receipt approval" (or offers to post it) instead of Amend/Cancel.
+		OpenReceipt *openReceiptDTO `json:"open_receipt,omitempty"`
 	}
 
 	dto := purchaseOrderDTO{
@@ -333,7 +338,7 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 		dto.OrderDate = po.OrderDate
 	}
 
-	writeJSON(w, http.StatusOK, poDetailDTO{purchaseOrderDTO: dto, LineItems: lines})
+	writeJSON(w, http.StatusOK, poDetailDTO{purchaseOrderDTO: dto, LineItems: lines, OpenReceipt: h.openReceiptFor(r.Context(), tenantID, po.ID)})
 }
 
 // ─── Purchase Order Writes ────────────────────────────────────────────────────
@@ -550,9 +555,15 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 }
 
 // AmendPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/amend.
-// Replaces the line items + notes/expected date of a draft or sent PO (before any
-// goods are received) and recomputes the total. Received/partially-received/
-// cancelled POs cannot be amended.
+// Replaces the whole order (lines, supplier, warehouse, terms, shipping, notes, dates) and
+// recomputes the total. When an order can be amended:
+//   - draft: always;
+//   - sent: only while nothing has been received and no goods receipt is open. If the total or
+//     the supplier changes, the order goes back to draft so its approval and budget check run
+//     again when it is re-sent;
+//   - partially received, received or cancelled: never (use a purchase return or a new order).
+//
+// Any purchase_order approval given for the old amount is closed when the amount changes.
 //
 //	@Summary      Amend a draft/sent purchase order's lines
 //	@Tags         Procurement
@@ -576,7 +587,7 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid purchase order ID")
 		return
 	}
-	po, err := h.orm.PurchaseOrder.Query().Where(entpurchaseorder.ID(poID), entpurchaseorder.TenantID(tenantID)).Only(r.Context())
+	po, err := h.orm.PurchaseOrder.Query().Where(entpurchaseorder.ID(poID), entpurchaseorder.TenantID(tenantID)).WithLines().Only(r.Context())
 	if err != nil {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
 		return
@@ -584,6 +595,19 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 	st := po.Status.String()
 	if st != "draft" && st != "sent" {
 		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Only draft or sent purchase orders can be amended")
+		return
+	}
+	for _, l := range po.Edges.Lines {
+		if l.QuantityReceived > 0 {
+			writeError(w, http.StatusConflict, "ALREADY_RECEIVING", "Goods have already been received on this order, so it can no longer be amended")
+			return
+		}
+	}
+	// An open receipt (draft or awaiting approval) was built from the current lines; amending
+	// them underneath it would let the approver sign off quantities that no longer match.
+	if live, lerr := h.liveOpenGoodsReceipts(r.Context(), tenantID, poID); lerr == nil && len(live) > 0 {
+		writeError(w, http.StatusConflict, "RECEIPT_OPEN",
+			"Goods receipt "+live[0].GrnNumber+" is open for this order. Post or cancel it before amending.")
 		return
 	}
 	var req createPOInput
@@ -632,7 +656,24 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 			return
 		}
 	}
-	upd := tx.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(roundDecimal(total)).SetNotes(req.Notes)
+	total = roundDecimal(total)
+	// Amend replaces the whole order as the form shows it, header included: supplier, warehouse,
+	// payment terms and shipping are applied too (they used to be silently ignored).
+	newStatus, returnedToDraft := amendedPOStatus(st, po.TotalAmount, total, po.SupplierID, req.SupplierID)
+	upd := tx.PurchaseOrder.UpdateOneID(po.ID).SetTotalAmount(total).SetNotes(req.Notes).
+		SetAdditionalShippingCharges(req.AdditionalShippingCharges).
+		SetStatus(entpurchaseorder.Status(newStatus))
+	if req.SupplierID != uuid.Nil {
+		upd = upd.SetSupplierID(req.SupplierID)
+	}
+	if req.WarehouseID != uuid.Nil {
+		upd = upd.SetWarehouseID(req.WarehouseID)
+	}
+	if req.PayTermDays != nil {
+		upd = upd.SetPayTermDays(*req.PayTermDays)
+	} else {
+		upd = upd.ClearPayTermDays()
+	}
 	if req.ExpectedDate != nil && *req.ExpectedDate != "" {
 		if t, e := time.Parse("2006-01-02", *req.ExpectedDate); e == nil {
 			upd = upd.SetExpectedDate(t)
@@ -649,7 +690,8 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 			return
 		}
 	}
-	if _, err = upd.Save(r.Context()); err != nil {
+	updated, err := upd.Save(r.Context())
+	if err != nil {
 		_ = tx.Rollback()
 		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to update purchase order")
 		return
@@ -658,10 +700,46 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusInternalServerError, "COMMIT_FAILED", "Failed to commit amendment")
 		return
 	}
-	h.publishOutbox(r.Context(), tenantID, "purchase_order", po.ID, "inventory.purchase_order.amended", map[string]any{
-		"id": po.ID, "po_number": po.PoNumber, "total_amount": total,
+	// A purchase_order approval was given for the old amount. When the amount changes, close it
+	// so the changed order has to be approved again before it can be sent (Send checks the
+	// latest request, which is now cancelled).
+	if total != po.TotalAmount {
+		_, _ = h.orm.ApprovalRequest.Update().
+			Where(areq.TenantID(tenantID), areq.ObjectID(po.ID), areq.ModuleEQ(areq.ModulePurchaseOrder),
+				areq.StatusIn(areq.StatusPending, areq.StatusApproved)).
+			SetStatus(areq.StatusCancelled).SetDecidedAt(time.Now()).
+			Save(r.Context())
+	}
+	// Treasury keeps the budget commitment in step: status "sent" refreshes it to the new total,
+	// any other status (an order sent back to draft) releases it until the order is sent again.
+	payload := poBudgetPayload(tenantID, updated)
+	payload["id"] = po.ID
+	payload["status"] = newStatus
+	payload["previous_status"] = st
+	payload["previous_total_amount"] = po.TotalAmount
+	payload["returned_to_draft"] = returnedToDraft
+	h.publishOutbox(r.Context(), tenantID, "purchase_order", po.ID, "inventory.purchase_order.amended", payload)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"id": po.ID, "po_number": po.PoNumber, "total_amount": total, "status": newStatus, "returned_to_draft": returnedToDraft,
 	})
-	writeJSON(w, http.StatusOK, map[string]any{"id": po.ID, "po_number": po.PoNumber, "total_amount": total, "status": st})
+}
+
+// amendedPOStatus decides an amended order's status. A draft stays a draft. A sent order stays
+// sent when the change is cosmetic (notes, dates, warehouse, terms, or the same total), but goes
+// back to draft when what was promised to the supplier changes (the total or the supplier): the
+// approval and treasury budget check that ran on send must run again for the new figures, so the
+// order has to be sent again rather than silently changing a committed amount.
+func amendedPOStatus(current string, oldTotal, newTotal float64, oldSupplier *uuid.UUID, newSupplier uuid.UUID) (status string, returnedToDraft bool) {
+	if current != "sent" {
+		return current, false
+	}
+	supplierChanged := newSupplier != uuid.Nil && (oldSupplier == nil || *oldSupplier != newSupplier)
+	// Totals are money: a change below one cent is rounding noise, not a new amount.
+	totalChanged := oldTotal-newTotal >= 0.005 || newTotal-oldTotal >= 0.005
+	if totalChanged || supplierChanged {
+		return "draft", true
+	}
+	return current, false
 }
 
 // SendPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/send.
@@ -808,6 +886,61 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 		return
 	}
 
+	// One open receipt per order. If a draft receipt already exists (typically one waiting for
+	// approval) this click works on THAT receipt: still pending answers "awaiting approval",
+	// approved posts it. Creating a fresh receipt on every click is what left PO 000021 with four
+	// identical drafts, each with its own approval request, none of which ever posted.
+	live, err := h.liveOpenGoodsReceipts(r.Context(), tenantID, poID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to check open goods receipts")
+		return
+	}
+	if len(live) > 1 {
+		numbers := make([]string, 0, len(live))
+		for _, g := range live {
+			numbers = append(numbers, g.GrnNumber)
+		}
+		writeError(w, http.StatusConflict, "MULTIPLE_OPEN_RECEIPTS",
+			"This order has several unposted goods receipts ("+strings.Join(numbers, ", ")+"). Cancel the duplicates on the Goods Receipts page and keep one.")
+		return
+	}
+	var g *ent.GoodsReceipt
+	if len(live) == 1 {
+		g = live[0]
+	} else {
+		g, err = h.createReceiveAllReceipt(r.Context(), tenantID, po)
+		if err != nil {
+			if err == errNothingToReceive {
+				writeError(w, http.StatusBadRequest, "NOTHING_TO_RECEIVE", "All lines are already fully received")
+				return
+			}
+			h.log.Error("auto-create GRN on mark-received failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to record goods receipt")
+			return
+		}
+	}
+
+	if !h.gateApproval(w, r, tenantID, "goods_receipt", g.ID, g.GrnNumber, po.TotalAmount) {
+		return // GRN stays in draft, awaiting/rejected sign-off; PO status is untouched.
+	}
+
+	if err = h.postGoodsReceiptOnce(r.Context(), tenantID, g, po); err != nil {
+		h.log.Error("post goods receipt on mark-received failed", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to post goods receipt")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"status": "received", "goods_receipt_id": g.ID, "grn_number": g.GrnNumber})
+}
+
+// errNothingToReceive means every line of the order is already fully received.
+var errNothingToReceive = errors.New("nothing left to receive")
+
+// createReceiveAllReceipt opens the "receive everything still outstanding" draft receipt for
+// Mark Received. After creating it, it re-reads the order's drafts: if a concurrent click opened
+// one first, this one is deleted and the earlier one is returned, so a double click still ends
+// with a single receipt.
+func (h *InventoryExtrasHandler) createReceiveAllReceipt(ctx context.Context, tenantID uuid.UUID, po *ent.PurchaseOrder) (*ent.GoodsReceipt, error) {
 	var remaining []*ent.PurchaseOrderLine
 	for _, line := range po.Edges.Lines {
 		if line.QuantityOrdered > line.QuantityReceived {
@@ -815,25 +948,22 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 		}
 	}
 	if len(remaining) == 0 {
-		writeError(w, http.StatusBadRequest, "NOTHING_TO_RECEIVE", "All lines are already fully received")
-		return
+		return nil, errNothingToReceive
 	}
 
 	grnNumber := "GRN-" + strings.ToUpper(uuid.New().String()[:8])
 	if h.docSvc != nil {
-		if n, derr := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypeGRN); derr == nil && n != "" {
+		if n, derr := h.docSvc.Seq().GenerateNumber(ctx, tenantID, documents.DocTypeGRN); derr == nil && n != "" {
 			grnNumber = n
 		}
 	}
 	g, err := h.orm.GoodsReceipt.Create().
-		SetTenantID(tenantID).SetGrnNumber(grnNumber).SetPurchaseOrderID(poID).
+		SetTenantID(tenantID).SetGrnNumber(grnNumber).SetPurchaseOrderID(po.ID).
 		SetNillableSupplierID(po.SupplierID).SetNillableWarehouseID(po.WarehouseID).
 		SetNotes("Auto-generated via Mark Received").
-		Save(r.Context())
+		Save(ctx)
 	if err != nil {
-		h.log.Error("auto-create GRN on mark-received failed", zap.Error(err))
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to record goods receipt")
-		return
+		return nil, err
 	}
 	for _, line := range remaining {
 		qty := line.QuantityOrdered - line.QuantityReceived
@@ -851,25 +981,19 @@ func (h *InventoryExtrasHandler) ReceivePurchaseOrder(w http.ResponseWriter, r *
 				lc = lc.SetPriceScope(scope)
 			}
 		}
-		if _, lerr := lc.Save(r.Context()); lerr != nil {
+		if _, lerr := lc.Save(ctx); lerr != nil {
 			h.log.Warn("auto GRN line create failed", zap.Error(lerr))
 		}
 	}
-	h.publishOutbox(r.Context(), tenantID, "inventory", g.ID, "goods_receipt.created", map[string]any{
-		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": poID,
+	// Double-click guard: keep only the oldest open draft for this order.
+	if open, oerr := h.openGoodsReceipts(ctx, tenantID, po.ID); oerr == nil && len(open) > 0 && open[0].ID != g.ID {
+		h.deleteGoodsReceipt(ctx, tenantID, g.ID)
+		return open[0], nil
+	}
+	h.publishOutbox(ctx, tenantID, "inventory", g.ID, "goods_receipt.created", map[string]any{
+		"id": g.ID, "grn_number": g.GrnNumber, "purchase_order_id": po.ID,
 	})
-
-	if !h.gateApproval(w, r, tenantID, "goods_receipt", g.ID, g.GrnNumber, po.TotalAmount) {
-		return // GRN stays in draft, awaiting/rejected sign-off; PO status is untouched.
-	}
-
-	if _, err = h.postGoodsReceiptCore(r.Context(), tenantID, g, po); err != nil {
-		h.log.Error("post goods receipt on mark-received failed", zap.Error(err))
-		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to post goods receipt")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, map[string]string{"status": "received"})
+	return g, nil
 }
 
 // CancelPurchaseOrder handles PUT /inventory/purchase-orders/{poID}/cancel.
@@ -903,6 +1027,13 @@ func (h *InventoryExtrasHandler) CancelPurchaseOrder(w http.ResponseWriter, r *h
 	}
 	if po.Status.String() == "received" {
 		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Received orders cannot be cancelled")
+		return
+	}
+	// An open receipt means goods are being booked in against this order right now; cancelling
+	// underneath it would leave a receipt (possibly already approved) for a dead order.
+	if live, lerr := h.liveOpenGoodsReceipts(r.Context(), tenantID, poID); lerr == nil && len(live) > 0 {
+		writeError(w, http.StatusConflict, "RECEIPT_OPEN",
+			"Goods receipt "+live[0].GrnNumber+" is open for this order. Post or cancel it before cancelling the order.")
 		return
 	}
 	if _, err := h.orm.PurchaseOrder.UpdateOneID(poID).SetStatus("cancelled").Save(r.Context()); err != nil {

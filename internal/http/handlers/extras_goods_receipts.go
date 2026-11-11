@@ -204,6 +204,9 @@ func (h *InventoryExtrasHandler) registerGoodsReceiptRoutes(r chi.Router, perm f
 	// Idempotency-Key guarded: a retried post (flaky connection, terminal replay) must not
 	// double-create cost layers or double-advance the PO.
 	r.With(perm(change), invmiddleware.Idempotency(h.orm)).Post("/inventory/goods-receipts/{grnID}/post", h.PostGoodsReceipt)
+	// Cancel a draft receipt (a duplicate, or one that will not be posted). Posted receipts are
+	// reversed with a purchase return instead.
+	r.With(perm(change)).Post("/inventory/goods-receipts/{grnID}/cancel", h.CancelGoodsReceipt)
 	r.Get("/inventory/purchase-orders/{poID}/match", h.MatchPurchaseOrder)
 }
 
@@ -405,6 +408,17 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
 		return
 	}
+	if !poAcceptsReceipts(po.Status.String()) {
+		writeError(w, http.StatusConflict, "ORDER_CLOSED", "This purchase order is already fully received or cancelled")
+		return
+	}
+	// One open receipt per order: post or cancel the existing draft before recording another,
+	// otherwise the same delivery ends up recorded (and later stocked) twice.
+	if live, lerr := h.liveOpenGoodsReceipts(r.Context(), tenantID, poID); lerr == nil && len(live) > 0 {
+		writeError(w, http.StatusConflict, "RECEIPT_OPEN",
+			"Goods receipt "+live[0].GrnNumber+" is still open for this order (draft or awaiting approval). Post or cancel it before recording another.")
+		return
+	}
 	var req grnPayload
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.Lines) == 0 {
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "At least one received line is required")
@@ -506,10 +520,14 @@ func (h *InventoryExtrasHandler) PostGoodsReceipt(w http.ResponseWriter, r *http
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Purchase order not found")
 		return
 	}
+	if !poAcceptsReceipts(po.Status.String()) {
+		writeError(w, http.StatusConflict, "ORDER_CLOSED", "This purchase order is already fully received or cancelled. Cancel this receipt instead of posting it.")
+		return
+	}
 	if !h.gateApproval(w, r, tenantID, "goods_receipt", g.ID, g.GrnNumber, po.TotalAmount) {
 		return
 	}
-	if _, err := h.postGoodsReceiptCore(r.Context(), tenantID, g, po); err != nil {
+	if err := h.postGoodsReceiptOnce(r.Context(), tenantID, g, po); err != nil {
 		h.log.Error("post goods receipt failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to post goods receipt")
 		return

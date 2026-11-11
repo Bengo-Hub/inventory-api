@@ -568,6 +568,11 @@ func (h *InventoryExtrasHandler) applyApprovalDecision(w http.ResponseWriter, r 
 	if updated.Status == areq.StatusApproved {
 		h.executeApprovedAction(r.Context(), updated, userID)
 	}
+	// A rejection undoes whatever was parked waiting for sign-off (a draft goods receipt is
+	// cancelled so its order can be received again).
+	if updated.Status == areq.StatusRejected {
+		h.onApprovalRejected(r.Context(), updated)
+	}
 	h.publishOutbox(r.Context(), tenantID, "approval_request", updated.ID, "inventory.approval."+string(updated.Status), map[string]any{
 		"id": updated.ID, "module": updated.Module, "object_id": updated.ObjectID, "status": updated.Status,
 	})
@@ -579,8 +584,17 @@ func (h *InventoryExtrasHandler) applyApprovalDecision(w http.ResponseWriter, r 
 // ClaimExecution (a compare-and-set on executed_at), so the effect posts exactly once
 // even if this races a legacy client retry. Modules that carry their own state
 // (purchase_order, requisition) are handled by syncDocFromApproval and no-op here.
+// The remaining gated modules (stock_transfer, purchase_return, production_batch, contract,
+// rfq and the asset modules) are "approve, then press the action again": their gate is keyed
+// on the existing document, so repeating the action after approval goes through.
 func (h *InventoryExtrasHandler) executeApprovedAction(ctx context.Context, req *ent.ApprovalRequest, approver uuid.UUID) {
 	switch req.Module {
+	case areq.ModuleGoodsReceipt:
+		// Approving a receipt posts it. Before this case existed, approval only flipped the
+		// request to "approved" and the receipt stayed a draft forever, because the "Mark
+		// Received" retry created a new receipt (and a new approval) instead of posting this one.
+		h.executeApprovedGoodsReceipt(ctx, req)
+
 	case areq.ModuleStockAdjustment, areq.ModuleStockWriteoff:
 		if h.stockSvc == nil {
 			h.log.Warn("cannot post approved adjustment: stock service not wired", zap.String("request_id", req.ID.String()))
