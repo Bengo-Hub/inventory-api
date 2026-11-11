@@ -74,6 +74,10 @@ type VariantRowInput struct {
 type SaveVariantsInput struct {
 	Axes map[string][]string `json:"axes"`
 	Rows []VariantRowInput   `json:"rows"`
+
+	// OperatingOutletID is the request's outlet (set by the handler, never read from the body):
+	// new child items open their balance in that outlet's warehouse, like a new item.
+	OperatingOutletID uuid.UUID `json:"-"`
 }
 
 // VariantInputError is a validation failure in a SaveVariants request (HTTP 400).
@@ -605,6 +609,7 @@ func (s *Service) SaveVariants(ctx context.Context, tenantID, parentID uuid.UUID
 				dto.SellingPrice = &price
 				dto.MaxSellingPrice, dto.MinSellingPrice = nil, nil
 			}
+			dto.OperatingOutletID = in.OperatingOutletID
 			created, err := s.CreateItem(ctx, tenantID, dto)
 			if err != nil {
 				return nil, err

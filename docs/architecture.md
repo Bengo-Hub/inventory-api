@@ -295,11 +295,11 @@ explicit warehouse resolves one the same way, through `stockcalc.OutletWarehouse
 3. Otherwise the tenant's active default warehouse.
 
 Stock movements (adjustments, receipts, counts) and every item-creating path (the item form, bulk
-import, recipe and composite ingredient creation) follow this. Since 2026-11-11 a new item's
+import, recipe and composite ingredient creation, variant child items) follow this. Since 2026-11-11 a new item's
 opening balance goes to the outlet the person is working in; before, it always went to the tenant
 default, so an item created at a branch never showed there. The outlet only comes from the request
 context, never from the request body, and an outlet that belongs to another tenant resolves to the
-tenant default. Variant child items still open at the tenant default (open item).
+tenant default.
 
 ---
 

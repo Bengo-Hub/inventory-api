@@ -1466,6 +1466,7 @@ func (h *InventoryHandler) SaveItemVariants(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
 		return
 	}
+	req.OperatingOutletID = operatingOutletID(r)
 	variants, err := h.itemsSvc.SaveVariants(r.Context(), tenantID, itemID, req)
 	if err != nil {
 		var inErr *items.VariantInputError
