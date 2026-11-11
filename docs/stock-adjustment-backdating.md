@@ -46,6 +46,30 @@ adjustments now follow the same idea.
 inventory-ui adds an "Adjustment date" field (`AdjustmentDateField`, default today, never later than
 today, 366 days back) to the Adjustments page modal and the stock drawer's adjust form.
 
+## Goods receipts (2026-11-11)
+
+A goods receipt can be dated the day the goods arrived. BOI entered a past purchase two days late:
+the order got order date 7 Nov, but its receipt was stamped 9 Nov (the entry time), because a receipt
+had no date of its own, so product history, the lot and the supplier bill showed 9 Nov.
+
+- `POST /inventory/purchase-orders/{poID}/goods-receipts` takes an optional `received_date`
+  (`YYYY-MM-DD`), resolved by `stock.ResolveReceivedDate`, which shares `resolveBackdate` with
+  adjustments: blank or today keeps the real time, an earlier day is the start of that day (UTC),
+  no future dates, at most 366 days back (400 `INVALID_RECEIVED_DATE`). It is stored in
+  `goods_receipts.received_date`; `created_at` keeps the entry time. No schema change.
+- Stock history dates the "Purchase (GRN)" row by `received_date` (as before) and adds `entered_at`
+  when the receipt is back-dated, so the page shows the amber "entered ..." note and the running
+  balance treats it as a late entry (`shiftStaleAnchors`).
+- The lot's `received_at` and a "new stock only" price change follow `received_date`.
+- `goods_receipt.posted` carries `received_date`; treasury-api dates the vendor bill (and its due
+  date) by it through `platform/effdate.FromEvent`, the same fallback rule as adjustments.
+- inventory-ui: the receive form has a "Received on" field (`AdjustmentDateField` with a label). It
+  starts at the order date when the order itself was back-dated (order date before the day it was
+  entered), otherwise today.
+
+Receipts entered before this change keep the entry day; re-dating one also moves its vendor bill and
+journal, so it is done only on the owner's say-so.
+
 ## Not covered
 
 Bulk adjust and stock take postings still stamp the entry time; a backdated stock take is a separate
