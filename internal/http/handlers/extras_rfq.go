@@ -662,7 +662,9 @@ type awardEntry struct {
 	Quantity   float64   `json:"quantity"`
 }
 
-// AwardRFQ handles POST /inventory/rfqs/{rfqID}/award. Replaces any prior awards.
+// AwardRFQ handles POST /inventory/rfqs/{rfqID}/award. Replaces any prior awards. Under an rfq
+// approval rule the selection is stored on the approval request and applied when it is approved;
+// a different selection is a new submission.
 func (h *InventoryExtrasHandler) AwardRFQ(w http.ResponseWriter, r *http.Request) {
 	tenantID, rfqID, ok := h.rfqParams(w, r)
 	if !ok {
@@ -679,50 +681,94 @@ func (h *InventoryExtrasHandler) AwardRFQ(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "NO_AWARDS", "Select at least one line to award")
 		return
 	}
+	rfq, err := h.orm.RFQ.Query().Where(entrfq.ID(rfqID), entrfq.TenantID(tenantID)).Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "RFQ not found")
+		return
+	}
+	if rfq.Status == entrfq.StatusCancelled {
+		writeError(w, http.StatusConflict, "RFQ_CANCELLED", "A cancelled RFQ cannot be awarded")
+		return
+	}
 	// Approval gate: awarding commits the tenant to suppliers. Amount = total award value.
 	var awardTotal float64
 	for _, a := range body.Awards {
 		awardTotal += a.UnitPrice * a.Quantity
 	}
-	rfqRef := ""
-	if rfq, e := h.orm.RFQ.Query().Where(entrfq.ID(rfqID), entrfq.TenantID(tenantID)).Only(r.Context()); e == nil {
-		rfqRef = rfq.RfqNumber
+	awards := body.Awards
+	h.runGatedAction(w, r, tenantID, "rfq", rfqID, rfq.RfqNumber, awardTotal, map[string]any{"awards": awards},
+		func(ctx context.Context) (any, *actionError) {
+			return h.awardRFQCore(ctx, tenantID, rfqID, rfq.RfqNumber, awards)
+		})
+}
+
+// awardsFromPayload reads the award selection stored on an rfq approval request.
+func awardsFromPayload(payload map[string]any) ([]awardEntry, bool) {
+	raw, ok := payload["awards"]
+	if !ok {
+		return nil, false
 	}
-	if !h.gateApproval(w, r, tenantID, "rfq", rfqID, rfqRef, awardTotal) {
-		return
+	b, err := json.Marshal(raw)
+	if err != nil {
+		return nil, false
+	}
+	var out []awardEntry
+	if err := json.Unmarshal(b, &out); err != nil || len(out) == 0 {
+		return nil, false
+	}
+	return out, true
+}
+
+// awardRFQCore writes the awards, marks the RFQ awarded and raises a draft contract per awarded
+// supplier. Shared by Award and the approval executor (which replays the stored selection).
+func (h *InventoryExtrasHandler) awardRFQCore(ctx context.Context, tenantID, rfqID uuid.UUID, rfqRef string, awards []awardEntry) (any, *actionError) {
+	// Mark the RFQ awarded first, conditionally (never a cancelled one), before touching awards.
+	// Awarding again is a legitimate re-award (it replaces the unconverted awards), so this switch
+	// is not a once-only guard by itself: on the approved path exactly-once comes from the
+	// executed_at claim, and nothing here moves stock or money (contracts are created once per
+	// supplier and RFQ).
+	n, err := h.orm.RFQ.Update().
+		Where(entrfq.ID(rfqID), entrfq.TenantID(tenantID), entrfq.StatusNEQ(entrfq.StatusCancelled)).
+		SetStatus(entrfq.StatusAwarded).
+		Save(ctx)
+	if err != nil {
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to award the RFQ"}
+	}
+	if n == 0 {
+		if exists, _ := h.orm.RFQ.Query().Where(entrfq.ID(rfqID), entrfq.TenantID(tenantID)).Exist(ctx); !exists {
+			return nil, &actionError{Status: http.StatusNotFound, Code: "NOT_FOUND", Message: "RFQ not found", Settled: true}
+		}
+		return nil, &actionError{Status: http.StatusConflict, Code: "RFQ_CANCELLED", Message: "A cancelled RFQ cannot be awarded", Settled: true}
 	}
 	// Replace prior awards that have not yet been converted to POs.
-	_, _ = h.orm.RFQAward.Delete().Where(entrfqaward.RfqID(rfqID), entrfqaward.PoIDIsNil()).Exec(r.Context())
-	for _, a := range body.Awards {
+	_, _ = h.orm.RFQAward.Delete().Where(entrfqaward.TenantID(tenantID), entrfqaward.RfqID(rfqID), entrfqaward.PoIDIsNil()).Exec(ctx)
+	for _, a := range awards {
 		qty := a.Quantity
 		if qty <= 0 {
-			qty = h.lineQty(r.Context(), rfqID, a.RFQLineID)
+			qty = h.lineQty(ctx, rfqID, a.RFQLineID)
 		}
 		if _, err := h.orm.RFQAward.Create().
 			SetTenantID(tenantID).SetRfqID(rfqID).SetRfqLineID(a.RFQLineID).
 			SetSupplierID(a.SupplierID).SetUnitPrice(a.UnitPrice).SetQuantity(qty).
-			Save(r.Context()); err != nil {
+			Save(ctx); err != nil {
 			h.log.Warn("create award failed", zap.Error(err))
 		}
-	}
-	if _, err := h.orm.RFQ.UpdateOneID(rfqID).SetStatus(entrfq.StatusAwarded).Save(r.Context()); err != nil {
-		h.log.Warn("set RFQ awarded failed", zap.Error(err))
 	}
 
 	// Auto-create a draft supplier Contract per awarded supplier, linked to this RFQ. Idempotent:
 	// skip suppliers that already have a contract for this RFQ (so re-awarding doesn't duplicate).
 	awardValueBySupplier := map[uuid.UUID]float64{}
-	for _, a := range body.Awards {
+	for _, a := range awards {
 		q := a.Quantity
 		if q <= 0 {
-			q = h.lineQty(r.Context(), rfqID, a.RFQLineID)
+			q = h.lineQty(ctx, rfqID, a.RFQLineID)
 		}
 		awardValueBySupplier[a.SupplierID] += a.UnitPrice * q
 	}
 	for sid, val := range awardValueBySupplier {
 		exists, _ := h.orm.Contract.Query().
 			Where(entcontract.TenantID(tenantID), entcontract.SupplierID(sid), entcontract.RfqID(rfqID)).
-			Exist(r.Context())
+			Exist(ctx)
 		if exists {
 			continue
 		}
@@ -731,16 +777,16 @@ func (h *InventoryExtrasHandler) AwardRFQ(w http.ResponseWriter, r *http.Request
 			SetTenantID(tenantID).SetSupplierID(sid).SetRfqID(rfqID).
 			SetTitle("Contract from RFQ " + rfqRef).
 			SetStartDate(now).SetEndDate(now.AddDate(1, 0, 0)).
-			SetValue(val).Save(r.Context()); err != nil {
+			SetValue(val).Save(ctx); err != nil {
 			h.log.Warn("award RFQ: auto-create contract failed", zap.Error(err))
 		}
 	}
 
-	h.publishOutbox(r.Context(), tenantID, "rfq", rfqID, "inventory.rfq.awarded", map[string]any{
-		"id": rfqID, "awards": len(body.Awards),
+	h.publishOutbox(ctx, tenantID, "rfq", rfqID, "inventory.rfq.awarded", map[string]any{
+		"id": rfqID, "awards": len(awards),
 	})
-	full, _ := h.loadRFQFull(r.Context(), tenantID, rfqID)
-	writeJSON(w, http.StatusOK, h.rfqToDTO(r.Context(), tenantID, full, true))
+	full, _ := h.loadRFQFull(ctx, tenantID, rfqID)
+	return h.rfqToDTO(ctx, tenantID, full, true), nil
 }
 
 func (h *InventoryExtrasHandler) lineQty(ctx context.Context, rfqID, lineID uuid.UUID) float64 {

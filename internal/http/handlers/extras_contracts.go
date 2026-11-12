@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"net/http"
@@ -241,10 +242,37 @@ func (h *InventoryExtrasHandler) ActivateContract(w http.ResponseWriter, r *http
 	if !ok {
 		return
 	}
-	if !h.gateApproval(w, r, tenantID, "contract", c.ID, c.Title, c.Value) {
+	if c.Status == entcontract.StatusActive {
+		writeError(w, http.StatusConflict, "ALREADY_ACTIVE", "This contract is already active")
 		return
 	}
-	h.setContractStatus(w, r, entcontract.StatusActive, "inventory.contract.activated")
+	// Approval gate: approving the request activates the contract. Editing the value after a
+	// rejection changes the amount, so the next press is a fresh submission.
+	h.runGatedAction(w, r, tenantID, "contract", c.ID, c.Title, c.Value, nil,
+		func(ctx context.Context) (any, *actionError) {
+			return h.activateContractCore(ctx, tenantID, c)
+		})
+}
+
+// activateContractCore switches a contract to active once (a conditional update, so racing
+// callers cannot both publish the activation). Shared by Activate and the approval executor.
+func (h *InventoryExtrasHandler) activateContractCore(ctx context.Context, tenantID uuid.UUID, c *ent.Contract) (any, *actionError) {
+	n, err := h.orm.Contract.Update().
+		Where(entcontract.ID(c.ID), entcontract.TenantID(tenantID), entcontract.StatusNEQ(entcontract.StatusActive)).
+		SetStatus(entcontract.StatusActive).
+		Save(ctx)
+	if err != nil {
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to update contract"}
+	}
+	if n == 0 {
+		return nil, &actionError{Status: http.StatusConflict, Code: "ALREADY_ACTIVE", Message: "This contract is already active", Settled: true}
+	}
+	updated, err := h.orm.Contract.Get(ctx, c.ID)
+	if err != nil {
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to load contract", Settled: true}
+	}
+	h.publishOutbox(ctx, tenantID, "contract", updated.ID, "inventory.contract.activated", map[string]any{"id": updated.ID, "status": updated.Status})
+	return contractToDTO(updated), nil
 }
 
 // TerminateContract handles POST /inventory/contracts/{contractID}/terminate.

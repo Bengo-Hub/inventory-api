@@ -13,6 +13,7 @@ import (
 	"github.com/Bengo-Hub/pagination"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 
+	"github.com/bengobox/inventory-service/internal/ent"
 	invmiddleware "github.com/bengobox/inventory-service/internal/http/middleware"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
@@ -151,9 +152,10 @@ func (h *TransferHandler) UpdateTransfer(w http.ResponseWriter, r *http.Request)
 	// amending the lines underneath a request that's already pending sign-off would leave the
 	// approver reviewing stale quantities, so block until it's resolved (reused, not
 	// duplicated: same Satisfied check ShipTransfer's gate uses).
+	// A rejected transfer is amendable (that is how it gets fixed before the next Ship resubmits it).
 	if h.appSvc != nil {
-		if ok, state, aerr := h.appSvc.Satisfied(r.Context(), tenantID, "stock_transfer", transferID, 0); aerr == nil && !ok && state == "pending" {
-			writeError(w, http.StatusConflict, "APPROVAL_PENDING", "This transfer is awaiting approval sign-off — resolve it before amending.")
+		if open, oerr := h.appSvc.OpenRequest(r.Context(), tenantID, "stock_transfer", transferID); oerr == nil && open != nil && open.Status == "pending" {
+			writeError(w, http.StatusConflict, "APPROVAL_PENDING", "This transfer is awaiting approval sign-off. Resolve it before amending.")
 			return
 		}
 	}
@@ -167,6 +169,13 @@ func (h *TransferHandler) UpdateTransfer(w http.ResponseWriter, r *http.Request)
 		h.log.Error("update transfer failed", zap.Error(err))
 		writeError(w, http.StatusBadRequest, "UPDATE_FAILED", err.Error())
 		return
+	}
+	// An approval that has not shipped yet signed off the old lines: withdraw it, so the amended
+	// quantities are approved again on the next Ship.
+	if h.appSvc != nil {
+		if _, werr := h.appSvc.WithdrawLive(r.Context(), tenantID, "stock_transfer", transferID); werr != nil {
+			h.log.Warn("withdraw transfer approval after amend failed", zap.Error(werr))
+		}
 	}
 
 	writeJSON(w, http.StatusOK, resp)
@@ -249,33 +258,62 @@ func (h *TransferHandler) ShipTransfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Approval gate: shipping moves stock between warehouses. Gate when a
-	// stock_transfer rule exists (no natural amount → 0). Reuses the shared engine.
-	if h.appSvc != nil {
-		if ok, state, aerr := h.appSvc.Satisfied(r.Context(), tenantID, "stock_transfer", transferID, 0); aerr == nil && !ok {
-			if state == "not_submitted" {
-				var by *uuid.UUID
-				if uid, ok := actingUserID(r); ok {
-					by = &uid
-				}
-				_, _, _ = h.appSvc.Submit(r.Context(), tenantID, "stock_transfer", transferID, "", 0, by)
-				writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "This transfer requires approval — it has been submitted for sign-off.")
-			} else if state == "pending" {
-				writeError(w, http.StatusConflict, "APPROVAL_PENDING", "This transfer is awaiting approval sign-off.")
-			} else {
-				writeError(w, http.StatusConflict, "APPROVAL_REJECTED", "The approval request for this transfer was rejected.")
-			}
-			return
-		}
+	// Only a draft ships. Checked before the approval gate so pressing Ship on a shipped or
+	// cancelled transfer never opens a new approval request.
+	cur, err := h.transferSvc.GetTransfer(r.Context(), tenantID, transferID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Transfer not found")
+		return
 	}
-
-	if err := h.transferSvc.ShipTransfer(r.Context(), tenantID, transferID); err != nil {
-		h.log.Error("ship transfer failed", zap.Error(err))
-		writeError(w, http.StatusBadRequest, "SHIP_FAILED", err.Error())
+	if cur.Status != "draft" {
+		writeError(w, http.StatusBadRequest, "SHIP_FAILED", "transfers: can only ship a draft transfer, current status: "+cur.Status)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"status": "in_transit"})
+	// Approval gate: shipping moves stock between warehouses. Gate when a stock_transfer rule
+	// exists (no natural amount, so 0). Approving the request ships the transfer; a rejected
+	// transfer stays a draft, is amended, and the next Ship resubmits it.
+	var approved *ent.ApprovalRequest
+	if h.appSvc != nil {
+		var by *uuid.UUID
+		if uid, ok := actingUserID(r); ok {
+			by = &uid
+		}
+		res, gerr := h.appSvc.Gate(r.Context(), tenantID, "stock_transfer", transferID, cur.TransferNumber, 0, by, nil)
+		switch {
+		case gerr != nil:
+			// Fail closed: a transfer that may need approval never ships on a database fault.
+			h.log.Error("transfer approval gate failed; ship refused", zap.Error(gerr))
+			writeApprovalUnavailable(w)
+			return
+		case !res.Proceed():
+			writeApprovalGate(w, "stock_transfer", res)
+			return
+		case res.State == approvals.StateApproved:
+			approved = res.Request
+		}
+	}
+
+	out, aerr := runClaimed(r.Context(), h.appSvc, approved, shipTransferAction(h.transferSvc, tenantID, transferID))
+	if aerr != nil {
+		h.log.Error("ship transfer failed", zap.String("code", aerr.Code), zap.String("reason", aerr.Message))
+		writeActionError(w, aerr)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// shipTransferAction ships a draft transfer. Shared by Ship and the approval executor. The
+// service flips draft to in_transit with a conditional update, so the stock leaves the source
+// once however many callers race; a transfer that is no longer a draft is settled.
+func shipTransferAction(svc TransferServicer, tenantID, transferID uuid.UUID) approvalAction {
+	return func(ctx context.Context) (any, *actionError) {
+		if err := svc.ShipTransfer(ctx, tenantID, transferID); err != nil {
+			return nil, &actionError{Status: http.StatusBadRequest, Code: "SHIP_FAILED", Message: err.Error(),
+				Settled: errors.Is(err, transfers.ErrTransferNotDraft)}
+		}
+		return map[string]string{"status": "in_transit"}, nil
+	}
 }
 
 // ReceiveTransfer handles POST /v1/{tenant}/inventory/transfers/{transferId}/receive

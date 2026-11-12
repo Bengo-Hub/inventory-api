@@ -318,6 +318,8 @@ func New(ctx context.Context) (*App, error) {
 	transferHandler := handlers.NewTransferHandler(log, transferSvc, rbacService, approvals.NewService(ormClient))
 	inventoryExtrasHandler := handlers.NewInventoryExtrasHandler(log, ormClient, rbacService)
 	inventoryExtrasHandler.SetMedia(mediaStore)
+	// Approving a stock_transfer request ships the transfer (the approval executor needs it).
+	inventoryExtrasHandler.SetTransferService(transferSvc)
 	inventoryExtrasHandler.SetVendorBalances(vendorbalances.NewService(ormClient, treasuryClient, log))
 	// Purchase orders are checked against treasury budgets before they are sent.
 	inventoryExtrasHandler.SetBudgetChecker(treasuryClient)

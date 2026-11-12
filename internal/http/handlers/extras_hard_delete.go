@@ -374,6 +374,95 @@ func (h *InventoryExtrasHandler) HardDeleteApprovalRequest(w http.ResponseWriter
 	})
 }
 
+// CancelApprovedRequest handles POST /inventory/approval-requests/{reqID}/cancel.
+//
+// Platform owners only. Cancels an approved request whose action never ran (executed_at empty),
+// for example an old approval that no longer matches reality. The request becomes cancelled and
+// stays as history; nothing is posted, and the executor can never claim it afterwards. Refused
+// with 409 when the request was executed (APPROVAL_EXECUTED) or is not approved (NOT_APPROVED).
+// Writes an approval.cancelled audit row with the request as it was and the optional ?reason=.
+//
+//	@Summary  Cancel an approved request whose action never ran (platform owners only)
+//	@Tags     Approvals
+//	@Produce  json
+//	@Param    reqID   path   string  true   "Approval request ID"
+//	@Param    reason  query  string  false  "Why, kept on the audit row"
+//	@Success  200  {object}  approvalRequestDTO
+//	@Failure  403  {object}  map[string]string
+//	@Failure  404  {object}  map[string]string
+//	@Failure  409  {object}  map[string]string
+//	@Security bearerAuth
+//	@Router   /{tenant}/inventory/approval-requests/{reqID}/cancel [post]
+func (h *InventoryExtrasHandler) CancelApprovedRequest(w http.ResponseWriter, r *http.Request) {
+	actor, ok := platformOwnerCaller(r)
+	if !ok {
+		writeError(w, http.StatusForbidden, "PLATFORM_OWNER_ONLY", "Only a platform owner can cancel an approved request")
+		return
+	}
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "reqID"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid request ID")
+		return
+	}
+	reason := deleteReason(r)
+
+	var req *ent.ApprovalRequest
+	done := h.runHardDelete(w, r, func(c *ent.Client) error {
+		ctx := r.Context()
+		req, err = c.ApprovalRequest.Query().Where(areq.ID(id), areq.TenantID(tenantID)).WithActions().Only(ctx)
+		if ent.IsNotFound(err) {
+			return refuse(http.StatusNotFound, "NOT_FOUND", "Approval request not found")
+		}
+		if err != nil {
+			return err
+		}
+		if req.ExecutedAt != nil {
+			return refuse(http.StatusConflict, "APPROVAL_EXECUTED", "This approval was executed; its action has been applied and it stays.")
+		}
+		if req.Status != areq.StatusApproved {
+			return refuse(http.StatusConflict, "NOT_APPROVED", "Only an approved request whose action never ran can be cancelled here.")
+		}
+		// The same conditions again on the write: if the executor claims the request between the
+		// read and this update, nothing matches and the cancel is refused.
+		n, uerr := c.ApprovalRequest.Update().
+			Where(areq.ID(req.ID), areq.TenantID(tenantID), areq.StatusEQ(areq.StatusApproved), areq.ExecutedAtIsNil()).
+			SetStatus(areq.StatusCancelled).SetDecidedAt(time.Now()).
+			Save(ctx)
+		if uerr != nil {
+			return uerr
+		}
+		if n != 1 {
+			return refuse(http.StatusConflict, "APPROVAL_EXECUTED", "This approval was executed in the meantime; it stays.")
+		}
+		before := approvalSnapshot(req, req.Edges.Actions)
+		if len(req.Payload) > 0 {
+			before["payload"] = req.Payload
+		}
+		return writeAuditTx(ctx, c, tenantID, actor, "approval.cancelled", "approval_request", req.ID.String(), reason, before)
+	})
+	if !done {
+		return
+	}
+	h.log.Info("approved request cancelled by platform owner",
+		zap.String("tenant_id", tenantID.String()), zap.String("request_id", req.ID.String()),
+		zap.String("module", string(req.Module)), zap.String("object_id", req.ObjectID.String()),
+		zap.String("actor", actor.String()))
+	h.publishOutbox(r.Context(), tenantID, "approval_request", req.ID, "inventory.approval.cancelled", map[string]any{
+		"id": req.ID, "module": req.Module, "object_id": req.ObjectID, "status": "cancelled",
+	})
+	full, err := h.orm.ApprovalRequest.Query().Where(areq.ID(req.ID), areq.TenantID(tenantID)).WithActions().Only(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusOK, map[string]any{"id": req.ID, "status": "cancelled"})
+		return
+	}
+	writeJSON(w, http.StatusOK, approvalRequestToDTO(full))
+}
+
 // HardDeletePurchaseOrder handles DELETE /inventory/purchase-orders/{poID}?hard=true.
 //
 // Platform owners only. Refused (409) when stock came in against the order: a posted goods

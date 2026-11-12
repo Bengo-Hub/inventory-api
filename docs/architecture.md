@@ -274,6 +274,14 @@ No index backs `metadata->>'variant_of'`. Every lookup is scoped by the indexed 
 keeps the scanned set to one tenant's items. If it shows up in slow query logs, add an expression
 index through the Ent and Atlas versioned migration workflow.
 
+## Plan limits and locked settings (2026-11-12)
+
+- The SKU, warehouse and supplier caps count only active rows. Inactive and End-of-Life items,
+  deactivated warehouses and archived suppliers do not use up a slot.
+- `PUT /inventory/settings` refuses a plan-locked toggle only when the request turns it on (stored
+  false, sent true). The settings page sends every toggle on save, so a tenant that dropped to a
+  lower plan with a toggle still on can keep saving its other settings and can always turn it off.
+
 ## Authentication
 
 - **JWT validation** via `shared-auth-client` v0.3.1 (JWKS from `sso.codevertexafrica.com`)

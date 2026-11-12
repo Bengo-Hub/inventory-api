@@ -1518,8 +1518,9 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Enforce the plan's inventory_max_sku structural cap (hard-block, no overage).
-	if _, total, cerr := h.itemsSvc.ListItems(r.Context(), tenantID, "", "all", 1, 0, nil, nil, "", nil, nil, ""); cerr == nil {
+	// Enforce the plan's inventory_max_sku structural cap (hard-block, no overage). Only active
+	// items count: inactive and End-of-Life items are not part of the live catalog.
+	if _, total, cerr := h.itemsSvc.ListItems(r.Context(), tenantID, "", "active", 1, 0, nil, nil, "", nil, nil, ""); cerr == nil {
 		if subscriptions.AssertLimit(w, r, "products", subscriptions.LimitSKU, total) {
 			return
 		}
@@ -2357,7 +2358,14 @@ func (h *InventoryHandler) gateStockAdjustment(w http.ResponseWriter, r *http.Re
 	// the stock the instant a manager approves (without this, an approved adjustment never moves
 	// stock — the client never retries and nothing else replays it).
 	intent := uuid.New()
-	request, gated, _ := h.approvalSvc.SubmitWithPayload(r.Context(), tenantID, module, intent, req.Reference, amount, &actor, adjustmentPayload(req, actor))
+	request, gated, serr := h.approvalSvc.SubmitWithPayload(r.Context(), tenantID, module, intent, req.Reference, amount, &actor, adjustmentPayload(req, actor))
+	if serr != nil {
+		// Fail closed: when the rule lookup or the request write fails, the adjustment does not
+		// post unapproved.
+		h.log.Error("stock adjustment approval gate failed; adjustment refused", zap.String("module", module), zap.Error(serr))
+		writeApprovalUnavailable(w)
+		return false
+	}
 	if gated {
 		resp := map[string]any{"approval_required": true, "intent_id": intent, "module": module}
 		if request != nil {

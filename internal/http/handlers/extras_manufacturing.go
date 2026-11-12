@@ -451,38 +451,69 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 		writeError(w, http.StatusBadRequest, "INVALID_STATE", "Only planned batches can be started")
 		return
 	}
-	// Approval gate: a production run commits raw materials, so gate the start of a
-	// batch when a production_batch approval rule is configured.
-	if !h.gateApproval(w, r, tenantID, "production_batch", b.ID, b.BatchNumber, 0) {
+	// Material-availability pre-check (skip with ?force=true), before asking for approval: a
+	// detergent batch must not start if a chemical raw material is short. A forced start is a
+	// different decision from a normal one, so force is part of what the approval signs off.
+	force := r.URL.Query().Get("force") == "true"
+	if aerr := h.batchMaterialShortages(r.Context(), tenantID, b, force); aerr != nil {
+		writeActionError(w, aerr)
 		return
 	}
-	recipe, err := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID), entrecipe.TenantID(tenantID)).Only(r.Context())
+	// Approval gate: a production run commits raw materials, so gate the start of a batch when a
+	// production_batch approval rule is configured. Approval starts the batch.
+	h.runGatedAction(w, r, tenantID, "production_batch", b.ID, b.BatchNumber, 0, map[string]any{"force": force},
+		func(ctx context.Context) (any, *actionError) {
+			return h.startProductionBatchCore(ctx, tenantID, b, force)
+		})
+}
+
+// batchMaterialShortages answers 409 INSUFFICIENT_MATERIALS when a raw material is short, unless
+// the start is forced.
+func (h *InventoryExtrasHandler) batchMaterialShortages(ctx context.Context, tenantID uuid.UUID, b *ent.ProductionBatch, force bool) *actionError {
+	if force {
+		return nil
+	}
+	if shortages, e := h.computeMaterialShortages(ctx, tenantID, b.RecipeID, b.PlannedQuantity); e == nil && len(shortages) > 0 {
+		return &actionError{Status: http.StatusConflict, Code: "INSUFFICIENT_MATERIALS", Message: "Insufficient raw materials to start this batch",
+			Body: map[string]any{"error": "Insufficient raw materials to start this batch", "code": "INSUFFICIENT_MATERIALS", "shortages": shortages}}
+	}
+	return nil
+}
+
+// startProductionBatchCore explodes the recipe BOM into BatchRawMaterial rows and consumes the raw
+// materials. Shared by the Start button and the approval executor. The planned to in_progress
+// switch happens first, as a conditional update, so the materials are issued once however many
+// callers race.
+func (h *InventoryExtrasHandler) startProductionBatchCore(ctx context.Context, tenantID uuid.UUID, b *ent.ProductionBatch, force bool) (any, *actionError) {
+	recipe, err := h.orm.Recipe.Query().Where(entrecipe.ID(b.RecipeID), entrecipe.TenantID(tenantID)).Only(ctx)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "RECIPE_NOT_FOUND", "Batch recipe not found")
-		return
+		return nil, &actionError{Status: http.StatusBadRequest, Code: "RECIPE_NOT_FOUND", Message: "Batch recipe not found"}
 	}
-	// Material-availability pre-check (skip with ?force=true). A detergent batch
-	// must not start if a chemical raw material is short.
-	if r.URL.Query().Get("force") != "true" {
-		if shortages, e := h.computeMaterialShortages(r.Context(), tenantID, b.RecipeID, b.PlannedQuantity); e == nil && len(shortages) > 0 {
-			writeJSON(w, http.StatusConflict, map[string]any{
-				"error": "Insufficient raw materials to start this batch", "code": "INSUFFICIENT_MATERIALS", "shortages": shortages,
-			})
-			return
-		}
+	if aerr := h.batchMaterialShortages(ctx, tenantID, b, force); aerr != nil {
+		return nil, aerr
+	}
+	n, err := h.orm.ProductionBatch.Update().
+		Where(entpb.ID(b.ID), entpb.TenantID(tenantID), entpb.StatusEQ(entpb.StatusPlanned)).
+		SetStatus(entpb.StatusInProgress).SetStartDate(time.Now().UTC()).
+		Save(ctx)
+	if err != nil {
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to start batch"}
+	}
+	if n == 0 {
+		return nil, &actionError{Status: http.StatusBadRequest, Code: "INVALID_STATE", Message: "Only planned batches can be started", Settled: true}
 	}
 	ratio := 1.0
 	if recipe.OutputQty > 0 {
 		ratio = b.PlannedQuantity / recipe.OutputQty
 	}
-	ings, _ := h.orm.RecipeIngredient.Query().Where(entri.RecipeID(recipe.ID)).All(r.Context())
+	ings, _ := h.orm.RecipeIngredient.Query().Where(entri.RecipeID(recipe.ID)).All(ctx)
 	consumed := make([]map[string]any, 0, len(ings))
 	consumeItems := make([]stock.ConsumptionItem, 0, len(ings))
 	for _, ing := range ings {
 		qty := ing.Quantity * ratio
 		// Material cost = item.cost_price * qty (rolled into unit cost at completion).
 		matCost := 0.0
-		if it, e := h.orm.Item.Get(r.Context(), ing.ItemID); e == nil && it.CostPrice != nil {
+		if it, e := h.orm.Item.Get(ctx, ing.ItemID); e == nil && it.CostPrice != nil {
 			matCost = *it.CostPrice * qty
 		}
 		mc := h.orm.BatchRawMaterial.Create().
@@ -490,7 +521,7 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 		if ing.UnitID != nil {
 			mc = mc.SetUnitID(*ing.UnitID)
 		}
-		if _, err := mc.Save(r.Context()); err != nil {
+		if _, err := mc.Save(ctx); err != nil {
 			h.log.Warn("create batch raw material failed", zap.Error(err))
 			continue
 		}
@@ -499,16 +530,15 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 			consumeItems = append(consumeItems, stock.ConsumptionItem{SKU: ing.ItemSku, Quantity: qty})
 		}
 		// Audit trail: raw material issued to production.
-		h.recordRawMaterialUsage(r.Context(), tenantID, b.ID, recipe.ItemID, ing.ItemID, ing.ItemSku, qty, matCost, "production")
+		h.recordRawMaterialUsage(ctx, tenantID, b.ID, recipe.ItemID, ing.ItemID, ing.ItemSku, qty, matCost, "production")
 	}
-	updated, err := h.orm.ProductionBatch.UpdateOneID(b.ID).SetStatus(entpb.StatusInProgress).SetStartDate(time.Now().UTC()).Save(r.Context())
+	updated, err := h.orm.ProductionBatch.Get(ctx, b.ID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to start batch")
-		return
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to start batch", Settled: true}
 	}
 	// Apply real raw-material consumption (stock-out) in-process.
 	if h.stockSvc != nil && len(consumeItems) > 0 {
-		if _, err := h.stockSvc.RecordConsumption(r.Context(), tenantID, stock.ConsumptionRequest{
+		if _, err := h.stockSvc.RecordConsumption(ctx, tenantID, stock.ConsumptionRequest{
 			TenantID:       tenantID,
 			OrderID:        b.ID,
 			Items:          consumeItems,
@@ -518,11 +548,11 @@ func (h *InventoryExtrasHandler) StartProductionBatch(w http.ResponseWriter, r *
 			h.log.Warn("production start: stock consumption failed", zap.Error(err))
 		}
 	}
-	h.publishOutbox(r.Context(), tenantID, "production_batch", updated.ID, "inventory.production.started", map[string]any{
+	h.publishOutbox(ctx, tenantID, "production_batch", updated.ID, "inventory.production.started", map[string]any{
 		"id": updated.ID, "batch_number": updated.BatchNumber, "consumed_materials": consumed,
 	})
-	mats, _ := h.orm.BatchRawMaterial.Query().Where(entbrm.ProductionBatchID(updated.ID)).All(r.Context())
-	writeJSON(w, http.StatusOK, productionBatchToDTO(updated, mats, nil))
+	mats, _ := h.orm.BatchRawMaterial.Query().Where(entbrm.ProductionBatchID(updated.ID)).All(ctx)
+	return productionBatchToDTO(updated, mats, nil), nil
 }
 
 // CompleteProductionBatch finalizes the batch, computes cost, and emits a

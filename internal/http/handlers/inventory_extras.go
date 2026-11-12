@@ -42,6 +42,8 @@ type InventoryExtrasHandler struct {
 	itemsSvc    *items.Service
 	auditSvc    *audit.Service
 	vendorBals  *vendorbalances.Service
+	// transferSvc ships a stock transfer when its approval request is approved.
+	transferSvc TransferServicer
 	// budgets checks a purchase order against the tenant's treasury budgets before it is sent.
 	budgets purchaseBudgetChecker
 	// authForFeatureGet authenticates feature-gated GET routes. The tenant router group

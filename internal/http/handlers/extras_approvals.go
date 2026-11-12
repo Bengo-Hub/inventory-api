@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -19,6 +20,7 @@ import (
 	astep "github.com/bengobox/inventory-service/internal/ent/approvalstep"
 	entpo "github.com/bengobox/inventory-service/internal/ent/purchaseorder"
 	entreq "github.com/bengobox/inventory-service/internal/ent/requisition"
+	entstockcount "github.com/bengobox/inventory-service/internal/ent/stockcount"
 	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 	"github.com/bengobox/inventory-service/internal/modules/stock"
@@ -72,6 +74,9 @@ type approvalRequestDTO struct {
 	Actions         []approvalActionDTO `json:"actions,omitempty"`
 	CreatedAt       time.Time           `json:"created_at"`
 	DecidedAt       *time.Time          `json:"decided_at,omitempty"`
+	// ExecutedAt is when the approved action ran. An approved request without it is "approved,
+	// ready to <action>": the action has not happened yet.
+	ExecutedAt *time.Time `json:"executed_at,omitempty"`
 }
 
 func approvalRuleToDTO(ru *ent.ApprovalRule) approvalRuleDTO {
@@ -106,6 +111,7 @@ func approvalRequestToDTO(req *ent.ApprovalRequest) approvalRequestDTO {
 		ID: req.ID, Module: string(req.Module), ObjectID: req.ObjectID,
 		ObjectReference: req.ObjectReference, Amount: req.Amount, Status: string(req.Status),
 		CurrentSequence: req.CurrentSequence, CreatedAt: req.CreatedAt, DecidedAt: req.DecidedAt,
+		ExecutedAt: req.ExecutedAt,
 	}
 	actions := append([]*ent.ApprovalAction(nil), req.Edges.Actions...)
 	sort.Slice(actions, func(i, j int) bool { return actions[i].Sequence < actions[j].Sequence })
@@ -169,9 +175,14 @@ func (h *InventoryExtrasHandler) registerApprovalRoutes(r chi.Router, perm func(
 	r.Get("/inventory/approval-requests/{reqID}", h.GetApprovalRequest)
 	r.Post("/inventory/approval-requests/{reqID}/approve", h.ApproveApprovalRequest)
 	r.Post("/inventory/approval-requests/{reqID}/reject", h.RejectApprovalRequest)
+	// Run the action of an approved request whose action never ran (its run at approval failed).
+	r.With(perm(rbac.PermApprovalsChange)).Post("/inventory/approval-requests/{reqID}/execute", h.ExecuteApprovalRequest)
 	// Permanent delete: platform owners only, checked in the handler against the signed
 	// is_platform_owner claim (never a role or the tenant slug).
 	r.Delete("/inventory/approval-requests/{reqID}", h.HardDeleteApprovalRequest)
+	// Cancel an approved request whose action never ran: platform owners only, checked in the
+	// handler against the signed claim, like the delete above.
+	r.Post("/inventory/approval-requests/{reqID}/cancel", h.CancelApprovedRequest)
 }
 
 // ─── Rule CRUD ───────────────────────────────────────────────────────────────
@@ -565,11 +576,11 @@ func (h *InventoryExtrasHandler) applyApprovalDecision(w http.ResponseWriter, r 
 		return nil, false
 	}
 	h.syncDocFromApproval(r, updated)
-	// Post the approved effect the moment sign-off completes: a gated stock adjustment replays
-	// its stashed payload; a stock count posts its variances. Without this, approving a stock
-	// movement flips the request to "approved" but never moves stock.
+	// Carry out the approved action the moment sign-off completes (post the adjustment, ship the
+	// transfer, start the batch, ...). A failure is logged and leaves the request approved but not
+	// executed, so pressing the action again (or /execute) finishes it on this approval.
 	if updated.Status == areq.StatusApproved {
-		h.executeApprovedAction(r.Context(), updated, userID)
+		_ = h.executeApprovedAction(r.Context(), updated, userID)
 	}
 	// A rejection undoes whatever was parked waiting for sign-off (a draft goods receipt is
 	// cancelled so its order can be received again).
@@ -582,40 +593,44 @@ func (h *InventoryExtrasHandler) applyApprovalDecision(w http.ResponseWriter, r 
 	return updated, true
 }
 
-// executeApprovedAction applies the real-world effect of a just-approved request for
-// modules whose stock movement is deferred until sign-off. It is idempotent via
-// ClaimExecution (a compare-and-set on executed_at), so the effect posts exactly once
-// even if this races a legacy client retry. Modules that carry their own state
-// (purchase_order, requisition) are handled by syncDocFromApproval and no-op here.
-// The remaining gated modules (stock_transfer, purchase_return, production_batch, contract,
-// rfq and the asset modules) are "approve, then press the action again": their gate is keyed
-// on the existing document, so repeating the action after approval goes through.
-func (h *InventoryExtrasHandler) executeApprovedAction(ctx context.Context, req *ent.ApprovalRequest, approver uuid.UUID) {
+// executeApprovedAction carries out the action of a just-approved request, exactly once. Every
+// path claims executed_at (a compare-and-set) before acting and releases it when the action
+// fails, so a later press of the action, or POST /approval-requests/{id}/execute, can finish it
+// on the same approval. Goods receipts post, stock adjustments and write-offs replay their stored
+// payload, stock counts post their variances, and the document modules (transfers, purchase
+// returns, production batches, contracts, RFQ awards, asset jobs) run their action through
+// approvedActionFor. Purchase orders and requisitions have nothing deferred here: an approved
+// requisition raises its orders in syncDocFromApproval, and an approved purchase order is sent by
+// staff with Send to supplier (the send runs the treasury budget check with the sender's override
+// rights, so it cannot run unattended). Returns the reason when nothing was carried out.
+func (h *InventoryExtrasHandler) executeApprovedAction(ctx context.Context, req *ent.ApprovalRequest, approver uuid.UUID) *actionError {
 	switch req.Module {
 	case areq.ModuleGoodsReceipt:
 		// Approving a receipt posts it. Before this case existed, approval only flipped the
 		// request to "approved" and the receipt stayed a draft forever, because the "Mark
 		// Received" retry created a new receipt (and a new approval) instead of posting this one.
 		h.executeApprovedGoodsReceipt(ctx, req)
+		return nil
 
 	case areq.ModuleStockAdjustment, areq.ModuleStockWriteoff:
 		if h.stockSvc == nil {
 			h.log.Warn("cannot post approved adjustment: stock service not wired", zap.String("request_id", req.ID.String()))
-			return
+			return &actionError{Status: http.StatusServiceUnavailable, Code: "NOT_WIRED", Message: "Stock posting is not available"}
 		}
 		adjReq, ok := adjustmentRequestFromPayload(req.Payload)
 		if !ok {
 			h.log.Error("approved adjustment has no replayable payload; stock not posted",
 				zap.String("request_id", req.ID.String()), zap.String("object_id", req.ObjectID.String()))
-			return
+			return &actionError{Status: http.StatusConflict, Code: "NO_PAYLOAD",
+				Message: "This approval does not carry the adjustment details (it predates them). Enter the adjustment again."}
 		}
 		won, err := h.approvals().ClaimExecution(ctx, req.TenantID, req.ID)
 		if err != nil {
 			h.log.Error("claim adjustment execution failed", zap.String("request_id", req.ID.String()), zap.Error(err))
-			return
+			return &actionError{Status: http.StatusInternalServerError, Code: "CLAIM_FAILED", Message: "Could not record the approval as used. Try again."}
 		}
 		if !won {
-			return // already posted by a prior/racing pass
+			return &actionError{Status: http.StatusConflict, Code: "ALREADY_EXECUTED", Message: "This approved action has already been carried out.", Settled: true}
 		}
 		result, err := h.stockSvc.AdjustStock(ctx, req.TenantID, adjReq)
 		if err != nil {
@@ -623,7 +638,7 @@ func (h *InventoryExtrasHandler) executeApprovedAction(ctx context.Context, req 
 			// adjustment being lost with the request stuck "approved but unposted".
 			_ = h.approvals().ReleaseExecution(ctx, req.TenantID, req.ID)
 			h.log.Error("post approved adjustment failed", zap.String("request_id", req.ID.String()), zap.String("sku", adjReq.SKU), zap.Error(err))
-			return
+			return &actionError{Status: http.StatusConflict, Code: "POST_FAILED", Message: "The adjustment could not be posted: " + err.Error()}
 		}
 		h.log.Info("posted approved stock adjustment",
 			zap.String("request_id", req.ID.String()), zap.String("sku", adjReq.SKU),
@@ -631,28 +646,48 @@ func (h *InventoryExtrasHandler) executeApprovedAction(ctx context.Context, req 
 		h.publishOutbox(ctx, req.TenantID, "approval_request", req.ID, "inventory.approval.executed", map[string]any{
 			"id": req.ID, "module": req.Module, "sku": adjReq.SKU, "quantity_after": result.QtyAfter,
 		})
+		return nil
 
 	case areq.ModuleStockCount:
 		if h.stockSvc == nil {
 			h.log.Warn("cannot post approved stock count: stock service not wired", zap.String("request_id", req.ID.String()))
-			return
+			return &actionError{Status: http.StatusServiceUnavailable, Code: "NOT_WIRED", Message: "Stock posting is not available"}
+		}
+		// A count cancelled after it was submitted never posts on its approval. Checked before the
+		// claim so the request is left as it is (a platform owner can cancel it); the posting
+		// service refuses a cancelled count as well.
+		if cnt, cerr := h.orm.StockCount.Query().
+			Where(entstockcount.ID(req.ObjectID), entstockcount.TenantID(req.TenantID)).Only(ctx); cerr == nil &&
+			cnt.Status == entstockcount.StatusCancelled {
+			h.log.Warn("approved stock count not posted: the count is cancelled", zap.String("request_id", req.ID.String()))
+			return &actionError{Status: http.StatusConflict, Code: "COUNT_CANCELLED", Message: "This stock count was cancelled, so its variances are not posted."}
 		}
 		won, err := h.approvals().ClaimExecution(ctx, req.TenantID, req.ID)
 		if err != nil {
 			h.log.Error("claim stock-count execution failed", zap.String("request_id", req.ID.String()), zap.Error(err))
-			return
+			return &actionError{Status: http.StatusInternalServerError, Code: "CLAIM_FAILED", Message: "Could not record the approval as used. Try again."}
 		}
 		if !won {
-			return
+			return &actionError{Status: http.StatusConflict, Code: "ALREADY_EXECUTED", Message: "This approved action has already been carried out.", Settled: true}
+		}
+		// Second guard, after the claim: the count must still be the one that was approved (a line
+		// edit withdraws the approval, this catches anything that slipped past). On a mismatch the
+		// claim is released and nothing posts.
+		if now, aerr := countGateAmount(ctx, h.orm, req.TenantID, req.ObjectID); aerr != nil || now != req.Amount {
+			_ = h.approvals().ReleaseExecution(ctx, req.TenantID, req.ID)
+			h.log.Warn("approved stock count not posted: the count changed after approval",
+				zap.String("request_id", req.ID.String()), zap.Float64("approved_amount", req.Amount), zap.Float64("current_amount", now))
+			return errCountChanged
 		}
 		result, err := h.stockSvc.PostStockCountVariances(ctx, req.TenantID, req.ObjectID, approver)
 		if err != nil {
 			_ = h.approvals().ReleaseExecution(ctx, req.TenantID, req.ID)
 			h.log.Error("post approved stock count failed", zap.String("request_id", req.ID.String()), zap.String("count_id", req.ObjectID.String()), zap.Error(err))
-			return
+			return &actionError{Status: http.StatusConflict, Code: "POST_FAILED", Message: "The count variances could not be posted: " + err.Error()}
 		}
 		if len(result.FailedSKUs) > 0 {
-			// Some lines didn't post — release so the operator's next approve retries them.
+			// Some lines didn't post: release so the next approve (or execute) retries them. Posted
+			// lines are flagged, so a retry only posts the remainder.
 			_ = h.approvals().ReleaseExecution(ctx, req.TenantID, req.ID)
 		}
 		h.log.Info("posted approved stock count",
@@ -661,7 +696,15 @@ func (h *InventoryExtrasHandler) executeApprovedAction(ctx context.Context, req 
 		h.publishOutbox(ctx, req.TenantID, "approval_request", req.ID, "inventory.approval.executed", map[string]any{
 			"id": req.ID, "module": req.Module, "count_id": req.ObjectID, "posted_lines": result.Posted,
 		})
+		if len(result.FailedSKUs) > 0 {
+			return &actionError{Status: http.StatusConflict, Code: "PARTIAL", Message: "Some variance lines could not post: " + strings.Join(result.FailedSKUs, ", ")}
+		}
+		return nil
+
+	case areq.ModulePurchaseOrder, areq.ModuleRequisition:
+		return nil
 	}
+	return h.runApprovedDocumentAction(ctx, req, approver)
 }
 
 // adjustmentRequestFromPayload rebuilds an AdjustStockRequest from the map persisted on
@@ -802,43 +845,4 @@ func (h *InventoryExtrasHandler) SubmitPurchaseOrderForApproval(w http.ResponseW
 	}
 	full, _ := h.orm.ApprovalRequest.Query().Where(areq.ID(req.ID)).WithActions().Only(r.Context())
 	writeJSON(w, http.StatusOK, map[string]any{"approval_required": true, "already_submitted": reused, "request": approvalRequestToDTO(full)})
-}
-
-// gateApproval enforces the approval matrix on ANY effecting action across the
-// inventory service (procurement, manufacturing, assets, stock). It returns true
-// when the caller may proceed — no matching rule (not_required) or an approved
-// request exists. Otherwise it writes a 409 and returns false: when no request
-// exists yet it auto-creates one ("submitted for approval"); a pending/rejected
-// request reports that state. Module-agnostic so every workflow reuses one path;
-// mirrors the PO-send gate. Amount 0 means "gate whenever any rule exists".
-func (h *InventoryExtrasHandler) gateApproval(w http.ResponseWriter, r *http.Request, tenantID uuid.UUID, module string, objectID uuid.UUID, reference string, amount float64) bool {
-	ok, state, err := h.approvals().Satisfied(r.Context(), tenantID, module, objectID, amount)
-	if err != nil {
-		// Fail open on engine errors — never block a legitimate action on infra failure.
-		h.log.Warn("approval gate check failed; allowing", zap.String("module", module), zap.Error(err))
-		return true
-	}
-	if ok {
-		return true // not_required or approved
-	}
-	switch state {
-	case "not_submitted":
-		var submittedBy *uuid.UUID
-		if uid, ok := actingUserID(r); ok {
-			submittedBy = &uid
-		}
-		if req, required, serr := h.approvals().Submit(r.Context(), tenantID, module, objectID, reference, amount, submittedBy); serr == nil && required {
-			h.publishOutbox(r.Context(), tenantID, "approval_request", req.ID, "inventory.approval.submitted", map[string]any{
-				"id": req.ID, "module": module, "object_id": objectID, "amount": amount,
-			})
-		}
-		writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "This action requires approval — it has been submitted for sign-off.")
-	case "pending":
-		writeError(w, http.StatusConflict, "APPROVAL_PENDING", "This action is awaiting approval sign-off.")
-	case "rejected":
-		writeError(w, http.StatusConflict, "APPROVAL_REJECTED", "The approval request for this action was rejected.")
-	default:
-		writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "This action requires approval before it can proceed.")
-	}
-	return false
 }

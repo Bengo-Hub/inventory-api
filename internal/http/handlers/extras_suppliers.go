@@ -225,8 +225,9 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Enforce the plan's max_suppliers structural cap (hard-block, no overage).
-	if count, cerr := h.orm.Supplier.Query().Where(entsupplier.TenantID(tenantID)).Count(r.Context()); cerr == nil {
+	// Enforce the plan's max_suppliers structural cap (hard-block, no overage). Archived
+	// suppliers do not count.
+	if count, cerr := countActiveSuppliers(r.Context(), h.orm, tenantID); cerr == nil {
 		if subscriptions.AssertLimit(w, r, "suppliers", subscriptions.LimitSuppliers, count) {
 			return
 		}
@@ -373,6 +374,15 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		update = update.SetCreditLimit(req.CreditLimit)
 	}
 	if req.IsActive != nil {
+		// Archived suppliers free their seat, so restoring one takes a seat again and is
+		// checked against max_suppliers like a new supplier.
+		if *req.IsActive && !existing.IsActive {
+			if count, cerr := countActiveSuppliers(r.Context(), h.orm, tenantID); cerr == nil {
+				if subscriptions.AssertLimit(w, r, "suppliers", subscriptions.LimitSuppliers, count) {
+					return
+				}
+			}
+		}
 		update = update.SetIsActive(*req.IsActive)
 	}
 

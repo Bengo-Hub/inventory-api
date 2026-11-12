@@ -13,8 +13,9 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
-	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
+	enttenant "github.com/bengobox/inventory-service/internal/ent/tenant"
 	entuseroutlet "github.com/bengobox/inventory-service/internal/ent/useroutlet"
+	"github.com/bengobox/inventory-service/internal/ent/userroleassignment"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/rbac"
 )
@@ -409,17 +410,58 @@ func stringSliceFromPayload(v any) []string {
 // handleTenantChanged invalidates the cached tenant branding (tenant:{slug}) when a tenant's
 // profile changes in auth, so generated documents pick up the new company name / address / KRA PIN
 // immediately instead of serving the 6h-TTL cached copy.
+//
+// A rename in auth keeps the UUID and changes the slug, so the local tenants row moves onto the
+// new slug here (auth owns both) and the cache entry under the old slug is dropped as well.
 func (c *AuthEventsConsumer) handleTenantChanged(ctx context.Context, evt *sharedevents.Event) error {
-	if c.cache == nil {
-		return nil
-	}
 	slug, _ := evt.Payload["slug"].(string)
 	if slug == "" {
 		return nil
 	}
-	c.cache.Invalidate(ctx, sharedcache.TenantCacheKey(slug))
-	c.log.Info("invalidated tenant branding cache on auth.tenant change", zap.String("slug", slug))
+	tenantID := evt.TenantID
+	if tenantID == uuid.Nil {
+		if v, ok := evt.Payload["tenant_id"].(string); ok {
+			tenantID, _ = uuid.Parse(v)
+		}
+	}
+	oldSlug := c.syncLocalTenantSlug(ctx, tenantID, slug)
+	if c.cache == nil {
+		return nil
+	}
+	for _, s := range []string{slug, oldSlug} {
+		if s != "" {
+			c.cache.Invalidate(ctx, sharedcache.TenantCacheKey(s))
+			c.log.Info("invalidated tenant branding cache on auth.tenant change", zap.String("slug", s))
+		}
+	}
 	return nil
+}
+
+// syncLocalTenantSlug writes newSlug onto the local tenant row and returns the slug it carried
+// before when that differed (empty otherwise). The row is left alone when it is not synced yet or
+// when another local row already holds newSlug (unique index).
+func (c *AuthEventsConsumer) syncLocalTenantSlug(ctx context.Context, tenantID uuid.UUID, newSlug string) string {
+	if c.orm == nil || tenantID == uuid.Nil {
+		return ""
+	}
+	row, err := c.orm.Tenant.Get(ctx, tenantID)
+	if err != nil || row.Slug == newSlug {
+		return ""
+	}
+	clash, err := c.orm.Tenant.Query().Where(enttenant.SlugEQ(newSlug), enttenant.IDNEQ(tenantID)).Exist(ctx)
+	if err != nil || clash {
+		c.log.Warn("tenant slug rename not projected: new slug held by another local row",
+			zap.String("tenant_id", tenantID.String()), zap.String("old_slug", row.Slug),
+			zap.String("new_slug", newSlug), zap.Error(err))
+		return row.Slug
+	}
+	if err := c.orm.Tenant.UpdateOneID(tenantID).SetSlug(newSlug).Exec(ctx); err != nil {
+		c.log.Warn("tenant slug rename not projected", zap.String("tenant_id", tenantID.String()), zap.Error(err))
+		return row.Slug
+	}
+	c.log.Info("tenant slug renamed from auth", zap.String("tenant_id", tenantID.String()),
+		zap.String("old_slug", row.Slug), zap.String("new_slug", newSlug))
+	return row.Slug
 }
 
 // reconcileUserOutlets makes the user's UserOutlet rows match the outlet set carried

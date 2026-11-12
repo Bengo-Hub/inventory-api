@@ -349,6 +349,123 @@
                 }
             }
         },
+        "/{tenant}/inventory/approval-requests/{reqID}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Cancel an approved request whose action never ran (platform owners only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Approval request ID",
+                        "name": "reqID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Why, kept on the audit row",
+                        "name": "reason",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.approvalRequestDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/{tenant}/inventory/approval-requests/{reqID}/execute": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Approvals"
+                ],
+                "summary": "Run the action of an approved request that has not run yet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Approval request ID",
+                        "name": "reqID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.approvalRequestDTO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/{tenant}/inventory/approval-rules": {
             "get": {
                 "security": [
@@ -6958,6 +7075,15 @@
                 "description": {
                     "type": "string"
                 },
+                "etims_item_cls_cd": {
+                    "type": "string"
+                },
+                "etims_pkg_unit_cd": {
+                    "type": "string"
+                },
+                "etims_qty_unit_cd": {
+                    "type": "string"
+                },
                 "image_url": {
                     "type": "string"
                 },
@@ -7009,6 +7135,13 @@
                 "target_margin_percent": {
                     "description": "fallback to tenant default",
                     "type": "number"
+                },
+                "tax_code_id": {
+                    "description": "Tax and KRA eTIMS fields, the same ones the plain item form saves. Saving a recipe used\nto drop them. Blank codes keep what is stored (a new item gets the automatic tax code);\ntax_inclusive saves as false when not sent, as it always did.",
+                    "type": "string"
+                },
+                "tax_inclusive": {
+                    "type": "boolean"
                 },
                 "unit_content_qty": {
                     "description": "Content per portion — how much one output portion contains (300 + \"ml\" for a pot\nof tea). Required for OTHER recipes to reference this item in ml/g lines; also\nwhat the deduction/costing paths bridge through.",
@@ -7201,6 +7334,10 @@
                     "$ref": "#/definitions/handlers.approvalActionDTO"
                 },
                 "decided_at": {
+                    "type": "string"
+                },
+                "executed_at": {
+                    "description": "ExecutedAt is when the approved action ran. An approved request without it is \"approved,\nready to \u003caction\u003e\": the action has not happened yet.",
                     "type": "string"
                 },
                 "id": {
@@ -7776,6 +7913,10 @@
                     "type": "string"
                 },
                 "received_by": {
+                    "type": "string"
+                },
+                "received_date": {
+                    "description": "ReceivedDate is the day the goods actually arrived (\"YYYY-MM-DD\", optional). Blank or today\nmeans now; an earlier day back-dates the receipt (stock.ResolveReceivedDate) so stock history,\nthe lot and the vendor bill sit on that day while created_at keeps the entry time.",
                     "type": "string"
                 },
                 "warehouse_id": {
@@ -8933,6 +9074,10 @@
                 },
                 "has_variants": {
                     "description": "Product variations — surfaced from the ItemVariant edge so retail can sell variations.\nHasVariants is always populated; Variants is populated when variants are eager-loaded\n(inline for single-item reads, or for the list when ?include=variants is requested).",
+                    "type": "boolean"
+                },
+                "holds_stock": {
+                    "description": "HoldsStock is true for an item that keeps its own balance: goods, ingredients, equipment, and\na RECIPE made by a production BOM. Treasury registers a stock-holding recipe with KRA as a\nfinished product (item type 2), a menu recipe as a service (3). Set on item lists.",
                     "type": "boolean"
                 },
                 "hs_code": {

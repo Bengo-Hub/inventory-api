@@ -27,7 +27,7 @@ The order detail (`GET /purchase-orders/{id}`) returns `open_receipt` (`id`, `gr
 | sent with an open receipt | No, `409 RECEIPT_OPEN` | Post or cancel the receipt first. |
 | partially received, received, cancelled | No | Use a purchase return or a new order. |
 
-When the amount changes, any pending or approved `purchase_order` approval request for the old amount is closed (cancelled), so the changed order needs approval again before Send.
+When the amount or the supplier changes, any pending `purchase_order` approval request, or an approved one not yet used to send the order, is closed (cancelled), so the changed order needs approval again before Send. An approval that was already used to send the order stays as history.
 
 Cancelling an order with an open receipt also answers `409 RECEIPT_OPEN`.
 
@@ -37,9 +37,67 @@ Cancelling an order with an open receipt also answers `409 RECEIPT_OPEN`.
 
 `inventory.goods_receipt.cancelled` is published when a draft receipt is cancelled.
 
-## Other gated modules
+## Every gated module: reject, fix, resubmit, approve once
 
-Stock adjustments, write-offs and stock counts post when approved (payload replay or variance posting). Transfers, purchase returns, production batches, contracts, RFQ awards and the asset modules are "approve, then press the action again": the gate is keyed on the existing document, so repeating the action after approval goes through.
+The same two rules hold in every module under the approval matrix.
+
+**A rejected document can be fixed and resubmitted.** Rejecting a request never locks the document. It stays editable where the module allows editing, and pressing the action again opens a new approval request. The rejected request stays as history. The answer is `409` (`422` for stock counts and adjustments) with `approval_required: true` and `state`: `submitted` for the first request, `resubmitted` for a new one after a rejection, `pending` while a request waits. The same happens when the document changed since it was approved (a different amount, or for RFQ awards a different selection): the old approval is cancelled and a new request opens, so an approval only ever covers the version it was given for.
+
+**Approving runs the action, exactly once.** The moment the last step approves, the action runs. Before acting, `executed_at` on the request is claimed (only one caller can set it), and every action also switches its document with a conditional update (draft to shipped, pending to paid, planned to in progress), so a second run finds nothing to do and stock or money never moves twice. If the action fails, the claim is released and the request stays "approved, not executed". Pressing the action again then runs it on that same approval, and so does `POST /approval-requests/{id}/execute` (needs the approvals change permission). Once executed, an approval is spent: doing the action again later needs a new approval.
+
+| Module | Action the approval runs | Fix after a rejection | Notes |
+|---|---|---|---|
+| `stock_transfer` | Ship (stock leaves the source warehouse) | Amend the draft transfer, press Ship | Amending withdraws an approval that has not shipped yet, so new quantities are approved again. |
+| `stock_count` | Post the variances and close the count | Correct the count lines, press Approve | The amount is the total variance, so a correction is a new request. |
+| `purchase_return` | Take the goods out of stock, publish the credit (or repair) event | Press Approve again | All or nothing, as before. |
+| `production_batch` | Start the batch (issue raw materials) | Press Start again | The material check runs before the request opens. A forced start (`?force=true`) is stored on the request and is a separate decision from a normal start. |
+| `contract` | Activate | Edit the contract, press Activate | |
+| `rfq` | Write the award, mark the RFQ awarded, raise draft contracts | Change the selection, press Award | The award selection is stored on the request and applied on approval. |
+| `asset_maintenance`, `asset_transfer`, `asset_disposal` | Complete the job (a disposal also publishes `inventory.asset.disposed` once) | Press Complete again | An asset transfer must still pass its own approval step first. |
+| `goods_receipt` | Post the receipt | A rejected receipt is cancelled; receive again | See the goods receipt section above. |
+| `stock_adjustment`, `stock_writeoff` | Post the stored adjustment | Enter the adjustment again (each entry is its own request) | |
+| `purchase_order` | Nothing runs by itself | Amend the draft order, Submit for approval | Staff press Send to supplier. Send runs the treasury budget check with the sender's override rights and tells the supplier, so it is not done unattended. The order shows "Approved, ready to send" until then, and Send marks the approval executed. |
+| `requisition` | The requisition is approved and raises its orders | Edit, submit again | |
+
+**The gate fails closed.** When the approval check cannot be completed (the rule lookup, the request lookup or the request write fails), the action does not run and the answer is `503 APPROVAL_UNAVAILABLE`. Only "no rule matches" lets an action through without approval. This covers every gated action, stock adjustments and Send to supplier included.
+
+**What counts as the same submission.** A request is matched on the amount, plus the stored inputs where a module has them (RFQ award selection, forced batch start). Two consequences we accept: an edit that keeps the amount (a contract edit with the same value, a purchase return edit with the same total, a stock count correction with the same total variance) keeps its approval; and amending a transfer withdraws its approval even for a notes-only edit, which costs one extra sign-off.
+
+**Stock counts.** The amount is the total variance of the whole count, posted lines included. If an approved count posts only some lines (an item cannot be adjusted), the claim is released and the same approval stays valid: fix the item and press Approve again, or use Execute, and the remaining lines post on the original approval. A cancelled count never posts: cancelling it withdraws its live request, and an approval for a count that is cancelled anyway is refused. Changing any count line withdraws the count's live request (pending, or approved and not run yet), even when the total variance stays the same, so the next Approve opens a fresh request for the numbers the count now has; re-saving a line unchanged keeps it. A posted line cannot be edited (`409 LINE_POSTED`), lines are frozen while the approval is being carried out (`409 COUNT_POSTING`), and a count that has posted anything cannot be cancelled (`409 COUNT_POSTED`). A line change locks the count's approval requests (`SELECT ... FOR UPDATE`), withdraws the live one and writes the line in one transaction, so a claim starting at the same moment waits and then finds the approval withdrawn. As a second guard, posting on an approval (the executor, Execute or Approve) first checks that the count's total variance still equals the approved amount, and otherwise refuses with `409 COUNT_CHANGED` and posts nothing. A stock count approval stored before this check may hold a total rounded differently and is then refused the same way; submitting the count for approval again fixes it.
+
+**Running a failed approval.** Approvers with the approvals change permission see "Execute approved action" on an approved request whose action has not run; it calls `/execute`, which writes an `approval.executed_manually` audit row with the caller. The document keeps the approver who signed it off. Pressing the action on the document itself also runs it on the same approval.
+
+Requests opened before this change have no stored inputs. An old approved RFQ request cannot be replayed (`NO_AWARD_SELECTION`): award again. An old production batch request is replaced on the next Start, because the forced or normal choice is now part of the request.
+
+### Approved but never executed
+
+To list approved requests whose action never ran, per tenant and module, with the document's current state (read only):
+
+```sql
+SELECT r.tenant_id, t.slug AS tenant, r.module, r.object_reference, r.object_id, r.amount,
+       r.decided_at,
+       (r.payload IS NOT NULL AND r.payload::text NOT IN ('null', '{}')) AS has_payload,
+       COALESCE(st.status::text, pr.payment_status::text, pb.status::text, c.status::text, q.status::text,
+                am.status::text, at.status::text, ad.status::text, sc.status::text, g.status::text,
+                po.status::text) AS document_status
+FROM approval_requests r
+LEFT JOIN tenants t            ON t.id = r.tenant_id
+LEFT JOIN stock_transfers st   ON r.module = 'stock_transfer'    AND st.id = r.object_id AND st.tenant_id = r.tenant_id
+LEFT JOIN purchase_returns pr  ON r.module = 'purchase_return'   AND pr.id = r.object_id AND pr.tenant_id = r.tenant_id
+LEFT JOIN production_batches pb ON r.module = 'production_batch' AND pb.id = r.object_id AND pb.tenant_id = r.tenant_id
+LEFT JOIN contracts c          ON r.module = 'contract'          AND c.id = r.object_id  AND c.tenant_id = r.tenant_id
+LEFT JOIN rf_qs q              ON r.module = 'rfq'               AND q.id = r.object_id  AND q.tenant_id = r.tenant_id
+LEFT JOIN asset_maintenances am ON r.module = 'asset_maintenance' AND am.id = r.object_id AND am.tenant_id = r.tenant_id
+LEFT JOIN asset_transfers at   ON r.module = 'asset_transfer'    AND at.id = r.object_id AND at.tenant_id = r.tenant_id
+LEFT JOIN asset_disposals ad   ON r.module = 'asset_disposal'    AND ad.id = r.object_id AND ad.tenant_id = r.tenant_id
+LEFT JOIN stock_counts sc      ON r.module = 'stock_count'       AND sc.id = r.object_id AND sc.tenant_id = r.tenant_id
+LEFT JOIN goods_receipts g     ON r.module = 'goods_receipt'     AND g.id = r.object_id  AND g.tenant_id = r.tenant_id
+LEFT JOIN purchase_orders po   ON r.module = 'purchase_order'    AND po.id = r.object_id AND po.tenant_id = r.tenant_id
+WHERE r.status = 'approved' AND r.executed_at IS NULL
+ORDER BY r.module, t.slug, r.decided_at;
+```
+
+Nothing runs these automatically after a deploy, because an old approval may no longer match reality. For each row: when the document already shows the action done (a transfer `in_transit` or `received`, a return `paid`, an order `sent`), the request is history from before the claim existed and needs nothing. Otherwise review it and press the action, or call `/execute`, or, when it should not happen any more, have a platform owner cancel it (below). A stock adjustment row with `has_payload = false` predates stored adjustments and cannot be replayed: enter the adjustment again if it is still wanted.
 
 ## One live approval per document
 
@@ -71,4 +129,6 @@ For a goods receipt request, `?with_object=true` also deletes the receipt, its l
 
 Each guard is checked twice. The handler reads it first to give a clear message, and then every delete statement carries the same condition (request not executed, receipt still draft or cancelled, order not received, line with nothing received) and compares the number of rows it removed. If an approval or a post commits between the read and the delete, the count comes up short and the whole transaction rolls back with a 409.
 
-In the app, "Delete permanently" appears on the approval detail and on the purchase order drawer only for platform owners, behind a confirmation that says it cannot be undone.
+`POST /{tenant}/inventory/approval-requests/{reqID}/cancel` cancels an approved request whose action never ran (`executed_at` empty). Same platform-owner rule as the deletes. The request becomes cancelled and stays as history; nothing is posted, and it can never be executed afterwards (execution only claims approved requests). It answers 409 `APPROVAL_EXECUTED` when the action already ran (also when the executor claims it at the same moment) and 409 `NOT_APPROVED` for any other status. It writes an `approval.cancelled` audit row with the request as it was (payload included) and the optional `?reason=`, and queues `inventory.approval.cancelled`.
+
+In the app, "Cancel approval" appears on the approval detail for platform owners when the request is approved and its action has not run. "Delete permanently" appears on the approval detail and on the purchase order drawer only for platform owners, behind a confirmation that says it cannot be undone.

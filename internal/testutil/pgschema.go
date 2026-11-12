@@ -36,7 +36,10 @@ func SchemaDB(t *testing.T, prefix string) (*ent.Client, *sql.DB) {
 		t.Fatal(err)
 	}
 	// The item search indexes use trigram operator classes; the extension lives in public.
-	if _, err := admin.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm"); err != nil {
+	// IF NOT EXISTS is not race-safe: when two test packages create it at the same moment the
+	// loser fails on pg_extension_name_index even though the extension now exists.
+	if _, err := admin.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm"); err != nil &&
+		!strings.Contains(err.Error(), "pg_extension_name_index") {
 		t.Fatal(err)
 	}
 	schema := prefix + strings.ReplaceAll(uuid.NewString()[:8], "-", "")

@@ -256,6 +256,30 @@ type updateInventorySettingsInput struct {
 	LabelPrintDefaults             *schema.LabelPrintDefaults `json:"label_print_defaults"`
 }
 
+// lockedSettingEnable returns the plan feature of the first gated toggle the request turns on
+// (stored false, requested true) while the tenant's plan lacks that feature, or "" when the
+// update may proceed. Resending a toggle's stored value, or turning one off, is never refused.
+func lockedSettingEnable(input updateInventorySettingsInput, cfg *ent.TenantInventoryConfig, featureEnabled func(string) bool) string {
+	toggles := []struct {
+		requested *bool
+		stored    bool
+		feature   string
+	}{
+		{input.EnableLowStockNotifications, cfg.EnableLowStockNotifications, "stock_alerts"},
+		{input.EnableExpiryNotifications, cfg.EnableExpiryNotifications, "expiry_alerts"},
+		{input.EnableLotTracking, cfg.EnableLotTracking, "lots_batches"},
+		{input.EnableExpiryTracking, cfg.EnableExpiryTracking, "batch_expiry_tracking"},
+		{input.PerOutletPricingEnabled, cfg.PerOutletPricingEnabled, "multi_branch_pricing"},
+		{input.BatchPeriodPricingEnabled, cfg.BatchPeriodPricingEnabled, "batch_period_pricing"},
+	}
+	for _, t := range toggles {
+		if t.requested != nil && *t.requested && !t.stored && !featureEnabled(t.feature) {
+			return t.feature
+		}
+	}
+	return ""
+}
+
 // PutSettings handles PUT /{tenant}/inventory/settings
 func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
@@ -270,41 +294,23 @@ func (h *InventorySettingsHandler) PutSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Alert/tracking toggles are plan-gated per the use-case PowerSuite specs
-	// (docs/subscription-plans in subscriptions-api): ENABLING one requires the
-	// matching subscription feature; disabling is always allowed. Exempt/demo/
-	// service-charge tenants pass via FeatureEnabled.
-	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
-		wantsLocked := func(v *bool, feature string) bool {
-			return v != nil && *v && !claims.FeatureEnabled(feature)
-		}
-		switch {
-		case wantsLocked(input.EnableLowStockNotifications, "stock_alerts"):
-			authclient.WriteFeatureLocked(w, "stock_alerts", "")
-			return
-		case wantsLocked(input.EnableExpiryNotifications, "expiry_alerts"):
-			authclient.WriteFeatureLocked(w, "expiry_alerts", "")
-			return
-		case wantsLocked(input.EnableLotTracking, "lots_batches"):
-			authclient.WriteFeatureLocked(w, "lots_batches", "")
-			return
-		case wantsLocked(input.EnableExpiryTracking, "batch_expiry_tracking"):
-			authclient.WriteFeatureLocked(w, "batch_expiry_tracking", "")
-			return
-		case wantsLocked(input.PerOutletPricingEnabled, "multi_branch_pricing"):
-			authclient.WriteFeatureLocked(w, "multi_branch_pricing", "")
-			return
-		case wantsLocked(input.BatchPeriodPricingEnabled, "batch_period_pricing"):
-			authclient.WriteFeatureLocked(w, "batch_period_pricing", "")
-			return
-		}
-	}
-
 	cfg, err := h.getOrCreate(r, tenantID)
 	if err != nil {
 		h.log.Error("get inventory settings for update", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "internal_error", "failed to load settings")
 		return
+	}
+
+	// Alert/tracking toggles are plan-gated per the use-case PowerSuite specs
+	// (docs/subscription-plans in subscriptions-api). The settings page sends every toggle on
+	// save, so only a false-to-true change of a locked toggle is refused: a toggle that is already
+	// on (a downgraded tenant) or stays off saves fine, and disabling is always allowed.
+	// Exempt/demo/service-charge tenants pass via FeatureEnabled.
+	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
+		if feature := lockedSettingEnable(input, cfg, claims.FeatureEnabled); feature != "" {
+			authclient.WriteFeatureLocked(w, feature, "")
+			return
+		}
 	}
 
 	// A new default tax code must be one of the tenant's treasury codes ("" means automatic). A

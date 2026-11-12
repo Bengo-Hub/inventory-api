@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	authclient "github.com/Bengo-Hub/shared-auth-client"
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
+	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
@@ -165,21 +166,40 @@ func (h *InventoryExtrasHandler) CompleteAssetMaintenance(w http.ResponseWriter,
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Maintenance record not found")
 		return
 	}
-	if !h.gateApproval(w, r, tenantID, "asset_maintenance", rec.ID, "", rec.Cost) {
+	if rec.Status == entmaint.StatusCompleted || rec.Status == entmaint.StatusCancelled {
+		writeError(w, http.StatusConflict, "INVALID_STATE", "This maintenance job is already "+string(rec.Status))
 		return
 	}
+	h.runGatedAction(w, r, tenantID, "asset_maintenance", rec.ID, "", rec.Cost, nil,
+		func(ctx context.Context) (any, *actionError) {
+			return h.completeAssetMaintenanceCore(ctx, tenantID, rec)
+		})
+}
+
+// completeAssetMaintenanceCore completes a maintenance job once (conditional update) and stamps
+// the asset's maintenance dates. Shared by Complete and the approval executor.
+func (h *InventoryExtrasHandler) completeAssetMaintenanceCore(ctx context.Context, tenantID uuid.UUID, rec *ent.AssetMaintenance) (any, *actionError) {
 	now := time.Now().UTC()
-	updated, err := h.orm.AssetMaintenance.UpdateOneID(rec.ID).SetStatus(entmaint.StatusCompleted).SetCompletedDate(now).Save(r.Context())
+	n, err := h.orm.AssetMaintenance.Update().
+		Where(entmaint.ID(rec.ID), entmaint.TenantID(tenantID), entmaint.StatusNotIn(entmaint.StatusCompleted, entmaint.StatusCancelled)).
+		SetStatus(entmaint.StatusCompleted).SetCompletedDate(now).
+		Save(ctx)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to complete maintenance")
-		return
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to complete maintenance"}
 	}
-	upd := h.orm.Asset.UpdateOneID(rec.AssetID).SetLastMaintenance(now)
+	if n == 0 {
+		return nil, &actionError{Status: http.StatusConflict, Code: "INVALID_STATE", Message: "This maintenance job is already completed or cancelled", Settled: true}
+	}
+	upd := h.orm.Asset.Update().Where(entasset.ID(rec.AssetID), entasset.TenantID(tenantID)).SetLastMaintenance(now)
 	if rec.NextMaintenanceDate != nil {
 		upd = upd.SetNextMaintenance(*rec.NextMaintenanceDate)
 	}
-	_, _ = upd.Save(r.Context())
-	writeJSON(w, http.StatusOK, updated)
+	_, _ = upd.Save(ctx)
+	updated, err := h.orm.AssetMaintenance.Get(ctx, rec.ID)
+	if err != nil {
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to load maintenance record", Settled: true}
+	}
+	return updated, nil
 }
 
 // --- Transfers ---
@@ -280,23 +300,43 @@ func (h *InventoryExtrasHandler) CompleteAssetTransfer(w http.ResponseWriter, r 
 	if a, e := h.orm.Asset.Get(r.Context(), rec.AssetID); e == nil {
 		assetVal = a.CurrentValue
 	}
-	if !h.gateApproval(w, r, tenantID, "asset_transfer", rec.ID, "", assetVal) {
-		return
-	}
-	updated, err := h.orm.AssetTransfer.UpdateOneID(rec.ID).SetStatus(enttrf.StatusCompleted).Save(r.Context())
+	h.runGatedAction(w, r, tenantID, "asset_transfer", rec.ID, "", assetVal, nil,
+		func(ctx context.Context) (any, *actionError) {
+			return h.completeAssetTransferCore(ctx, tenantID, rec)
+		})
+}
+
+// completeAssetTransferCore completes an approved (or in transit) asset transfer once and moves
+// the asset to its new location and custodian. Shared by Complete and the approval executor.
+func (h *InventoryExtrasHandler) completeAssetTransferCore(ctx context.Context, tenantID uuid.UUID, rec *ent.AssetTransfer) (any, *actionError) {
+	n, err := h.orm.AssetTransfer.Update().
+		Where(enttrf.ID(rec.ID), enttrf.TenantID(tenantID), enttrf.StatusIn(enttrf.StatusApproved, enttrf.StatusInTransit)).
+		SetStatus(enttrf.StatusCompleted).
+		Save(ctx)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to complete transfer")
-		return
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to complete transfer"}
 	}
-	upd := h.orm.Asset.UpdateOneID(rec.AssetID)
+	if n == 0 {
+		cur, gerr := h.orm.AssetTransfer.Get(ctx, rec.ID)
+		if gerr == nil && (cur.Status == enttrf.StatusCompleted || cur.Status == enttrf.StatusCancelled) {
+			return nil, &actionError{Status: http.StatusConflict, Code: "INVALID_STATE", Message: "This transfer is already " + string(cur.Status), Settled: true}
+		}
+		// Still pending its own approval: not settled, the approval stays usable.
+		return nil, &actionError{Status: http.StatusBadRequest, Code: "NOT_APPROVED", Message: "Transfer must be approved before it can be completed"}
+	}
+	upd := h.orm.Asset.Update().Where(entasset.ID(rec.AssetID), entasset.TenantID(tenantID))
 	if rec.ToLocation != "" {
 		upd = upd.SetLocation(rec.ToLocation)
 	}
 	if rec.ToUser != nil {
 		upd = upd.SetCustodianID(*rec.ToUser)
 	}
-	_, _ = upd.Save(r.Context())
-	writeJSON(w, http.StatusOK, updated)
+	_, _ = upd.Save(ctx)
+	updated, err := h.orm.AssetTransfer.Get(ctx, rec.ID)
+	if err != nil {
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to load transfer", Settled: true}
+	}
+	return updated, nil
 }
 
 // ApproveAssetTransfer handles POST /inventory/asset-transfers/{recID}/approve.
@@ -437,23 +477,44 @@ func (h *InventoryExtrasHandler) CompleteAssetDisposal(w http.ResponseWriter, r 
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Disposal not found")
 		return
 	}
-	if !h.gateApproval(w, r, tenantID, "asset_disposal", rec.ID, "", rec.DisposalValue) {
+	if rec.Status == entdisp.StatusCompleted || rec.Status == entdisp.StatusCancelled {
+		writeError(w, http.StatusConflict, "INVALID_STATE", "This disposal is already "+string(rec.Status))
 		return
 	}
-	updated, err := h.orm.AssetDisposal.UpdateOneID(rec.ID).SetStatus(entdisp.StatusCompleted).Save(r.Context())
+	h.runGatedAction(w, r, tenantID, "asset_disposal", rec.ID, "", rec.DisposalValue, nil,
+		func(ctx context.Context) (any, *actionError) {
+			return h.completeAssetDisposalCore(ctx, tenantID, rec)
+		})
+}
+
+// completeAssetDisposalCore completes a disposal once, writes the asset off and publishes
+// inventory.asset.disposed (treasury books the gain or loss from it, so it must go out exactly
+// once). The conditional update is what guarantees that. Shared by Complete and the executor.
+func (h *InventoryExtrasHandler) completeAssetDisposalCore(ctx context.Context, tenantID uuid.UUID, rec *ent.AssetDisposal) (any, *actionError) {
+	n, err := h.orm.AssetDisposal.Update().
+		Where(entdisp.ID(rec.ID), entdisp.TenantID(tenantID), entdisp.StatusNotIn(entdisp.StatusCompleted, entdisp.StatusCancelled)).
+		SetStatus(entdisp.StatusCompleted).
+		Save(ctx)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to complete disposal")
-		return
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to complete disposal"}
 	}
-	_, _ = h.orm.Asset.UpdateOneID(rec.AssetID).SetStatus(entasset.StatusDisposed).SetCurrentValue(0).SetBookValue(0).Save(r.Context())
-	h.publishOutbox(r.Context(), tenantID, "asset", rec.AssetID, "inventory.asset.disposed", map[string]any{
+	if n == 0 {
+		return nil, &actionError{Status: http.StatusConflict, Code: "INVALID_STATE", Message: "This disposal is already completed or cancelled", Settled: true}
+	}
+	_, _ = h.orm.Asset.Update().Where(entasset.ID(rec.AssetID), entasset.TenantID(tenantID)).
+		SetStatus(entasset.StatusDisposed).SetCurrentValue(0).SetBookValue(0).Save(ctx)
+	h.publishOutbox(ctx, tenantID, "asset", rec.AssetID, "inventory.asset.disposed", map[string]any{
 		"asset_id":    rec.AssetID,
 		"disposal_id": rec.ID,
 		"method":      rec.DisposalMethod,
-		// proceeds drive the treasury capital gain/loss (proceeds − tax WDV).
+		// proceeds drive the treasury capital gain/loss (proceeds less tax WDV).
 		"proceeds": rec.DisposalValue,
 	})
-	writeJSON(w, http.StatusOK, updated)
+	updated, err := h.orm.AssetDisposal.Get(ctx, rec.ID)
+	if err != nil {
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to load disposal", Settled: true}
+	}
+	return updated, nil
 }
 
 // --- Insurance ---

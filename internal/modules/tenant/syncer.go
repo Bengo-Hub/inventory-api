@@ -175,6 +175,17 @@ func (s *Syncer) syncTenant(ctx context.Context, slug string) (uuid.UUID, error)
 		if remote.UseCase != "" {
 			update = update.SetUseCase(remote.UseCase)
 		}
+		// Auth owns the slug as well as the UUID: a rename upstream (same UUID, new slug) must
+		// reach this row. Skip it only when another local row already holds the new slug.
+		if newSlug := strings.TrimSpace(remote.Slug); newSlug != "" && newSlug != existing.Slug {
+			clash, clashErr := s.client.Tenant.Query().Where(enttenant.SlugEQ(newSlug), enttenant.IDNEQ(realID)).Exist(ctx)
+			if clashErr == nil && !clash {
+				update = update.SetSlug(newSlug)
+				log.Printf("  [tenant-sync] slug for %s renamed %s -> %s", realID, existing.Slug, newSlug)
+			} else {
+				log.Printf("  [tenant-sync] slug for %s left as %s: %s is held by another local row (err=%v)", realID, existing.Slug, newSlug, clashErr)
+			}
+		}
 		if _, updErr := update.Save(ctx); updErr != nil {
 			return uuid.Nil, fmt.Errorf("tenant.Syncer: update tenant: %w", updErr)
 		}

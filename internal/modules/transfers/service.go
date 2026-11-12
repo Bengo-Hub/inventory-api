@@ -138,6 +138,10 @@ func (s *Service) validateTransferLines(ctx context.Context, tx *ent.Tx, tenantI
 // this to 400 instead of an opaque 500.
 var ErrInvalidTransferDate = errors.New("invalid transfer_date")
 
+// ErrTransferNotDraft is returned by ShipTransfer when the transfer is no longer a draft (already
+// shipped, received or cancelled), including when a concurrent ship won the race.
+var ErrTransferNotDraft = errors.New("transfers: can only ship a draft transfer")
+
 // maxTransferDateBackDays/maxTransferDateForwardDays bound transfer_date on EITHER side of today
 // (unlike pos-api's business_date, which is backdate-only) — a tenant may log a transfer days
 // after the stock actually moved, or schedule one ahead for a planned future shipment (client
@@ -729,7 +733,8 @@ func (s *Service) ShipTransfer(ctx context.Context, tenantID, transferID uuid.UU
 	}
 
 	if transfer.Status != stocktransfer.StatusDraft {
-		return fmt.Errorf("transfers: can only ship a draft transfer, current status: %s", transfer.Status)
+		err = fmt.Errorf("%w, current status: %s", ErrTransferNotDraft, transfer.Status)
+		return err
 	}
 
 	// Deduct each line's quantity from the SOURCE warehouse balance.
@@ -739,12 +744,21 @@ func (s *Service) ShipTransfer(ctx context.Context, tenantID, transferID uuid.UU
 		}
 	}
 
+	// Flip draft to in_transit only while the row is still a draft. Two ships racing (an approval
+	// executing while staff press Ship) both pass the status read above; only one matches here,
+	// and the loser's deductions roll back, so the stock leaves the source once.
 	now := time.Now()
-	if _, err = tx.StockTransfer.UpdateOne(transfer).
+	var flipped int
+	if flipped, err = tx.StockTransfer.Update().
+		Where(stocktransfer.ID(transferID), stocktransfer.TenantID(tenantID), stocktransfer.StatusEQ(stocktransfer.StatusDraft)).
 		SetStatus(stocktransfer.StatusInTransit).
 		SetShippedAt(now).
 		Save(ctx); err != nil {
 		return fmt.Errorf("transfers: update status: %w", err)
+	}
+	if flipped == 0 {
+		err = fmt.Errorf("%w, it was shipped or cancelled in the meantime", ErrTransferNotDraft)
+		return err
 	}
 
 	if err = tx.Commit(); err != nil {

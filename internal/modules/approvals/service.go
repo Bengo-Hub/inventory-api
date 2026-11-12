@@ -11,7 +11,9 @@ package approvals
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"reflect"
 	"sort"
 	"time"
 
@@ -21,6 +23,7 @@ import (
 	entact "github.com/bengobox/inventory-service/internal/ent/approvalaction"
 	entreq "github.com/bengobox/inventory-service/internal/ent/approvalrequest"
 	entrule "github.com/bengobox/inventory-service/internal/ent/approvalrule"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 )
 
 // Sentinel errors returned by Act.
@@ -316,6 +319,9 @@ func (s *Service) ClaimExecution(ctx context.Context, tenantID, requestID uuid.U
 		Where(
 			entreq.ID(requestID),
 			entreq.TenantID(tenantID),
+			// Only an approved request can be executed: one a platform owner cancelled in the
+			// meantime must never run.
+			entreq.StatusEQ(entreq.StatusApproved),
 			entreq.ExecutedAtIsNil(),
 		).
 		SetExecutedAt(time.Now()).
@@ -334,6 +340,202 @@ func (s *Service) ReleaseExecution(ctx context.Context, tenantID, requestID uuid
 		ClearExecutedAt().
 		Save(ctx)
 	return err
+}
+
+// Gate and Check states. A gated action proceeds on StateNotRequired and StateApproved; every
+// other state means it waits for sign-off.
+const (
+	StateNotRequired  = "not_required"  // no rule with steps matches: no approval needed
+	StateApproved     = "approved"      // an approved request for this exact submission awaits execution
+	StatePending      = "pending"       // a request for this exact submission is waiting for approvers
+	StateRejected     = "rejected"      // the latest request was rejected (Check only)
+	StateNotSubmitted = "not_submitted" // nothing live for this submission (Check only)
+	StateSubmitted    = "submitted"     // Gate opened the first request for the document
+	StateResubmitted  = "resubmitted"   // Gate opened a new request after an earlier one (rejected, cancelled, executed or stale)
+)
+
+// GateResult is the outcome of Check or Gate. Request is the request the state refers to: the
+// approved one to claim, the pending or new one, or the rejected one.
+type GateResult struct {
+	State   string
+	Request *ent.ApprovalRequest
+}
+
+// Proceed reports whether the gated action may run now.
+func (g GateResult) Proceed() bool {
+	return g.State == StateNotRequired || g.State == StateApproved
+}
+
+// LatestFor returns the most recent request for (tenant, module, object), nil when there is none.
+// Unlike Latest it never mixes in another module's request for the same object id.
+func (s *Service) LatestFor(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID) (*ent.ApprovalRequest, error) {
+	req, err := s.orm.ApprovalRequest.Query().
+		Where(entreq.TenantID(tenantID), entreq.ModuleEQ(entreq.Module(module)), entreq.ObjectID(objectID)).
+		Order(ent.Desc(entreq.FieldCreatedAt)).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	return req, err
+}
+
+// Check reports where a document stands at its approval gate without writing anything. A request
+// counts only when it is live (pending, or approved and not executed) and was made for the same
+// submission: the same amount and, when payload is given, the same payload. An approval therefore
+// authorises one execution of one version of the document.
+func (s *Service) Check(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, amount float64, payload map[string]any) (GateResult, error) {
+	res, _, _, err := s.check(ctx, tenantID, module, objectID, amount, payload)
+	return res, err
+}
+
+// check is Check plus what Gate needs to open a request: the rule's ordered steps and the stale
+// live request (one made for another submission) that a new request supersedes.
+func (s *Service) check(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, amount float64, payload map[string]any) (GateResult, *ent.ApprovalRule, *ent.ApprovalRequest, error) {
+	rule, err := s.MatchRule(ctx, tenantID, module, amount)
+	if err != nil {
+		return GateResult{}, nil, nil, err
+	}
+	if rule == nil || len(rule.Edges.Steps) == 0 {
+		return GateResult{State: StateNotRequired}, nil, nil, nil
+	}
+	open, err := s.OpenRequest(ctx, tenantID, module, objectID)
+	if err != nil {
+		return GateResult{}, nil, nil, err
+	}
+	if open != nil && sameSubmission(open, amount, payload) {
+		if open.Status == entreq.StatusApproved {
+			return GateResult{State: StateApproved, Request: open}, rule, nil, nil
+		}
+		return GateResult{State: StatePending, Request: open}, rule, nil, nil
+	}
+	latest, err := s.LatestFor(ctx, tenantID, module, objectID)
+	if err != nil {
+		return GateResult{}, nil, nil, err
+	}
+	if latest != nil && latest.Status == entreq.StatusRejected {
+		return GateResult{State: StateRejected, Request: latest}, rule, open, nil
+	}
+	return GateResult{State: StateNotSubmitted, Request: latest}, rule, open, nil
+}
+
+// Gate is the approval gate every effecting action goes through. It returns StateNotRequired or
+// StateApproved when the action may run (the caller then claims the approved request with
+// ClaimExecution before acting), and StatePending while the matching request waits. In every
+// other case (never submitted, rejected, cancelled, already executed, or changed since) it opens a
+// new request for this submission and returns StateSubmitted or StateResubmitted. A rejected
+// request stays as history, so a fixed document is resubmitted simply by pressing the action
+// again. payload is stored on the new request: the inputs the approval executor needs to run the
+// action on approval, and part of what identifies the submission.
+func (s *Service) Gate(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID, objectRef string, amount float64, submittedBy *uuid.UUID, payload map[string]any) (GateResult, error) {
+	res, rule, stale, err := s.check(ctx, tenantID, module, objectID, amount, payload)
+	if err != nil {
+		return res, err
+	}
+	switch res.State {
+	case StateNotRequired, StateApproved, StatePending:
+		return res, nil
+	}
+	steps := append([]*ent.ApprovalStep(nil), rule.Edges.Steps...)
+	sort.Slice(steps, func(i, j int) bool { return steps[i].Sequence < steps[j].Sequence })
+	state := StateSubmitted
+	if res.Request != nil {
+		state = StateResubmitted
+	}
+
+	tx, err := s.orm.Tx(ctx)
+	if err != nil {
+		return GateResult{}, err
+	}
+	if stale != nil {
+		// The live request was made for another version of the document (createRequestTx only
+		// supersedes other amounts; a changed payload at the same amount is closed here).
+		n, err := tx.ApprovalRequest.Update().
+			Where(entreq.ID(stale.ID), entreq.TenantID(tenantID), liveRequest()).
+			SetStatus(entreq.StatusCancelled).SetDecidedAt(time.Now()).
+			Save(ctx)
+		if err != nil {
+			_ = tx.Rollback()
+			return GateResult{}, err
+		}
+		if n == 0 {
+			// The stale request changed between the check and here (most likely the executor
+			// claimed it and is running its action). Opening a second request now could let the
+			// action run twice, so report it as still in progress; the next press sees the
+			// settled state and opens a new request if one is needed.
+			_ = tx.Rollback()
+			cur, gerr := s.orm.ApprovalRequest.Query().Where(entreq.ID(stale.ID), entreq.TenantID(tenantID)).Only(ctx)
+			if gerr != nil {
+				return GateResult{}, gerr
+			}
+			return GateResult{State: StatePending, Request: cur}, nil
+		}
+	}
+	req, err := createRequestTx(ctx, tx.Client(), tenantID, module, objectID, objectRef, amount, submittedBy, payload, rule.ID, steps)
+	if err != nil {
+		_ = tx.Rollback()
+		if ent.IsConstraintError(err) {
+			// A concurrent press opened the request first; report that one.
+			if racer, rerr := s.OpenRequest(ctx, tenantID, module, objectID); rerr == nil && racer != nil {
+				if racer.Status == entreq.StatusApproved {
+					return GateResult{State: StateApproved, Request: racer}, nil
+				}
+				return GateResult{State: StatePending, Request: racer}, nil
+			}
+		}
+		return GateResult{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return GateResult{}, err
+	}
+	return GateResult{State: state, Request: req}, nil
+}
+
+// WithdrawLive cancels the document's live requests (pending, or approved and not executed) for
+// the module, because the document changed under them. Executed requests are history and stay.
+// Returns how many requests were withdrawn.
+func (s *Service) WithdrawLive(ctx context.Context, tenantID uuid.UUID, module string, objectID uuid.UUID) (int, error) {
+	return s.orm.ApprovalRequest.Update().
+		Where(entreq.TenantID(tenantID), entreq.ModuleEQ(entreq.Module(module)), entreq.ObjectID(objectID), liveRequest()).
+		SetStatus(entreq.StatusCancelled).SetDecidedAt(time.Now()).
+		Save(ctx)
+}
+
+// liveRequest matches a request that still governs its document: pending, or approved and not
+// executed yet.
+func liveRequest() predicate.ApprovalRequest {
+	return entreq.Or(
+		entreq.StatusEQ(entreq.StatusPending),
+		entreq.And(entreq.StatusEQ(entreq.StatusApproved), entreq.ExecutedAtIsNil()),
+	)
+}
+
+// sameSubmission reports whether a live request was made for this version of the document: the
+// same amount and, when the caller passes a payload, an equal payload once both are read as JSON.
+func sameSubmission(req *ent.ApprovalRequest, amount float64, payload map[string]any) bool {
+	if req.Amount != amount {
+		return false
+	}
+	if len(payload) == 0 {
+		return true
+	}
+	return reflect.DeepEqual(asJSON(req.Payload), asJSON(payload))
+}
+
+// asJSON reads a payload the way it comes back from the database, so a map built from typed
+// values compares equal to the stored copy.
+func asJSON(p map[string]any) any {
+	if len(p) == 0 {
+		return nil
+	}
+	raw, err := json.Marshal(p)
+	if err != nil {
+		return nil
+	}
+	var out any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil
+	}
+	return out
 }
 
 // Latest returns the most recent approval request for an object (nil if none).

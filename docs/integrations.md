@@ -36,7 +36,7 @@ This document provides detailed integration information for all external service
 
 **Events Consumed**:
 - `auth.tenant.created` - Initialize tenant in inventory system
-- `auth.tenant.updated` - Update tenant metadata
+- `auth.tenant.updated` - Update tenant metadata. A rename (same UUID, new slug) moves the local `tenants` row onto the new slug and drops the cached `tenant:{slug}` entry under both the old and new slug; `SyncTenant` writes the slug on its update path as well
 - `auth.tenant.synced` - Sync tenant metadata
 - `auth.outlet.created` - Create outlet reference
 - `auth.outlet.updated` - Update outlet metadata

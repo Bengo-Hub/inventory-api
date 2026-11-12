@@ -19,6 +19,9 @@ var varianceReasons = map[string]bool{
 	"correction": true, "count_variance": true, "other": true,
 }
 
+// ErrStockCountCancelled is returned by PostStockCountVariances for a cancelled count.
+var ErrStockCountCancelled = errors.New("stock: the stock count is cancelled")
+
 // PostCountResult summarizes a variance-posting pass over a stock count.
 type PostCountResult struct {
 	Posted        int      // lines whose variance posted this pass
@@ -45,6 +48,10 @@ func (s *Service) PostStockCountVariances(ctx context.Context, tenantID, countID
 		Only(ctx)
 	if err != nil {
 		return res, err
+	}
+	// A cancelled count never posts, whoever asks (an approval granted before the cancel included).
+	if count.Status == entcount.StatusCancelled {
+		return res, ErrStockCountCancelled
 	}
 
 	lines, err := s.client.StockCountLine.Query().

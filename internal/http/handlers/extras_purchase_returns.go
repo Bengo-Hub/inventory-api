@@ -396,42 +396,63 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 		writeError(w, http.StatusConflict, "ALREADY_APPROVED", "This return has already been approved")
 		return
 	}
-	ctx := r.Context()
+	// Refuse a return that could never be approved before asking anyone to sign it off.
+	if _, _, aerr := h.purchaseReturnLines(r.Context(), tenantID, pr); aerr != nil {
+		writeActionError(w, aerr)
+		return
+	}
+	actor := actorFromRequest(r)
+	h.runGatedAction(w, r, tenantID, "purchase_return", pr.ID, pr.ReturnNumber, pr.ReturnAmount, nil,
+		func(ctx context.Context) (any, *actionError) {
+			return h.approvePurchaseReturnCore(ctx, tenantID, pr, actor)
+		})
+}
+
+type returnItemInfo struct{ sku, name string }
+
+// purchaseReturnLines loads a return's lines with each item's SKU and name, refusing a return with
+// no lines or with an item that no longer exists, so a return can never end up approved with only
+// some of its items taken out of stock.
+func (h *InventoryExtrasHandler) purchaseReturnLines(ctx context.Context, tenantID uuid.UUID, pr *ent.PurchaseReturn) ([]*ent.PurchaseReturnLine, map[uuid.UUID]returnItemInfo, *actionError) {
 	lines, err := h.orm.PurchaseReturnLine.Query().
 		Where(entprline.PurchaseReturnID(pr.ID), entprline.TenantID(tenantID)).All(ctx)
 	if err != nil || len(lines) == 0 {
-		writeError(w, http.StatusBadRequest, "NO_ITEMS", "This return has no items to send back")
-		return
+		return nil, nil, &actionError{Status: http.StatusBadRequest, Code: "NO_ITEMS", Message: "This return has no items to send back"}
 	}
-	// Resolve every SKU before anything moves, so a return can never end up approved with
-	// only some of its items taken out of stock.
 	itemIDs := make([]uuid.UUID, 0, len(lines))
 	for _, l := range lines {
 		itemIDs = append(itemIDs, l.ItemID)
 	}
-	type itemInfo struct{ sku, name string }
-	itemsByID := map[uuid.UUID]itemInfo{}
+	itemsByID := map[uuid.UUID]returnItemInfo{}
 	if its, ierr := h.orm.Item.Query().
 		Where(entitem.TenantID(tenantID), entitem.IDIn(uniqueUUIDs(itemIDs)...)).
 		Select(entitem.FieldID, entitem.FieldSku, entitem.FieldName).All(ctx); ierr == nil {
 		for _, it := range its {
-			itemsByID[it.ID] = itemInfo{sku: it.Sku, name: it.Name}
+			itemsByID[it.ID] = returnItemInfo{sku: it.Sku, name: it.Name}
 		}
 	}
 	for _, l := range lines {
 		if itemsByID[l.ItemID].sku == "" {
-			writeError(w, http.StatusBadRequest, "UNKNOWN_ITEM", "A returned item no longer exists; edit the return before approving")
-			return
+			return nil, nil, &actionError{Status: http.StatusBadRequest, Code: "UNKNOWN_ITEM", Message: "A returned item no longer exists; edit the return before approving"}
 		}
 	}
-	if !h.gateApproval(w, r, tenantID, "purchase_return", pr.ID, pr.ReturnNumber, pr.ReturnAmount) {
-		return
-	}
+	return lines, itemsByID, nil
+}
 
+// approvePurchaseReturnCore takes the return's goods out of stock and publishes the credit (or
+// repair) event. Shared by the Approve button and the approval executor. The pending to paid
+// switch is a conditional update, so it runs once however many callers race.
+func (h *InventoryExtrasHandler) approvePurchaseReturnCore(ctx context.Context, tenantID uuid.UUID, pr *ent.PurchaseReturn, actor uuid.UUID) (any, *actionError) {
+	if pr.PaymentStatus == entpr.PaymentStatusPaid {
+		return nil, &actionError{Status: http.StatusConflict, Code: "ALREADY_APPROVED", Message: "This return has already been approved", Settled: true}
+	}
+	lines, itemsByID, aerr := h.purchaseReturnLines(ctx, tenantID, pr)
+	if aerr != nil {
+		return nil, aerr
+	}
 	warehouseID := h.purchaseReturnWarehouse(ctx, tenantID, pr)
 	if warehouseID == uuid.Nil {
-		writeError(w, http.StatusBadRequest, "NO_WAREHOUSE", "No location found to take the returned goods out of")
-		return
+		return nil, &actionError{Status: http.StatusBadRequest, Code: "NO_WAREHOUSE", Message: "No location found to take the returned goods out of"}
 	}
 	// Claim the approval atomically: only the request that flips pending -> paid moves stock, so
 	// a double click or two approvers at once can never take the goods out twice.
@@ -445,16 +466,13 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 		claim = claim.SetWarehouseID(warehouseID)
 	}
 	if n, cerr := claim.Save(ctx); cerr != nil {
-		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to approve purchase return")
-		return
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to approve purchase return"}
 	} else if n == 0 {
-		writeError(w, http.StatusConflict, "ALREADY_APPROVED", "This return has already been approved")
-		return
+		return nil, &actionError{Status: http.StatusConflict, Code: "ALREADY_APPROVED", Message: "This return has already been approved", Settled: true}
 	}
 	updated, err := h.orm.PurchaseReturn.Get(ctx, pr.ID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "UPDATE_FAILED", "Failed to approve purchase return")
-		return
+		return nil, &actionError{Status: http.StatusInternalServerError, Code: "UPDATE_FAILED", Message: "Failed to approve purchase return"}
 	}
 
 	isService := updated.Destination == entpr.DestinationService
@@ -485,7 +503,6 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 			notes += ": " + updated.Reason
 		}
 	}
-	actor := actorFromRequest(r)
 	items := make([]map[string]any, 0, len(lines))
 	stockWarnings := make([]string, 0)
 	moves := make([]stockMove, 0, len(lines))
@@ -524,18 +541,18 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 				zap.String("return_number", updated.ReturnNumber), zap.String("sku", moves[failed].Req.SKU),
 				zap.NamedError("stock_error", merr), zap.NamedError("reverse_error", uerr))
 			if uerr != nil {
-				writeError(w, http.StatusInternalServerError, "STOCK_OUT_PARTIAL",
-					fmt.Sprintf("%s could not be taken out of stock and earlier items could not be put back automatically. Check this return in the stock history before retrying.", name))
-				return
+				// Stock may be partly out: the return stays approved (paid) so nobody retries it
+				// blindly, and the approval claim is kept for the same reason.
+				return nil, &actionError{Status: http.StatusInternalServerError, Code: "STOCK_OUT_PARTIAL", Settled: true,
+					Message: fmt.Sprintf("%s could not be taken out of stock and earlier items could not be put back automatically. Check this return in the stock history before retrying.", name)}
 			}
 			if _, rerr := h.orm.PurchaseReturn.Update().
 				Where(entpr.ID(updated.ID), entpr.TenantID(tenantID)).
 				SetPaymentStatus(entpr.PaymentStatusPending).ClearServiceStatus().Save(ctx); rerr != nil {
 				h.log.Error("purchase return: could not undo the approval claim", zap.Error(rerr))
 			}
-			writeError(w, http.StatusConflict, "STOCK_OUT_FAILED",
-				fmt.Sprintf("%s could not be taken out of stock. Nothing was changed.", name))
-			return
+			return nil, &actionError{Status: http.StatusConflict, Code: "STOCK_OUT_FAILED",
+				Message: fmt.Sprintf("%s could not be taken out of stock. Nothing was changed.", name)}
 		}
 	}
 
@@ -566,9 +583,7 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 			sent["approved_by"] = actor.String()
 		}
 		h.publishOutbox(ctx, tenantID, "purchase_return", updated.ID, "inventory.service_order.sent", sent)
-		dto := h.purchaseReturnsToDTOs(ctx, tenantID, []*ent.PurchaseReturn{updated})[0]
-		writeJSON(w, http.StatusOK, dto)
-		return
+		return h.purchaseReturnsToDTOs(ctx, tenantID, []*ent.PurchaseReturn{updated})[0], nil
 	}
 	// Enriched payload so treasury can raise an itemised vendor CREDIT NOTE dated on the return
 	// day that nets the supplier payable, on the right outlet and eTIMS branch.
@@ -599,7 +614,7 @@ func (h *InventoryExtrasHandler) ApprovePurchaseReturn(w http.ResponseWriter, r 
 
 	dto := h.purchaseReturnsToDTOs(ctx, tenantID, []*ent.PurchaseReturn{updated})[0]
 	dto.StockWarnings = stockWarnings
-	writeJSON(w, http.StatusOK, dto)
+	return dto, nil
 }
 
 // autoCreateReturnForRejected creates a PENDING supplier return for a posted goods receipt's

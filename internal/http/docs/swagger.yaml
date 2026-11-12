@@ -81,6 +81,12 @@ definitions:
         type: string
       description:
         type: string
+      etims_item_cls_cd:
+        type: string
+      etims_pkg_unit_cd:
+        type: string
+      etims_qty_unit_cd:
+        type: string
       image_url:
         type: string
       ingredients:
@@ -121,6 +127,14 @@ definitions:
       target_margin_percent:
         description: fallback to tenant default
         type: number
+      tax_code_id:
+        description: |-
+          Tax and KRA eTIMS fields, the same ones the plain item form saves. Saving a recipe used
+          to drop them. Blank codes keep what is stored (a new item gets the automatic tax code);
+          tax_inclusive saves as false when not sent, as it always did.
+        type: string
+      tax_inclusive:
+        type: boolean
       unit_content_qty:
         description: |-
           Content per portion — how much one output portion contains (300 + "ml" for a pot
@@ -258,6 +272,11 @@ definitions:
       current_step:
         $ref: '#/definitions/handlers.approvalActionDTO'
       decided_at:
+        type: string
+      executed_at:
+        description: |-
+          ExecutedAt is when the approved action ran. An approved request without it is "approved,
+          ready to <action>": the action has not happened yet.
         type: string
       id:
         type: string
@@ -666,6 +685,12 @@ definitions:
       notes:
         type: string
       received_by:
+        type: string
+      received_date:
+        description: |-
+          ReceivedDate is the day the goods actually arrived ("YYYY-MM-DD", optional). Blank or today
+          means now; an earlier day back-dates the receipt (stock.ResolveReceivedDate) so stock history,
+          the lot and the vendor bill sit on that day while created_at keeps the entry time.
         type: string
       warehouse_id:
         type: string
@@ -1514,6 +1539,12 @@ definitions:
           HasVariants is always populated; Variants is populated when variants are eager-loaded
           (inline for single-item reads, or for the list when ?include=variants is requested).
         type: boolean
+      holds_stock:
+        description: |-
+          HoldsStock is true for an item that keeps its own balance: goods, ingredients, equipment, and
+          a RECIPE made by a production BOM. Treasury registers a stock-holding recipe with KRA as a
+          finished product (item type 2), a menu recipe as a service (3). Set on item lists.
+        type: boolean
       hs_code:
         description: customs tariff code
         type: string
@@ -2307,6 +2338,81 @@ paths:
       security:
       - bearerAuth: []
       summary: Permanently delete an approval request (platform owners only)
+      tags:
+      - Approvals
+  /{tenant}/inventory/approval-requests/{reqID}/cancel:
+    post:
+      parameters:
+      - description: Approval request ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      - description: Why, kept on the audit row
+        in: query
+        name: reason
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.approvalRequestDTO'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Cancel an approved request whose action never ran (platform owners
+        only)
+      tags:
+      - Approvals
+  /{tenant}/inventory/approval-requests/{reqID}/execute:
+    post:
+      parameters:
+      - description: Approval request ID
+        in: path
+        name: reqID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.approvalRequestDTO'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - bearerAuth: []
+      summary: Run the action of an approved request that has not run yet
       tags:
       - Approvals
   /{tenant}/inventory/approval-rules:

@@ -23,6 +23,7 @@ import (
 	entpoline "github.com/bengobox/inventory-service/internal/ent/purchaseorderline"
 	entsupplier "github.com/bengobox/inventory-service/internal/ent/supplier"
 	entunit "github.com/bengobox/inventory-service/internal/ent/unit"
+	"github.com/bengobox/inventory-service/internal/modules/approvals"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 )
 
@@ -563,7 +564,7 @@ func (h *InventoryExtrasHandler) CreatePurchaseOrder(w http.ResponseWriter, r *h
 //     again when it is re-sent;
 //   - partially received, received or cancelled: never (use a purchase return or a new order).
 //
-// Any purchase_order approval given for the old amount is closed when the amount changes.
+// An unused purchase_order approval is closed when the amount or the supplier changes.
 //
 //	@Summary      Amend a draft/sent purchase order's lines
 //	@Tags         Procurement
@@ -701,12 +702,14 @@ func (h *InventoryExtrasHandler) AmendPurchaseOrder(w http.ResponseWriter, r *ht
 		return
 	}
 	// A purchase_order approval was given for the old amount. When the amount changes, close it
-	// so the changed order has to be approved again before it can be sent (Send checks the
-	// latest request, which is now cancelled).
-	if total != po.TotalAmount {
+	// so the changed order has to be approved again before it can be sent. An executed approval
+	// (the order was sent on it) is history and stays approved; Send never reuses it anyway. A
+	// supplier change withdraws it too: the approver signed off this spend with that supplier.
+	supplierChanged := req.SupplierID != uuid.Nil && (po.SupplierID == nil || *po.SupplierID != req.SupplierID)
+	if total != po.TotalAmount || supplierChanged {
 		_, _ = h.orm.ApprovalRequest.Update().
 			Where(areq.TenantID(tenantID), areq.ObjectID(po.ID), areq.ModuleEQ(areq.ModulePurchaseOrder),
-				areq.StatusIn(areq.StatusPending, areq.StatusApproved)).
+				areq.Or(areq.StatusEQ(areq.StatusPending), areq.And(areq.StatusEQ(areq.StatusApproved), areq.ExecutedAtIsNil()))).
 			SetStatus(areq.StatusCancelled).SetDecidedAt(time.Now()).
 			Save(r.Context())
 	}
@@ -776,10 +779,19 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 		writeError(w, http.StatusBadRequest, "INVALID_STATUS", "Only draft orders can be sent")
 		return
 	}
-	// Approval-matrix gate: if a rule matches this PO's amount, an approved request is
-	// required before sending. No matching rule → no gate (state "not_required").
-	if ok, state, aerr := h.approvals().Satisfied(r.Context(), tenantID, "purchase_order", po.ID, po.TotalAmount); aerr == nil && !ok {
-		writeError(w, http.StatusConflict, "APPROVAL_REQUIRED", "Purchase order requires approval before sending (status: "+state+")")
+	// Approval-matrix gate: if a rule matches this PO's amount, an approved request for this
+	// amount that has not been used yet is required before sending. No matching rule, no gate.
+	// Sending is not automatic on approval: it runs the treasury budget check with the sender's
+	// override rights, so staff press Send ("Approved, ready to send" in the app). A rejected
+	// order stays a draft; it is amended and submitted again (a new request).
+	gate, gerr := h.approvals().Check(r.Context(), tenantID, "purchase_order", po.ID, po.TotalAmount, nil)
+	if gerr != nil {
+		// Fail closed: an order that may need approval is never sent on a database fault.
+		h.log.Error("PO approval check failed; send refused", zap.Error(gerr))
+		writeApprovalUnavailable(w)
+		return
+	} else if !gate.Proceed() {
+		writeApprovalGate(w, "purchase_order", gate)
 		return
 	}
 	// Budget control: sending promises the spend to the supplier, so it is checked against the
@@ -788,9 +800,35 @@ func (h *InventoryExtrasHandler) SendPurchaseOrder(w http.ResponseWriter, r *htt
 	if !ok {
 		return
 	}
-	if _, err := h.orm.PurchaseOrder.UpdateOneID(poID).SetStatus("sent").Save(r.Context()); err != nil {
-		h.log.Error("send PO failed", zap.Error(err))
-		writeError(w, http.StatusInternalServerError, "SEND_FAILED", "Failed to send purchase order")
+	// The approval is spent by this send: claim it first so two sends cannot both use it.
+	var approved *ent.ApprovalRequest
+	if gate.State == approvals.StateApproved {
+		approved = gate.Request
+		won, cerr := h.approvals().ClaimExecution(r.Context(), tenantID, approved.ID)
+		if cerr != nil {
+			writeError(w, http.StatusInternalServerError, "CLAIM_FAILED", "Could not record the approval as used. Try again.")
+			return
+		}
+		if !won {
+			writeError(w, http.StatusConflict, "ALREADY_SENT", "This order is already being sent on its approval")
+			return
+		}
+	}
+	// Draft to sent only once, whatever the race.
+	n, err := h.orm.PurchaseOrder.Update().
+		Where(entpurchaseorder.ID(poID), entpurchaseorder.TenantID(tenantID), entpurchaseorder.StatusEQ(entpurchaseorder.StatusDraft)).
+		SetStatus(entpurchaseorder.StatusSent).
+		Save(r.Context())
+	if err != nil || n == 0 {
+		if approved != nil {
+			_ = h.approvals().ReleaseExecution(r.Context(), tenantID, approved.ID)
+		}
+		if err != nil {
+			h.log.Error("send PO failed", zap.Error(err))
+			writeError(w, http.StatusInternalServerError, "SEND_FAILED", "Failed to send purchase order")
+			return
+		}
+		writeError(w, http.StatusConflict, "ALREADY_SENT", "This order was sent or changed in the meantime")
 		return
 	}
 

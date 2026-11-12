@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -16,8 +17,10 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/ent"
+	areq "github.com/bengobox/inventory-service/internal/ent/approvalrequest"
 	entbalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	entcount "github.com/bengobox/inventory-service/internal/ent/stockcount"
 	entcountline "github.com/bengobox/inventory-service/internal/ent/stockcountline"
 	enttemplate "github.com/bengobox/inventory-service/internal/ent/stockcounttemplate"
@@ -379,32 +382,152 @@ func (h *StockCountHandler) UpsertLine(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if existing != nil {
-		upd := existing.Update().SetCountedQty(countedQty).SetVariance(variance)
-		if req.Reason != nil {
-			upd = upd.SetReason(reason)
-		}
-		_, err = upd.Save(ctx)
-	} else {
-		create := h.orm.StockCountLine.Create().
-			SetTenantID(tenantID).
-			SetStockCountID(countID).
-			SetItemID(req.ItemID).
-			SetSku(req.Sku).
-			SetSystemQty(sysQty).
-			SetCountedQty(countedQty).
-			SetVariance(variance)
-		if reason != "" {
-			create = create.SetReason(reason)
-		}
-		_, err = create.Save(ctx)
+	// A posted line already moved stock: changing it would desync the line from the adjustment that
+	// was posted, so it is refused (the unposted lines of a partly posted count stay editable).
+	if existing != nil && existing.Posted {
+		writeError(w, http.StatusConflict, "LINE_POSTED", "This line's variance has already been posted and can no longer be edited")
+		return
 	}
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to save line")
+	changed := existing == nil || existing.CountedQty == nil || *existing.CountedQty != countedQty ||
+		existing.Variance == nil || *existing.Variance != variance ||
+		(req.Reason != nil && reason != existing.Reason)
+	if !changed {
+		// Re-saving the same numbers is not a change: nothing is written and the approval stays.
+		writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "variance": variance})
+		return
+	}
+	if aerr := h.saveCountLineLocked(ctx, tenantID, countID, existing, upsertLineWrite{
+		itemID: req.ItemID, sku: req.Sku, sysQty: sysQty, countedQty: countedQty, variance: variance,
+		reason: reason, setReason: req.Reason != nil,
+	}); aerr != nil {
+		writeActionError(w, aerr)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "variance": variance})
 }
+
+// upsertLineWrite is the line change UpsertLine saves.
+type upsertLineWrite struct {
+	itemID     uuid.UUID
+	sku        string
+	sysQty     float64
+	countedQty float64
+	variance   float64
+	reason     string
+	setReason  bool
+}
+
+// saveCountLineLocked saves a count line change and withdraws the count's live approval in ONE
+// transaction that first locks the count's approval request rows (SELECT ... FOR UPDATE).
+// ClaimExecution updates those rows, so a claim that starts while the line is being changed waits
+// for this transaction and then finds the request cancelled (it only claims approved requests):
+// the old approval can never post the new numbers. A request that was already claimed and is
+// being posted (approved, executed_at set) freezes the lines: 409 COUNT_POSTING.
+func (h *StockCountHandler) saveCountLineLocked(ctx context.Context, tenantID, countID uuid.UUID, existing *ent.StockCountLine, lw upsertLineWrite) *actionError {
+	saveFailed := &actionError{Status: http.StatusInternalServerError, Code: "SAVE_FAILED", Message: "The count line was not saved. Try again."}
+	tx, err := h.orm.Tx(ctx)
+	if err != nil {
+		return saveFailed
+	}
+	fail := func(e *actionError) *actionError {
+		_ = tx.Rollback()
+		return e
+	}
+	// Lock every request of this count. ent is generated without the lock feature, so the lock is
+	// added to the select through a predicate on the SQL builder.
+	reqs, err := tx.ApprovalRequest.Query().
+		Where(
+			areq.TenantID(tenantID), areq.ModuleEQ(areq.ModuleStockCount), areq.ObjectID(countID),
+			predicate.ApprovalRequest(func(s *entsql.Selector) { s.ForUpdate() }),
+		).
+		All(ctx)
+	if err != nil {
+		return fail(saveFailed)
+	}
+	live := make([]uuid.UUID, 0, len(reqs))
+	for _, rq := range reqs {
+		if rq.Status == areq.StatusApproved && rq.ExecutedAt != nil {
+			return fail(&actionError{Status: http.StatusConflict, Code: "COUNT_POSTING",
+				Message: "This count is being posted on its approval; its lines can no longer be edited"})
+		}
+		if rq.Status == areq.StatusPending || rq.Status == areq.StatusApproved {
+			live = append(live, rq.ID)
+		}
+	}
+	// The live approval (pending, or approved and not run yet) was given for the old numbers, even
+	// when the total variance happens to stay the same: withdraw it, so the next Approve opens a
+	// fresh request for what the count now says.
+	if len(live) > 0 {
+		if _, err := tx.ApprovalRequest.Update().
+			Where(areq.IDIn(live...), areq.TenantID(tenantID)).
+			SetStatus(areq.StatusCancelled).SetDecidedAt(time.Now()).
+			Save(ctx); err != nil {
+			return fail(saveFailed)
+		}
+	}
+	if existing != nil {
+		// Conditional on the line still being unposted, so an edit never overwrites a posted line.
+		upd := tx.StockCountLine.Update().
+			Where(entcountline.ID(existing.ID), entcountline.TenantID(tenantID), entcountline.Posted(false)).
+			SetCountedQty(lw.countedQty).SetVariance(lw.variance)
+		if lw.setReason {
+			upd = upd.SetReason(lw.reason)
+		}
+		n, err := upd.Save(ctx)
+		if err != nil {
+			return fail(saveFailed)
+		}
+		if n == 0 {
+			return fail(&actionError{Status: http.StatusConflict, Code: "LINE_POSTED",
+				Message: "This line's variance has already been posted and can no longer be edited"})
+		}
+	} else {
+		create := tx.StockCountLine.Create().
+			SetTenantID(tenantID).
+			SetStockCountID(countID).
+			SetItemID(lw.itemID).
+			SetSku(lw.sku).
+			SetSystemQty(lw.sysQty).
+			SetCountedQty(lw.countedQty).
+			SetVariance(lw.variance)
+		if lw.reason != "" {
+			create = create.SetReason(lw.reason)
+		}
+		if _, err := create.Save(ctx); err != nil {
+			return fail(saveFailed)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return saveFailed
+	}
+	return nil
+}
+
+// countGateAmount is a stock count's approval amount: the total absolute variance of all its
+// counted lines, posted ones included, summed in a fixed order and rounded to 4 decimals so two
+// computations over the same lines always give the same figure.
+func countGateAmount(ctx context.Context, orm *ent.Client, tenantID, countID uuid.UUID) (float64, error) {
+	lines, err := orm.StockCountLine.Query().
+		Where(entcountline.TenantID(tenantID), entcountline.StockCountID(countID)).
+		Order(ent.Asc(entcountline.FieldID)).
+		All(ctx)
+	if err != nil {
+		return 0, err
+	}
+	total := 0.0
+	for _, ln := range lines {
+		if ln.CountedQty == nil || ln.Variance == nil {
+			continue
+		}
+		total += math.Abs(*ln.Variance)
+	}
+	return math.Round(total*10000) / 10000, nil
+}
+
+// errCountChanged is the refusal when a count no longer matches the amount its approval was given
+// for (a line changed after sign-off): the approval must not post numbers nobody approved.
+var errCountChanged = &actionError{Status: http.StatusConflict, Code: "COUNT_CHANGED",
+	Message: "This count changed after it was approved, so it was not posted. Submit it for approval again."}
 
 // Submit handles POST /inventory/stock-counts/{id}/submit — counting → review.
 func (h *StockCountHandler) Submit(w http.ResponseWriter, r *http.Request) {
@@ -412,8 +535,43 @@ func (h *StockCountHandler) Submit(w http.ResponseWriter, r *http.Request) {
 }
 
 // Cancel handles POST /inventory/stock-counts/{id}/cancel.
+// A cancelled count must never post, so its live approval request (pending, or approved and not
+// yet executed) is withdrawn with it.
+// A count that already posted (approved, or with any posted line) has moved stock and cannot be
+// cancelled: 409 COUNT_POSTED.
 func (h *StockCountHandler) Cancel(w http.ResponseWriter, r *http.Request) {
-	h.transition(w, r, "cancelled", nil)
+	tenantID, err := parseTenantID(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
+		return
+	}
+	countID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid count id")
+		return
+	}
+	count, err := h.orm.StockCount.Query().Where(entcount.ID(countID), entcount.TenantID(tenantID)).Only(r.Context())
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "Count not found")
+		return
+	}
+	posted, err := h.orm.StockCountLine.Query().
+		Where(entcountline.TenantID(tenantID), entcountline.StockCountID(countID), entcountline.Posted(true)).
+		Exist(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "QUERY_FAILED", "Failed to check the count")
+		return
+	}
+	if count.Status == entcount.StatusApproved || posted {
+		writeError(w, http.StatusConflict, "COUNT_POSTED", "This count has already posted stock adjustments and cannot be cancelled")
+		return
+	}
+	if !h.transition(w, r, "cancelled", nil) || h.approvalSvc == nil {
+		return
+	}
+	if _, err := h.approvalSvc.WithdrawLive(r.Context(), tenantID, "stock_count", countID); err != nil {
+		h.log.Warn("withdraw approval of cancelled count failed", zap.String("count_id", countID.String()), zap.Error(err))
+	}
 }
 
 // Approve handles POST /inventory/stock-counts/{id}/approve — posts variance
@@ -445,46 +603,65 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 		approver, _ = claims.UserID()
 	}
 
-	lines, _ := h.orm.StockCountLine.Query().
-		Where(entcountline.StockCountID(countID), entcountline.Posted(false)).
-		All(ctx)
+	// The gate amount covers every counted line, posted ones included: the approval covers the
+	// whole count, so after a partial post (some SKUs failed) the amount stays the same and
+	// pressing Approve again finishes the remaining lines on the ORIGINAL approval. Changing a
+	// count line withdraws the approval (UpsertLine), so the next press is a new submission.
+	gateAmount, lerr := countGateAmount(ctx, h.orm, tenantID, countID)
+	if lerr != nil {
+		writeError(w, http.StatusInternalServerError, "QUERY_FAILED", "Failed to load count lines")
+		return
+	}
 
 	// Approval-engine gate: a configured stock_count ApprovalRule routes the variance posting
 	// through the workflow, keyed on the count itself (objectID = countID). With no matching rule
-	// the count's own RBAC review→approve step is authoritative (auto-approve — the default), so a
-	// tenant that has not configured a rule is never blocked. The gate amount is the total absolute
-	// variance being posted (net offsets don't mask a large exposure).
+	// the count's own RBAC review to approve step is authoritative (auto-approve, the default), so
+	// a tenant that has not configured a rule is never blocked. The gate amount is the total
+	// absolute variance of the count (net offsets don't mask a large exposure).
+	var approvedReq *ent.ApprovalRequest
 	if h.approvalSvc != nil {
-		gateAmount := 0.0
-		for _, ln := range lines {
-			if ln.CountedQty == nil || ln.Variance == nil {
-				continue
+		// A rejected count is corrected (lines stay editable) and Approve pressed again: that opens
+		// a new request; the rejected one stays as history. Approving the request posts the count
+		// through the approval executor.
+		res, gerr := h.approvalSvc.Gate(ctx, tenantID, "stock_count", countID, "stock-count:"+countID.String(), gateAmount, &approver, nil)
+		if gerr != nil {
+			// Fail closed: variances never post unapproved because of a database fault.
+			h.log.Error("stock count approval gate failed; approve refused", zap.Error(gerr))
+			writeApprovalUnavailable(w)
+			return
+		} else if !res.Proceed() {
+			body := map[string]any{
+				"approval_required": true, "module": "stock_count", "object_id": countID, "state": res.State,
 			}
-			if v := *ln.Variance; v < 0 {
-				gateAmount -= v
-			} else {
-				gateAmount += v
+			if res.State == approvals.StatePending {
+				body["error"] = "STOCK_COUNT_APPROVAL_PENDING"
 			}
+			if res.Request != nil {
+				body["request_id"] = res.Request.ID
+			}
+			writeJSON(w, http.StatusUnprocessableEntity, body)
+			return
+		} else if res.State == approvals.StateApproved {
+			approvedReq = res.Request
 		}
-		ok, state, _ := h.approvalSvc.Satisfied(ctx, tenantID, "stock_count", countID, gateAmount)
-		if !ok {
-			// A rule exists but the count isn't approved yet: create the request on first sight,
-			// then report it as pending so the configured approver(s) can act.
-			if state == "not_submitted" {
-				if _, gated, _ := h.approvalSvc.Submit(ctx, tenantID, "stock_count", countID, "stock-count:"+countID.String(), gateAmount, &approver); gated {
-					writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
-						"approval_required": true, "module": "stock_count", "object_id": countID, "state": "pending",
-					})
-					return
-				}
-				// Submit reported no rule after all (raced/removed) — fall through and post.
-			} else {
-				writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
-					"error": "STOCK_COUNT_APPROVAL_" + strings.ToUpper(state), "approval_required": true,
-					"module": "stock_count", "object_id": countID, "state": state,
-				})
-				return
-			}
+	}
+	// The approval (when there is one) is claimed before posting, so this press and the approval
+	// executor never both post.
+	if approvedReq != nil {
+		won, cerr := h.approvalSvc.ClaimExecution(ctx, tenantID, approvedReq.ID)
+		if cerr != nil {
+			writeError(w, http.StatusInternalServerError, "CLAIM_FAILED", "Could not record the approval as used. Try again.")
+			return
+		}
+		if !won {
+			writeError(w, http.StatusConflict, "ALREADY_EXECUTED", "This count is already being posted on its approval.")
+			return
+		}
+		// Second guard, after the claim: the count must still be what was approved.
+		if now, aerr := countGateAmount(ctx, h.orm, tenantID, countID); aerr != nil || now != approvedReq.Amount {
+			_ = h.approvalSvc.ReleaseExecution(ctx, tenantID, approvedReq.ID)
+			writeActionError(w, errCountChanged)
+			return
 		}
 	}
 	// Post every unposted variance line (and finalize the count when all post). Shared with
@@ -492,8 +669,15 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 	// flag keeps it idempotent across the RBAC approve and the approval-matrix sign-off.
 	result, err := h.stockSvc.PostStockCountVariances(ctx, tenantID, countID, approver)
 	if err != nil {
+		if approvedReq != nil {
+			_ = h.approvalSvc.ReleaseExecution(ctx, tenantID, approvedReq.ID)
+		}
 		writeError(w, http.StatusInternalServerError, "SAVE_FAILED", "Failed to post count variances")
 		return
+	}
+	if approvedReq != nil && len(result.FailedSKUs) > 0 {
+		// Some lines did not post: keep the approval usable for the retry.
+		_ = h.approvalSvc.ReleaseExecution(ctx, tenantID, approvedReq.ID)
 	}
 	posted, totalVar := result.Posted, result.TotalVariance
 
@@ -536,16 +720,16 @@ func (h *StockCountHandler) Approve(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"count": countDTO(updated), "posted_lines": posted, "total_variance": totalVar})
 }
 
-func (h *StockCountHandler) transition(w http.ResponseWriter, r *http.Request, status string, _ any) {
+func (h *StockCountHandler) transition(w http.ResponseWriter, r *http.Request, status string, _ any) bool {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
-		return
+		return false
 	}
 	countID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_ID", "Invalid count id")
-		return
+		return false
 	}
 	n, err := h.orm.StockCount.Update().
 		Where(entcount.ID(countID), entcount.TenantID(tenantID)).
@@ -553,9 +737,10 @@ func (h *StockCountHandler) transition(w http.ResponseWriter, r *http.Request, s
 		Save(r.Context())
 	if err != nil || n == 0 {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Count not found")
-		return
+		return false
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"status": status})
+	return true
 }
 
 // List handles GET /inventory/stock-counts.

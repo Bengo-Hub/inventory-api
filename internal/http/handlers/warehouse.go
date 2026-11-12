@@ -396,9 +396,8 @@ func (h *WarehouseHandler) CreateWarehouse(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Subscription limit: enforce max_warehouses for the tenant's plan before creating.
-	existingCount, err := h.orm.Warehouse.Query().
-		Where(entwarehouse.TenantID(tenantID)).
-		Count(r.Context())
+	// Only active warehouses count against the cap.
+	existingCount, err := countActiveWarehouses(r.Context(), h.orm, tenantID)
 	if err != nil {
 		h.log.Error("count warehouses for limit check failed", zap.Error(err))
 	} else if subscriptions.AssertLimit(w, r, "warehouses", subscriptions.LimitWarehouses, existingCount) {
@@ -498,12 +497,20 @@ func (h *WarehouseHandler) UpdateWarehouse(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 
 	// Verify ownership.
-	_, err = h.orm.Warehouse.Query().
+	current, err := h.orm.Warehouse.Query().
 		Where(entwarehouse.TenantID(tenantID), entwarehouse.ID(warehouseID)).
 		Only(ctx)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "Warehouse not found")
 		return
+	}
+	// Deactivated warehouses free their seat, so reactivating one is checked against
+	// max_warehouses like a new warehouse.
+	if req.IsActive != nil && *req.IsActive && !current.IsActive {
+		if count, cerr := countActiveWarehouses(ctx, h.orm, tenantID); cerr == nil &&
+			subscriptions.AssertLimit(w, r, "warehouses", subscriptions.LimitWarehouses, count) {
+			return
+		}
 	}
 
 	upd := h.orm.Warehouse.UpdateOneID(warehouseID).
