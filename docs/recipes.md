@@ -153,6 +153,27 @@ The rule lives in `stock.isProductionItem` (`bom.go`), the same test `AdjustStoc
 
 Before this change a production item's sale exploded its BOM, so the ingredients were deducted twice (once by the run, once by the sale) and the finished item's balance never went down.
 
+**Returns.** A returned production item with no consumption recorded on its order goes back into its own balance on the direct path (`directReturnRestock`, `return_restock.go`), into the same warehouse and with the same `customer_return` stock event as a returned goods item. A returned menu recipe is still skipped there; its ingredients come back only through the recorded-line reversal. A production item sold before 2026-11-13 has ingredient lines recorded, so its return reverses those ingredients, which is what that sale took.
+
+**Reservations made before the deploy.** A production item reserved before 2026-11-13 was exploded: its ingredient lines carry `component: true` and its summary line `composite: true`. Consuming one still deducts the ingredients. I left this without a code guard: component lines do not name their parent, an ingredient can be shared with a menu recipe on the same order, a partly held reservation has no summary line, and the recipe may have changed since. Instead the ones still open are counted with the query below and released or consumed by hand. A reservation that could not hold every ingredient (only on tenants with `auto_hide_on_stock_out`) has no summary line, so the query cannot see it.
+
+```sql
+-- Open reservations still holding an exploded production item (read only).
+SELECT r.tenant_id, r.id AS reservation_id, r.order_id, r.status, r.created_at,
+       line->>'sku' AS production_sku, (line->>'reserved_qty')::numeric AS qty
+FROM reservations r
+CROSS JOIN LATERAL jsonb_array_elements(r.items::jsonb) AS line
+JOIN items i ON i.tenant_id = r.tenant_id AND i.sku = line->>'sku' AND i.type = 'RECIPE'
+WHERE r.status IN ('pending', 'confirmed')
+  -- composite tag since 2026-10-03; an older summary line is untagged and would now also
+  -- deduct the item's own balance on top of the ingredients
+  AND (COALESCE((line->>'composite')::boolean, false) OR r.created_at < '2026-10-04')
+  AND EXISTS (SELECT 1 FROM recipes rc
+              WHERE rc.tenant_id = r.tenant_id AND (rc.item_id = i.id OR rc.sku = i.sku)
+                AND rc.is_active AND rc.kind <> 'menu')
+ORDER BY r.created_at;
+```
+
 ## Stock units: changing them, and entering stock in another unit (2026-10-04)
 
 - **Changing an item's stock unit** (`UpdateItem`, `items/unit_rescale.go`) rescales everything in the same transaction: balances, reorder levels, lots (quantity and cost), open reservations, `cost_price`, selling guardrails and tier prices.

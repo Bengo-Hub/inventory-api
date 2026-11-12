@@ -229,6 +229,8 @@ func (s *Service) consumedSKUs(ctx context.Context, tenantID, orderID uuid.UUID,
 }
 
 // directReturnRestock restocks SKUs the order never consumed here into the outlet's warehouse.
+// Goods and production items (isProductionItem) go back into their own balance; menu recipes
+// are skipped, since only their ingredients ever held stock.
 // It records a compensating Consumption (keyed "<key>-direct") plus negative "reversal" lines,
 // so the stock-history ledger shows a Sell Return with the order number and a replay is a no-op.
 // Lines skip the utilization rollup because nothing was consumed in the first place.
@@ -263,9 +265,10 @@ func (s *Service) directReturnRestock(ctx context.Context, tenantID uuid.UUID, r
 			Where(item.TenantID(tenantID), item.Sku(l.SKU)).
 			WithUnits().
 			First(ctx)
-		if ierr != nil || holdsNoStock(itm) || itm.Type == item.TypeRECIPE {
-			// Unknown SKU, a service/voucher, or a recipe whose sale never exploded its BOM:
-			// there is no stock row this return can honestly add to.
+		if ierr != nil || holdsNoStock(itm) || (itm.Type == item.TypeRECIPE && !s.isProductionItem(ctx, itm)) {
+			// Unknown SKU, a service/voucher, or a made-to-order (menu) recipe whose sale never
+			// exploded its BOM: there is no stock row this return can honestly add to. A
+			// production item (made in advance) keeps its own balance and goes back like goods.
 			skipped = append(skipped, l.SKU)
 			continue
 		}
