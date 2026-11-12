@@ -988,6 +988,12 @@ func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, p
 	if po.ProjectID != nil {
 		payload["project_id"] = po.ProjectID
 	}
+	// The tenant admin's "purchase order received" email names the supplier.
+	if po.SupplierID != nil {
+		if sup, serr := h.orm.Supplier.Get(context.Background(), *po.SupplierID); serr == nil {
+			payload["supplier_name"] = sup.Name
+		}
+	}
 	// The PO's own receiving warehouse's outlet — same purpose as goods_receipt.posted's outlet_id
 	// (this event is only the FALLBACK path for inventory deployments with no per-GR events, but
 	// it deserves the same attribution).

@@ -1066,18 +1066,27 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 	}
 
 	notification := s.stockAlertNotification(ctx, tenantID)
+	// The alert emails name the warehouse and the time the band changed; without these they
+	// showed the warehouse UUID and an empty time. Read only on a band change.
+	warehouseName := ""
+	if wh, werr := tx.Warehouse.Get(ctx, warehouseID); werr == nil {
+		warehouseName = wh.Name
+	}
+	detectedAt := time.Now().UTC().Format(time.RFC3339)
 	if state == stockBandOut {
 		autoHide := s.autoHideOnStockOut(ctx, tenantID)
 		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "out", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.out", map[string]any{
-			"tenant_id":    tenantID.String(),
-			"item_id":      itm.ID.String(),
-			"sku":          itm.Sku,
-			"name":         itm.Name,
-			"available":    bal.Available,
-			"warehouse_id": warehouseID.String(),
-			"outlet_id":    outletID,
-			"notification": notification,
+			"tenant_id":      tenantID.String(),
+			"item_id":        itm.ID.String(),
+			"sku":            itm.Sku,
+			"name":           itm.Name,
+			"available":      bal.Available,
+			"warehouse_id":   warehouseID.String(),
+			"warehouse_name": warehouseName,
+			"detected_at":    detectedAt,
+			"outlet_id":      outletID,
+			"notification":   notification,
 			// Consumers (POS, ordering) only mark the item unavailable when this is true; when
 			// false the event is an alert only and the item keeps selling into negative stock.
 			"affects_availability": autoHide,
@@ -1094,15 +1103,17 @@ func (s *Service) checkAndPublishLowStock(ctx context.Context, tx *ent.Tx, tenan
 	} else {
 		s.persistStockLevelEvent(ctx, tx, tenantID, itm.ID, warehouseID, outletUUID, "low", bal.Available, bal.ReorderLevel)
 		s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.low", map[string]any{
-			"tenant_id":     tenantID.String(),
-			"item_id":       itm.ID.String(),
-			"sku":           itm.Sku,
-			"name":          itm.Name,
-			"available":     bal.Available,
-			"reorder_level": bal.ReorderLevel,
-			"warehouse_id":  warehouseID.String(),
-			"outlet_id":     outletID,
-			"notification":  notification,
+			"tenant_id":      tenantID.String(),
+			"item_id":        itm.ID.String(),
+			"sku":            itm.Sku,
+			"name":           itm.Name,
+			"available":      bal.Available,
+			"reorder_level":  bal.ReorderLevel,
+			"warehouse_id":   warehouseID.String(),
+			"warehouse_name": warehouseName,
+			"detected_at":    detectedAt,
+			"outlet_id":      outletID,
+			"notification":   notification,
 		})
 		s.log.Info("low stock alert published",
 			zap.String("sku", itm.Sku),
