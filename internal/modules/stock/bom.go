@@ -20,7 +20,9 @@ import (
 
 // maxSubRecipeDepth caps sub-recipe backflush recursion (cycle guard): a menu recipe
 // may explode into a prep recipe (lemon juice) whose own ingredients are raw items.
-const maxSubRecipeDepth = 3
+// It is the same cap availability uses (stockcalc), so the portions shown agree with
+// what a sale deducts.
+const maxSubRecipeDepth = stockcalc.MaxSubRecipeDepth
 
 // explodedIngredient is a single resolved stock deduction produced by BOM explosion.
 // Quantity is expressed in the ingredient item's STOCK (base) unit — recipe-line units

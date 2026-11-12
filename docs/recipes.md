@@ -192,3 +192,34 @@ WHERE i.type = 'RECIPE' AND i.is_active = true
   AND (r.id IS NULL OR (r.id IS NOT NULL AND ri.cnt IS NULL));
 ```
 The fix for an affected item is always the same: add its `RecipeIngredient` lines (or reactivate/create its `Recipe` row) via the normal recipe-editing UI/API. If the item has already accrued a negative balance from being wrongly direct-consumed, that balance is a byproduct of the misconfiguration, not real backorder debt — reset it to 0 via an audited stock adjustment (`reason=correction`) once the ingredients are in place, matching [[oversell-negative-stock-settlement]]'s established remediation pattern. See project memory `recipe-item-no-bom-direct-consumption-bug-2026-09-23` for the 2026-09-23 fleet audit and repair.
+
+## Availability, sub-recipes and KRA stock (2026-11-12)
+
+KRA's eTIMS team saw recipe items flagged as out of stock at the 2026-11-11 review although recipes
+hold no stock. The causes and the rules now:
+
+- **Availability resolves sub-recipes.** `stockcalc.ProduciblePortions` and
+  `AllIngredientsAvailable` expand a prepared ingredient (a RECIPE item with `usable_in_recipes`)
+  through its own recipe, up to `MaxSubRecipeDepth` (5) levels with a cycle guard, the same way
+  `bom.go` deducts. Deduction now also nests to 5 levels, so the two agree.
+- **A recipe that nothing limits is unlimited**, not zero: `ProduciblePortions` returns `Unlimited`
+  (-1) when no line constrains stock (all non-depleting, or every line has a unit mismatch).
+- **`tracks_stock`** is on every availability answer. Services, vouchers and menu recipes report
+  `tracks_stock: false` and are never out of stock; a client must read `available` only when
+  `tracks_stock` is true. A RECIPE made by a production BOM holds its own balance and reads it like
+  goods. The inventory summary counts low and out of stock only for items that hold stock.
+- **Batched.** `items/recipe_availability.go` loads recipes, sub-recipe levels and balances for a
+  whole page in a fixed number of queries, never one per item.
+- **The cascade restores parents.** Restocking an ingredient re-evaluates every recipe that uses it,
+  directly or through a sub-recipe, and brings it back.
+- **Item lists carry `holds_stock`.** Treasury registers a stock-holding recipe with KRA as a
+  finished product (item type 2) and a menu recipe as a service (3).
+
+**What KRA learns about recipe stock.** A recipe's sale line holds no stock, so its ingredients
+leaving were never reported. Now each ingredient (and each stock-holding modifier) deducted for a
+sale publishes `inventory.stock.updated` with reason `consumption`, from `RecordConsumption` and from
+`ConsumeReservation` (reservation lines carry `component: true`), and treasury sends it to KRA as an
+adjustment out (16). A return or void brings ingredients back as `consumption_reversal` (06). A sold
+item coming back as itself is `sale_reversal`, which treasury skips because the refund already
+reports it. Stock moves made for a treasury invoice or its credit note carry `fiscal_document: true`
+and are not sent again.

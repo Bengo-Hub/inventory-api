@@ -23,6 +23,11 @@ type ReservedItemJSON struct {
 	// recipe item's own balance for it, or the recipe item drifts negative while its
 	// ingredients are also deducted.
 	Composite bool `json:"composite,omitempty"`
+	// Component marks an ingredient line exploded from a recipe. Consuming it publishes a
+	// "consumption" stock.updated event (treasury reports it to KRA as an adjustment out); the
+	// sold items themselves are reported by their sale. Absent on reservations made before
+	// 2026-11-12, which then report nothing extra, as before.
+	Component bool `json:"component,omitempty"`
 }
 
 // Reservation holds the schema definition for stock reservations.

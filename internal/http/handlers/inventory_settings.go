@@ -499,6 +499,9 @@ type taxCodeDTO struct {
 	Rate      float64 `json:"rate"`
 	TaxType   string  `json:"tax_type"`
 	IsDefault bool    `json:"is_default"`
+	// KraCode is the OSCU band letter the code reaches KRA as (A exempt, B 16%, C zero,
+	// D non-VAT, E 8%); empty when treasury has none on it.
+	KraCode string `json:"kra_code,omitempty"`
 }
 
 // ListTaxes handles GET /{tenant}/inventory/taxes — the tenant's active tax codes, sourced
@@ -528,6 +531,7 @@ func (h *InventorySettingsHandler) ListTaxes(w http.ResponseWriter, r *http.Requ
 				Rate:      float64(t.Rate),
 				TaxType:   t.TaxType,
 				IsDefault: t.IsDefault,
+				KraCode:   strings.ToUpper(strings.TrimSpace(t.KraCode)),
 			})
 		}
 	}

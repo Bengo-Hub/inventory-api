@@ -299,7 +299,14 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 					// EmitStockChangeCascade (not a standalone cascadeIngredientRestocked call)
 					// so this ALSO publishes stock.updated, keeping ordering's quantity-aware
 					// catalog projection in sync — a gap found auditing this exact class of bug.
-					s.EmitStockChangeCascade(ctx, tx, tenantID, itm.ID, lineWarehouseID, beforeAvail, afterAvail, "consumption_reversal")
+					// An ingredient coming back is "consumption_reversal", the mirror of its
+					// "consumption" event. The sold item itself coming back is "sale_reversal":
+					// its refund or credit note already reports it to KRA, so treasury skips it.
+					reason := "consumption_reversal"
+					if !isRecipeComponent(l.IngredientSku, l.FinishedItemSku) {
+						reason = "sale_reversal"
+					}
+					s.EmitStockChangeCascade(ctx, tx, tenantID, itm.ID, lineWarehouseID, beforeAvail, afterAvail, reason)
 				case ent.IsNotFound(berr):
 					s.log.Warn("consumption reversal: no balance row — utilization compensated, no stock returned",
 						zap.String("sku", l.IngredientSku))

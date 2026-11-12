@@ -39,7 +39,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/documents"
 	"github.com/bengobox/inventory-service/internal/modules/stockcalc"
-	"github.com/bengobox/inventory-service/internal/modules/tenantconfig"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
@@ -588,6 +587,10 @@ type ItemDTO struct {
 	// saved back; EtimsItemClsSource says which ("item" or "category"; empty when neither is set).
 	EtimsItemClsEffective string `json:"etims_item_cls_effective,omitempty"`
 	EtimsItemClsSource    string `json:"etims_item_cls_source,omitempty"`
+	// HoldsStock is true for an item that keeps its own balance: goods, ingredients, equipment, and
+	// a RECIPE made by a production BOM. Treasury registers a stock-holding recipe with KRA as a
+	// finished product (item type 2), a menu recipe as a service (3). Set on item lists.
+	HoldsStock bool `json:"holds_stock"`
 	// Event capacity fields — SERVICE type only
 	TotalCapacity  *int       `json:"total_capacity,omitempty"`
 	BookedCapacity *int       `json:"booked_capacity,omitempty"`
@@ -793,6 +796,10 @@ type StockAvailability struct {
 	// child's attributes (e.g. {"size":"M","colour":"Red"}).
 	VariantOf         string            `json:"variant_of,omitempty"`
 	VariantAttributes map[string]string `json:"variant_attributes,omitempty"`
+	// TracksStock is false for an item that never runs out: a service, a voucher, or a menu
+	// recipe with no BOM or none constraining stock. Available is then 0 and must be read as
+	// always available, never as out of stock.
+	TracksStock bool `json:"tracks_stock"`
 }
 
 // Service handles item-related business logic.
@@ -925,8 +932,13 @@ func (s *Service) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, 
 	return avail, nil
 }
 
-// getDirectAvailability returns availability for a non-recipe item directly from InventoryBalance.
+// getDirectAvailability returns availability for a non-recipe item (or a production BOM's
+// finished good) directly from InventoryBalance. A service or voucher tracks no stock.
 func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID, itm *ent.Item) (*StockAvailability, error) {
+	if IsNonStockSellable(itm.Type) {
+		avail := availabilityFor(itm, nil, nil)
+		return &avail, nil
+	}
 	bal, err := s.client.InventoryBalance.Query().
 		Where(
 			inventorybalance.TenantID(tenantID),
@@ -942,6 +954,7 @@ func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID,
 				OnHand:        0,
 				Available:     0,
 				Reserved:      0,
+				TracksStock:   true,
 				UnitOfMeasure: "",
 				UpdatedAt:     itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 			}, nil
@@ -956,6 +969,7 @@ func (s *Service) getDirectAvailability(ctx context.Context, tenantID uuid.UUID,
 		OnHand:              bal.OnHand,
 		Available:           bal.Available,
 		Reserved:            bal.Reserved,
+		TracksStock:         true,
 		UnitOfMeasure:       bal.UnitOfMeasure,
 		ReorderLevel:        bal.ReorderLevel,
 		ReorderQuantity:     bal.ReorderQuantity,
@@ -985,285 +999,6 @@ func (s *Service) categoryWithDescendants(ctx context.Context, tenantID, categor
 	return append(ids, children...)
 }
 
-// recipePortionsForItems returns, per RECIPE item id, how many whole portions its active recipe's
-// ingredients can produce, summing ingredient balances over the given warehouse scope (nil = all
-// of the tenant's warehouses). Items without an active recipe or ingredients are absent. Two
-// queries regardless of page size: recipes with ingredients (and units), then their balances.
-func (s *Service) recipePortionsForItems(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID, scope map[uuid.UUID]struct{}) map[uuid.UUID]float64 {
-	out := make(map[uuid.UUID]float64, len(itemIDs))
-	if len(itemIDs) == 0 {
-		return out
-	}
-	recs, err := s.client.Recipe.Query().
-		Where(recipe.TenantID(tenantID), recipe.IsActive(true), recipe.ItemIDIn(itemIDs...)).
-		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
-		}).
-		All(ctx)
-	if err != nil || len(recs) == 0 {
-		return out
-	}
-	ingIDs := make([]uuid.UUID, 0)
-	seen := make(map[uuid.UUID]struct{})
-	for _, r := range recs {
-		for _, ing := range r.Edges.Ingredients {
-			if _, ok := seen[ing.ItemID]; !ok {
-				seen[ing.ItemID] = struct{}{}
-				ingIDs = append(ingIDs, ing.ItemID)
-			}
-		}
-	}
-	available := make(map[uuid.UUID]float64, len(ingIDs))
-	if len(ingIDs) > 0 {
-		bals, berr := s.client.InventoryBalance.Query().
-			Where(inventorybalance.TenantIDEQ(tenantID), inventorybalance.ItemIDIn(ingIDs...)).
-			All(ctx)
-		if berr != nil {
-			return out
-		}
-		for _, b := range bals {
-			if scope != nil {
-				if _, ok := scope[b.WarehouseID]; !ok {
-					continue
-				}
-			}
-			available[b.ItemID] += b.Available
-		}
-	}
-	cfg := tenantconfig.Get(ctx, s.client, tenantID)
-	constrains := func(ingItem *ent.Item) bool { return !stockcalc.NonDepleting(ingItem, cfg) }
-	for _, r := range recs {
-		if r.ItemID == nil || len(r.Edges.Ingredients) == 0 || r.Kind != recipe.KindMenu {
-			continue
-		}
-		out[*r.ItemID] = stockcalc.ProduciblePortions(r, available, constrains)
-	}
-	return out
-}
-
-// finishedGoodsRecipeItems returns the RECIPE item ids among itemIDs whose active recipe is a
-// production BOM (kind != menu): manufactured finished goods made in production batches, which
-// genuinely hold stock. Every other RECIPE item (menu recipes, or no recipe at all) never does.
-func (s *Service) finishedGoodsRecipeItems(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) map[uuid.UUID]struct{} {
-	out := make(map[uuid.UUID]struct{})
-	if len(itemIDs) == 0 {
-		return out
-	}
-	recs, err := s.client.Recipe.Query().
-		Where(recipe.TenantID(tenantID), recipe.IsActive(true), recipe.ItemIDIn(itemIDs...), recipe.KindNEQ(recipe.KindMenu)).
-		Select(recipe.FieldItemID).
-		All(ctx)
-	if err != nil {
-		return out
-	}
-	for _, r := range recs {
-		if r.ItemID != nil {
-			out[*r.ItemID] = struct{}{}
-		}
-	}
-	return out
-}
-
-// getRecipeAvailability performs BOM explosion: for a RECIPE item, looks up the recipe,
-// sums each ingredient's available balance across the tenant's warehouses, and returns the
-// minimum number of portions that can be produced. It uses the same maths as the deduction
-// path (stockcalc: unit conversion including the content-per-unit bridge, waste factor,
-// non-depleting ingredients never constrain), so this figure agrees with what a sale removes.
-func (s *Service) getRecipeAvailability(ctx context.Context, tenantID uuid.UUID, itm *ent.Item) (*StockAvailability, error) {
-	rec, err := s.client.Recipe.Query().
-		Where(recipe.TenantID(tenantID), recipe.Sku(itm.Sku), recipe.IsActive(true)).
-		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.Order(ent.Asc(recipeingredient.FieldDisplayOrder)).
-				WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
-		}).
-		Only(ctx)
-	if err != nil {
-		if ent.IsNotFound(err) {
-			// No BOM defined — fall back to direct balance check
-			return s.getDirectAvailability(ctx, tenantID, itm)
-		}
-		return nil, fmt.Errorf("items: lookup recipe for sku=%s: %w", itm.Sku, err)
-	}
-
-	if len(rec.Edges.Ingredients) == 0 {
-		return s.getDirectAvailability(ctx, tenantID, itm)
-	}
-
-	// Collect ingredient item IDs
-	ingredientIDs := make([]uuid.UUID, len(rec.Edges.Ingredients))
-	for i, ing := range rec.Edges.Ingredients {
-		ingredientIDs[i] = ing.ItemID
-	}
-
-	// Fetch all ingredient balances in one query
-	balances, err := s.client.InventoryBalance.Query().
-		Where(
-			inventorybalance.TenantID(tenantID),
-			inventorybalance.ItemIDIn(ingredientIDs...),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("items: query ingredient balances: %w", err)
-	}
-
-	// Sum across warehouses: an item stocked in several locations has one balance row each
-	// (the previous last-row-wins map under-reported multi-warehouse tenants).
-	balMap := make(map[uuid.UUID]float64, len(balances))
-	for _, b := range balances {
-		balMap[b.ItemID] += b.Available
-	}
-
-	cfg := tenantconfig.Get(ctx, s.client, tenantID)
-	constrains := func(ingItem *ent.Item) bool { return !stockcalc.NonDepleting(ingItem, cfg) }
-	// Floors at 0 when any constraining ingredient is negative (a legitimate oversold state,
-	// see [[oversell-negative-stock-settlement]]): producible portions can't be negative.
-	availablePortions := int(stockcalc.ProduciblePortions(rec, balMap, constrains))
-
-	return &StockAvailability{
-		ItemID:        itm.ID,
-		SKU:           itm.Sku,
-		WarehouseID:   uuid.Nil,
-		OnHand:        float64(availablePortions),
-		Available:     float64(availablePortions),
-		Reserved:      0,
-		UnitOfMeasure: rec.UnitOfMeasure,
-		UpdatedAt:     itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
-	}, nil
-}
-
-// BOMAvailabilityResult represents the BOM-aware availability for a single SKU.
-type BOMAvailabilityResult struct {
-	SKU           string    `json:"sku"`
-	ItemID        uuid.UUID `json:"item_id"`
-	Available     float64   `json:"available"`
-	Type          string    `json:"type"` // "recipe" or "simple"
-	UnitOfMeasure string    `json:"unit_of_measure,omitempty"`
-	UpdatedAt     string    `json:"updated_at"`
-}
-
-// GetBOMAvailability returns BOM-aware availability for multiple SKUs.
-// For RECIPE items, it computes the maximum portions producible from ingredient stock.
-// For non-recipe items, it returns direct stock availability.
-func (s *Service) GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]BOMAvailabilityResult, error) {
-	results := make([]BOMAvailabilityResult, 0, len(skus))
-	// Preload every requested item in ONE query instead of an Item.Query per SKU (N+1 on the
-	// terminal's availability check). The per-recipe BOM computation below is inherently per-item.
-	itemsBySku := make(map[string]*ent.Item, len(skus))
-	if items, err := s.client.Item.Query().
-		Where(item.TenantID(tenantID), item.SkuIn(skus...), item.IsActive(true)).
-		All(ctx); err == nil {
-		for _, it := range items {
-			itemsBySku[it.Sku] = it
-		}
-	}
-	for _, sku := range skus {
-		itm := itemsBySku[sku]
-		if itm == nil {
-			s.log.Warn("bom availability: item not found", zap.String("sku", sku))
-			continue
-		}
-
-		if itm.Type == item.TypeRECIPE {
-			avail, err := s.getRecipeAvailability(ctx, tenantID, itm)
-			if err != nil {
-				s.log.Warn("bom availability: recipe check failed", zap.String("sku", sku), zap.Error(err))
-				// Fall back to simple
-				avail, err = s.getDirectAvailability(ctx, tenantID, itm)
-				if err != nil {
-					continue
-				}
-				results = append(results, BOMAvailabilityResult{
-					SKU:           sku,
-					ItemID:        itm.ID,
-					Available:     avail.Available,
-					Type:          "simple",
-					UnitOfMeasure: avail.UnitOfMeasure,
-					UpdatedAt:     avail.UpdatedAt,
-				})
-				continue
-			}
-			results = append(results, BOMAvailabilityResult{
-				SKU:           sku,
-				ItemID:        itm.ID,
-				Available:     avail.Available,
-				Type:          "recipe",
-				UnitOfMeasure: avail.UnitOfMeasure,
-				UpdatedAt:     avail.UpdatedAt,
-			})
-		} else {
-			avail, err := s.getDirectAvailability(ctx, tenantID, itm)
-			if err != nil {
-				s.log.Warn("bom availability: direct check failed", zap.String("sku", sku), zap.Error(err))
-				continue
-			}
-			results = append(results, BOMAvailabilityResult{
-				SKU:           sku,
-				ItemID:        itm.ID,
-				Available:     avail.Available,
-				Type:          "simple",
-				UnitOfMeasure: avail.UnitOfMeasure,
-				UpdatedAt:     avail.UpdatedAt,
-			})
-		}
-	}
-	return results, nil
-}
-
-// BulkAvailability returns stock availability for multiple items by SKU.
-func (s *Service) BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]StockAvailability, error) {
-	items, err := s.client.Item.Query().
-		Where(
-			item.TenantID(tenantID),
-			item.SkuIn(skus...),
-			item.IsActive(true),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("items: query items: %w", err)
-	}
-
-	itemIDs := make([]uuid.UUID, len(items))
-	itemMap := make(map[uuid.UUID]*ent.Item, len(items))
-	for i, itm := range items {
-		itemIDs[i] = itm.ID
-		itemMap[itm.ID] = itm
-	}
-
-	balances, err := s.client.InventoryBalance.Query().
-		Where(
-			inventorybalance.TenantID(tenantID),
-			inventorybalance.ItemIDIn(itemIDs...),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("items: query balances: %w", err)
-	}
-
-	balMap := make(map[uuid.UUID]*ent.InventoryBalance, len(balances))
-	for _, b := range balances {
-		balMap[b.ItemID] = b
-	}
-
-	result := make([]StockAvailability, 0, len(items))
-	for _, itm := range items {
-		avail := StockAvailability{
-			ItemID:    itm.ID,
-			SKU:       itm.Sku,
-			UpdatedAt: itm.UpdatedAt.Format("2006-01-02T15:04:05Z"),
-		}
-		if bal, ok := balMap[itm.ID]; ok {
-			avail.WarehouseID = bal.WarehouseID
-			avail.OnHand = bal.OnHand
-			avail.Available = bal.Available
-			avail.Reserved = bal.Reserved
-			avail.UpdatedAt = bal.UpdatedAt.Format("2006-01-02T15:04:05Z")
-		}
-		result = append(result, avail)
-	}
-
-	return result, nil
-}
-
 // InventorySummary represents high-level stock metrics.
 type InventorySummary struct {
 	TotalItems          int `json:"total_items"`
@@ -1282,12 +1017,15 @@ func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (
 		return nil, fmt.Errorf("items: count total items: %w", err)
 	}
 
+	// Low and out of stock count only items that hold their own stock: a service's or a menu
+	// recipe's zero balance row is not a stock-out.
 	// Assuming 10 is the default low stock threshold if not specified on item
 	lowStock, err := s.client.InventoryBalance.Query().
 		Where(
 			inventorybalance.TenantID(tenantID),
 			inventorybalance.AvailableLTE(10), // Simplification: threshold = 10
 			inventorybalance.AvailableGT(0),
+			stockBearingBalance(),
 		).
 		Count(ctx)
 	if err != nil {
@@ -1298,6 +1036,7 @@ func (s *Service) GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (
 		Where(
 			inventorybalance.TenantID(tenantID),
 			inventorybalance.AvailableLTE(0),
+			stockBearingBalance(),
 		).
 		Count(ctx)
 	if err != nil {
@@ -1936,14 +1675,13 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 		}
 		// Recipe items never hold stock of their own: their "in stock" is how many portions their
 		// ingredients can produce (same outlet scope), computed for the whole page in two queries.
-		recipeIDs := make([]uuid.UUID, 0)
+		recipeItems := make([]*ent.Item, 0)
 		for _, it := range itms {
 			if it.Type == item.TypeRECIPE {
-				recipeIDs = append(recipeIDs, it.ID)
+				recipeItems = append(recipeItems, it)
 			}
 		}
-		recipePortions := s.recipePortionsForItems(innerCtx, tenantID, recipeIDs, balanceScopeWarehouseIDs)
-		finishedGoods := s.finishedGoodsRecipeItems(innerCtx, tenantID, recipeIDs)
+		recipePortions, finishedGoods := s.recipePortionsForItems(innerCtx, tenantID, recipeItems, balanceScopeWarehouseIDs)
 		// Load tenant config once for suggested price computation.
 		cfg, _ := s.client.TenantInventoryConfig.Query().
 			Where(tenantinventoryconfig.TenantID(tenantID)).
@@ -1983,8 +1721,11 @@ func (s *Service) ListItems(ctx context.Context, tenantID uuid.UUID, typeFilter,
 					dto.OnHandContentQty = &onHandContent
 				}
 			}
-			if _, isFinishedGoods := finishedGoods[it.ID]; it.Type == item.TypeRECIPE && !isFinishedGoods {
-				// Never a menu recipe's own balance. nil (shown as "-") when it has no BOM yet.
+			_, isFinishedGoods := finishedGoods[it.ID]
+			dto.HoldsStock = holdsOwnStock(it.Type, isFinishedGoods)
+			if it.Type == item.TypeRECIPE && !isFinishedGoods {
+				// Never a menu recipe's own balance. nil (shown as "-") when it has no BOM yet
+				// or no line of it constrains stock: such a recipe never runs out.
 				dto.Available, dto.OnHand = nil, nil
 				if p, ok := recipePortions[it.ID]; ok {
 					portions := p

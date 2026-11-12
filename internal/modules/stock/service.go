@@ -213,6 +213,11 @@ type AdjustStockRequest struct {
 	// down the item's layers, so without this the returning units would carry no cost of their
 	// own. Set by the handler, never read from a request body.
 	CostLayerUnitCost float64 `json:"-"`
+	// FiscalDocument marks a movement that a treasury fiscal document already reports to KRA (goods
+	// out on an invoice, goods back on its credit note, goods bought for a job). Its stock.updated
+	// event says so, and treasury does not send it to KRA a second time. Set by the event consumers,
+	// never read from a request body.
+	FiscalDocument bool `json:"-"`
 }
 
 // AdjustStockResponse represents the result of a stock adjustment.
@@ -503,6 +508,7 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		"reason":          req.Reason,
 		"on_hand":         newOnHand,
 		"available":       newAvailable,
+		"fiscal_document": req.FiscalDocument,
 	})
 
 	// Any downward adjustment draws down cost layers too (same mechanism a sale uses), so a
@@ -1471,6 +1477,9 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 					ReservedQty:     reserveQty,
 					AvailableQty:    availableQty,
 					IsFullyReserved: reserveQty >= ing.Quantity,
+					// An ingredient of a recipe: the recipe's sale line holds no stock, so
+					// consuming it is reported to KRA as its own stock movement.
+					Component: true,
 				})
 			}
 		}
@@ -1495,6 +1504,9 @@ func (s *Service) CreateReservation(ctx context.Context, tenantID uuid.UUID, req
 				ReservedQty:     reserveQty,
 				AvailableQty:    availableQty,
 				IsFullyReserved: reserveQty >= ming.Quantity,
+				// A modifier's stock (extra cheese) leaves with no sale line of its own, so
+				// consuming it is reported to KRA as its own stock movement.
+				Component: isRecipeComponent(ming.SKU, ri.SKU),
 			})
 		}
 
@@ -1888,6 +1900,10 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 				return nil, fmt.Errorf("stock: round balance for sku=%s: %w", ri.SKU, err)
 			}
 		}
+		if ri.Component {
+			s.writeStockUpdated(ctx, tx, tenantID, itm, whID, onHandBefore, updatedBal.OnHand,
+				updatedBal.OnHand, updatedBal.Available, "consumption")
+		}
 		if sf := eventShortfall(ri.ReservedQty, onHandBefore); sf > 0 {
 			s.log.Warn("reservation consume exceeds on-hand — balance now carries the debt as negative stock",
 				zap.String("sku", ri.SKU),
@@ -2256,6 +2272,14 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 
 			// Check for low stock after consumption
 			s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
+			// An ingredient leaving for a recipe sale is reported as its own stock movement: the
+			// recipe's sale line carries no stock, so KRA would otherwise never see it go
+			// (treasury sends it as an adjustment out). The sold item itself is reported by its
+			// sale, so it gets no event here.
+			if isRecipeComponent(cl.SKU, cl.FinishedItemSKU) {
+				s.writeStockUpdated(ctx, tx, tenantID, itm, whID, onHandBefore, updatedBal.OnHand,
+					updatedBal.OnHand, updatedBal.Available, "consumption")
+			}
 
 			// Lot-ordered consumption: draw down InventoryLot cost layers (real lots AND the
 			// internal is_cost_layer rows created for non-lot-tracked items — same table) in

@@ -247,6 +247,8 @@ func (c *SaleGoodsConsumer) apply(ctx context.Context, tenantID uuid.UUID, ref s
 		}
 		if _, err := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
 			SKU: sku, Adjustment: change, Reason: reason, Reference: ref, Notes: verb + note, WarehouseID: warehouseID,
+			// The invoice or credit note itself reports this movement to KRA.
+			FiscalDocument: true,
 		}); err != nil {
 			c.log.Warn("sale goods: stock not adjusted", zap.Error(err), zap.String("sku", sku), zap.String("reference", ref))
 		}

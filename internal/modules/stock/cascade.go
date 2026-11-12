@@ -2,6 +2,7 @@ package stock
 
 import (
 	"context"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -9,6 +10,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	"github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	entschema "github.com/bengobox/inventory-service/internal/ent/schema"
@@ -31,15 +33,17 @@ func (s *Service) cascadeIngredientStockOut(ctx context.Context, tx *ent.Tx, ten
 		return
 	}
 	outletID := s.outletIDForWarehouse(ctx, tx, warehouseID)
-	available := s.ingredientAvailability(ctx, tx, tenantID, warehouseID, recipes)
+	subs := s.cascadeSubRecipes(ctx, tx, tenantID, recipes)
+	available := s.ingredientAvailability(ctx, tx, tenantID, warehouseID, recipes, subs)
 	constrains := s.ingredientConstrainsFn(ctx, tenantID)
 	for _, r := range recipes {
 		// Non-depleting recipe items are never auto-86'd (they sell regardless of
-		// tracked ingredient levels — the tenant counts stock manually).
-		if s.itemNonDepletingLazy(ctx, r.Edges.Item) {
+		// tracked ingredient levels; the tenant counts stock manually). A production BOM's
+		// item holds its own stock, so an ingredient running out does not take it off sale.
+		if r.Kind != recipe.KindMenu || s.itemNonDepletingLazy(ctx, r.Edges.Item) {
 			continue
 		}
-		if stockcalc.AllIngredientsAvailable(r, available, constrains) {
+		if stockcalc.AllIngredientsAvailable(r, available, constrains, subs) {
 			continue
 		}
 		recipeItem := r.Edges.Item
@@ -82,21 +86,13 @@ func (s *Service) EmitStockInCascade(ctx context.Context, tx *ent.Tx, tenantID, 
 // cascade (stock.out/stock.in) so POS/ordering 86 or restore any recipe this item gates at that
 // specific outlet (opt-in tenants only). Best-effort: errors are logged inside the helpers; the
 // caller's transaction is never aborted.
-func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64, reason string) {
-	itm, err := tx.Item.Get(ctx, itemID)
-	if err != nil {
-		return
-	}
-	bal, _ := tx.InventoryBalance.Query().
-		Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itemID), inventorybalance.WarehouseID(warehouseID)).
-		First(ctx)
-	onHand, available := qtyAfter, qtyAfter
-	if bal != nil {
-		onHand, available = bal.OnHand, bal.Available
-	}
-	s.writeOutboxEvent(ctx, tx, tenantID, itemID, "inventory", "stock.updated", map[string]any{
+// writeStockUpdated writes one inventory.stock.updated event for a movement of itm at warehouseID.
+// It is the payload every stock movement shares; callers that also need the low-stock and recipe
+// cascade use EmitStockChangeCascade, which calls this.
+func (s *Service) writeStockUpdated(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, itm *ent.Item, warehouseID uuid.UUID, qtyBefore, qtyAfter, onHand, available float64, reason string) {
+	s.writeOutboxEvent(ctx, tx, tenantID, itm.ID, "inventory", "stock.updated", map[string]any{
 		"tenant_id":       tenantID.String(),
-		"item_id":         itemID.String(),
+		"item_id":         itm.ID.String(),
 		"sku":             itm.Sku,
 		"warehouse_id":    warehouseID.String(),
 		"outlet_id":       s.outletIDForWarehouse(ctx, tx, warehouseID), // "" = shared warehouse; lets consumers route per branch
@@ -111,6 +107,29 @@ func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenant
 		"on_hand":       onHand,
 		"available":     available,
 	})
+}
+
+// isRecipeComponent reports whether a consumption line is an ingredient used by a recipe or BOM,
+// rather than the sold item itself (whose finished SKU is its own SKU). Only components move stock
+// that no fiscal document reports: a recipe's sale line holds no stock, so KRA learns about the
+// ingredients leaving only from the consumption events.
+func isRecipeComponent(sku, finishedSKU string) bool {
+	return finishedSKU != "" && !strings.EqualFold(strings.TrimSpace(sku), strings.TrimSpace(finishedSKU))
+}
+
+func (s *Service) EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64, reason string) {
+	itm, err := tx.Item.Get(ctx, itemID)
+	if err != nil {
+		return
+	}
+	bal, _ := tx.InventoryBalance.Query().
+		Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itemID), inventorybalance.WarehouseID(warehouseID)).
+		First(ctx)
+	onHand, available := qtyAfter, qtyAfter
+	if bal != nil {
+		onHand, available = bal.OnHand, bal.Available
+	}
+	s.writeStockUpdated(ctx, tx, tenantID, itm, warehouseID, qtyBefore, qtyAfter, onHand, available, reason)
 	if bal != nil {
 		// checkAndPublishLowStock is the authoritative down-direction dispatcher: on a
 		// transition into the out/low band it already publishes stock.out/stock.low AND
@@ -153,31 +172,37 @@ func (s *Service) cascadeIngredientRestocked(ctx context.Context, tx *ent.Tx, te
 	if len(recipes) == 0 {
 		return
 	}
-	available := s.ingredientAvailability(ctx, tx, tenantID, warehouseID, recipes)
+	subs := s.cascadeSubRecipes(ctx, tx, tenantID, recipes)
+	available := s.ingredientAvailability(ctx, tx, tenantID, warehouseID, recipes, subs)
 	constrains := s.ingredientConstrainsFn(ctx, tenantID)
 	for _, r := range recipes {
-		// Non-depleting recipe items were never 86'd, so there is nothing to unblock.
-		if s.itemNonDepletingLazy(ctx, r.Edges.Item) {
+		// Non-depleting recipe items and production BOM items were never 86'd by the
+		// stock-out cascade, so there is nothing to unblock.
+		if r.Kind != recipe.KindMenu || s.itemNonDepletingLazy(ctx, r.Edges.Item) {
 			continue
 		}
-		if !stockcalc.AllIngredientsAvailable(r, available, constrains) {
+		if !stockcalc.AllIngredientsAvailable(r, available, constrains, subs) {
 			continue
 		}
 		recipeItem := r.Edges.Item
-		s.writeOutboxEvent(ctx, tx, tenantID, recipeItem.ID, "inventory", "stock.in", map[string]any{
-			"tenant_id":    tenantID.String(),
-			"item_id":      recipeItem.ID.String(),
-			"sku":          recipeItem.Sku,
-			"name":         recipeItem.Name,
-			"warehouse_id": warehouseID.String(),
-			"outlet_id":    outletID,
-			"reason":       "ingredient_restocked",
-			// Quantity-aware projection (STK-5): how many portions of this recipe its
-			// ingredients can currently produce, so the catalog reflects a real stock
-			// level, not just a sold-out boolean.
-			"available":            stockcalc.ProduciblePortions(r, available, constrains),
+		payload := map[string]any{
+			"tenant_id":            tenantID.String(),
+			"item_id":              recipeItem.ID.String(),
+			"sku":                  recipeItem.Sku,
+			"name":                 recipeItem.Name,
+			"warehouse_id":         warehouseID.String(),
+			"outlet_id":            outletID,
+			"reason":               "ingredient_restocked",
 			"affects_availability": true,
-		})
+		}
+		// Quantity-aware projection (STK-5): how many portions of this recipe its
+		// ingredients can currently produce, so the catalog reflects a real stock level,
+		// not just a sold-out boolean. An unconstrained recipe sends no figure at all, so
+		// consumers keep it available without a quantity cap.
+		if portions := stockcalc.ProduciblePortions(r, available, constrains, subs); portions != stockcalc.Unlimited {
+			payload["available"] = portions
+		}
+		s.writeOutboxEvent(ctx, tx, tenantID, recipeItem.ID, "inventory", "stock.in", payload)
 		s.log.Info("cascade stock.in: recipe item unblocked",
 			zap.String("recipe_sku", recipeItem.Sku),
 			zap.String("restocked_ingredient_id", itemID.String()),
@@ -197,28 +222,55 @@ func (s *Service) outletIDForWarehouse(ctx context.Context, tx *ent.Tx, warehous
 	return wh.OutletID.String()
 }
 
-// recipesForIngredient loads, in one query, every active recipe of the tenant that lists
-// itemID as a direct ingredient and produces a sellable item, with each ingredient's item
-// (and unit) and the produced item eager-loaded. Replaces the old per-recipe lookups.
+// recipesForIngredient loads every active recipe of the tenant that itemID gates and that
+// produces a sellable item: the recipes listing it as a direct ingredient, and the parents
+// that use any of those as a sub-recipe, up to stockcalc.MaxSubRecipeDepth levels up (a
+// cocktail made from lemon juice is gated by lemons too). One query per level, each with the
+// ingredients' items (and units) and the produced item eager-loaded.
 func (s *Service) recipesForIngredient(ctx context.Context, tx *ent.Tx, tenantID, itemID uuid.UUID) []*ent.Recipe {
-	rs, err := tx.Recipe.Query().
-		Where(
-			recipe.TenantID(tenantID),
-			recipe.IsActive(true),
-			recipe.ItemIDNotNil(),
-			recipe.HasIngredientsWith(recipeingredient.ItemID(itemID)),
-		).
-		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
-		}).
-		WithItem().
-		All(ctx)
+	load := func(uses predicate.RecipeIngredient) ([]*ent.Recipe, error) {
+		return tx.Recipe.Query().
+			Where(
+				recipe.TenantID(tenantID),
+				recipe.IsActive(true),
+				recipe.HasIngredientsWith(uses),
+			).
+			WithIngredients(func(q *ent.RecipeIngredientQuery) {
+				q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() })
+			}).
+			WithItem().
+			All(ctx)
+	}
+	found, err := load(recipeingredient.ItemID(itemID))
 	if err != nil {
 		s.log.Warn("cascade: query recipes using ingredient", zap.Error(err))
 		return nil
 	}
-	out := rs[:0]
-	for _, r := range rs {
+	seen := make(map[uuid.UUID]struct{}, len(found))
+	frontier := make([]uuid.UUID, 0, len(found))
+	for _, r := range found {
+		seen[r.ID] = struct{}{}
+		frontier = append(frontier, r.ID)
+	}
+	for depth := 0; depth < stockcalc.MaxSubRecipeDepth && len(frontier) > 0; depth++ {
+		parents, perr := load(recipeingredient.SubRecipeIDIn(frontier...))
+		if perr != nil {
+			s.log.Warn("cascade: query recipes using a sub-recipe", zap.Error(perr))
+			break
+		}
+		next := make([]uuid.UUID, 0, len(parents))
+		for _, p := range parents {
+			if _, dup := seen[p.ID]; dup {
+				continue
+			}
+			seen[p.ID] = struct{}{}
+			next = append(next, p.ID)
+			found = append(found, p)
+		}
+		frontier = next
+	}
+	out := found[:0]
+	for _, r := range found {
 		if r.Edges.Item != nil {
 			out = append(out, r)
 		}
@@ -226,19 +278,21 @@ func (s *Service) recipesForIngredient(ctx context.Context, tx *ent.Tx, tenantID
 	return out
 }
 
-// ingredientAvailability returns available stock at the warehouse for every ingredient of
-// the given recipes, fetched in a single query. Missing rows are simply absent.
-func (s *Service) ingredientAvailability(ctx context.Context, tx *ent.Tx, tenantID, warehouseID uuid.UUID, recipes []*ent.Recipe) map[uuid.UUID]float64 {
-	seen := make(map[uuid.UUID]struct{})
-	ids := make([]uuid.UUID, 0)
-	for _, r := range recipes {
-		for _, ing := range r.Edges.Ingredients {
-			if _, ok := seen[ing.ItemID]; !ok {
-				seen[ing.ItemID] = struct{}{}
-				ids = append(ids, ing.ItemID)
-			}
-		}
+// cascadeSubRecipes loads the sub-recipes the cascade's recipes can expand into, so a parent
+// recipe reads what its prep recipes can make rather than the prep item's empty balance.
+func (s *Service) cascadeSubRecipes(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, recipes []*ent.Recipe) stockcalc.SubRecipes {
+	subs, err := stockcalc.LoadSubRecipes(ctx, tx.Client(), tenantID, recipes)
+	if err != nil {
+		s.log.Warn("cascade: load sub-recipes", zap.Error(err))
 	}
+	return subs
+}
+
+// ingredientAvailability returns available stock at the warehouse for every ingredient of
+// the given recipes and their sub-recipes, fetched in a single query. Missing rows are
+// simply absent.
+func (s *Service) ingredientAvailability(ctx context.Context, tx *ent.Tx, tenantID, warehouseID uuid.UUID, recipes []*ent.Recipe, subs stockcalc.SubRecipes) map[uuid.UUID]float64 {
+	ids := stockcalc.IngredientItemIDs(recipes, subs)
 	available := make(map[uuid.UUID]float64, len(ids))
 	if len(ids) == 0 {
 		return available

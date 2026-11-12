@@ -80,6 +80,14 @@ type MenuItemCompositeRequest struct {
 	// what the deduction/costing paths bridge through.
 	UnitContentQty *float64 `json:"unit_content_qty,omitempty"`
 	UnitContentUOM string   `json:"unit_content_uom,omitempty"`
+	// Tax and KRA eTIMS fields, the same ones the plain item form saves. Saving a recipe used
+	// to drop them. Blank codes keep what is stored (a new item gets the automatic tax code);
+	// tax_inclusive saves as false when not sent, as it always did.
+	TaxCodeID      string `json:"tax_code_id,omitempty"`
+	TaxInclusive   *bool  `json:"tax_inclusive,omitempty"`
+	EtimsItemClsCd string `json:"etims_item_cls_cd,omitempty"`
+	EtimsPkgUnitCd string `json:"etims_pkg_unit_cd,omitempty"`
+	EtimsQtyUnitCd string `json:"etims_qty_unit_cd,omitempty"`
 
 	// ── Recipe fields ─────────────────────────────────────────────────────────
 	Servings            float64  `json:"servings"`              // output_qty; default 1
@@ -178,6 +186,13 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 		ImageURL:        req.ImageURL,
 		SuggestedPrice:  &sp,
 		AddToAllOutlets: true,
+		TaxCodeID:       strings.TrimSpace(req.TaxCodeID),
+		EtimsItemClsCd:  strings.TrimSpace(req.EtimsItemClsCd),
+		EtimsPkgUnitCd:  strings.TrimSpace(req.EtimsPkgUnitCd),
+		EtimsQtyUnitCd:  strings.TrimSpace(req.EtimsQtyUnitCd),
+	}
+	if req.TaxInclusive != nil {
+		itemDTO.TaxInclusive = *req.TaxInclusive
 	}
 	// No outlet context on the composite flow — create untagged (universal within the
 	// tenant); the category is tenant-scoped either way.

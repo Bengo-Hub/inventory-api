@@ -453,6 +453,8 @@ func (c *GoodsCommittedConsumer) receiveDirectPurchase(ctx context.Context, tena
 		if _, err := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
 			SKU: skus[itemID], Adjustment: qty, Reason: "transfer_in", Reference: ref, WarehouseID: warehouseID,
 			Notes: fmt.Sprintf("Bought directly for job %s (paid from a bank in treasury).", p.RootNumber),
+			// The treasury purchase for the job reports this stock to KRA.
+			FiscalDocument: true,
 		}); err != nil {
 			c.log.Warn("job goods purchased: stock not received for item", zap.Error(err), zap.String("sku", skus[itemID]))
 		}
