@@ -140,7 +140,18 @@ A menu recipe's stock is tracked only through its ingredients:
 - **Reservations** never hold a recipe item's own balance.
 - **`AdjustStock`** refuses menu recipe items with 422 `RECIPE_HOLDS_NO_STOCK`. Stock-count posting closes such lines without blocking approval.
 - **Item list** (`GET /inventory/items`): a menu recipe's `available`/`on_hand` is the number of portions its ingredients can produce, in the same outlet scope (`recipePortionsForItems`, two batched queries per page). It's null when the recipe has no BOM.
-- **Exception: manufactured finished goods** (a RECIPE item whose active recipe is a production BOM, `kind != menu`) keep a real balance, fed by production batches through `RestockItems`.
+- **Exception: manufactured finished goods** (a RECIPE item whose active recipe is a production BOM, `kind != menu`) keep a real balance, fed by production batches through `RestockItems`. See "Selling a production item" below for what a sale deducts.
+
+## Selling a production item (2026-11-13)
+
+What a sale deducts depends on how the item is made:
+
+- **Made in advance (production BOM, recipe `kind` not `menu`).** The production run consumed the ingredients and added stock of the finished item. A sale deducts the finished item's own balance, like goods, and never the ingredients again. No `consumption` stock event is written for the ingredients; the sold item is reported by its sale, as goods are. Reservations hold and consume the item's own balance as a direct line.
+- **Made to order (menu recipe).** The item holds no stock (`tracks_stock` and `holds_stock` false). A sale explodes the BOM and deducts the ingredients, each reported as a `consumption` stock movement. This has not changed.
+
+The rule lives in `stock.isProductionItem` (`bom.go`), the same test `AdjustStock` and `items.holdsOwnStock` use. `explodeBOM` returns no BOM for a production recipe at the top level, so `RecordConsumption`, `CreateReservation` and modifier consumption take the direct path. A prep sub-recipe inside a menu recipe still backflushes when it has no stock. The tenant default `recipe_items_non_depleting_default` applies to menu recipes only; a production item left on the default mode depletes, while an explicit `non_depleting` mode still wins.
+
+Before this change a production item's sale exploded its BOM, so the ingredients were deducted twice (once by the run, once by the sale) and the finished item's balance never went down.
 
 ## Stock units: changing them, and entering stock in another unit (2026-10-04)
 

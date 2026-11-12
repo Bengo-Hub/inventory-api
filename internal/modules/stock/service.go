@@ -1351,9 +1351,10 @@ func (s *Service) reserveIngredient(ctx context.Context, tx *ent.Tx, tenantID, w
 			zap.String("sku", ing.SKU), zap.Error(qerr))
 		return 0, 0, false, false, nil
 	}
-	// A RECIPE item reaches here only when it has no BOM (explodeBOM handles the rest): recipe
-	// items never hold stock of their own, so there is nothing to reserve.
-	if isNonDepleting(itm, cfg) || holdsNoStock(itm) || itm.Type == item.TypeRECIPE {
+	// A menu RECIPE item reaches here only when it has no BOM (explodeBOM handles the rest): it
+	// holds no stock of its own, so there is nothing to reserve. A production item holds its own.
+	if s.saleNonDepleting(ctx, itm, cfg) || holdsNoStock(itm) ||
+		(itm.Type == item.TypeRECIPE && !s.isProductionItem(ctx, itm)) {
 		return 0, 0, true, true, nil
 	}
 
@@ -2023,7 +2024,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		// A non-depleting menu item is never exploded: its usage is recorded
 		// theoretically (AvT reporting) but no ingredient stock moves. Its modifiers
 		// still deduct below — modifier items carry their own tracking mode.
-		if itm, ierr := s.ResolveItemBySKU(ctx, tenantID, ci.SKU); ierr == nil && isNonDepleting(itm, cfg) {
+		if itm, ierr := s.ResolveItemBySKU(ctx, tenantID, ci.SKU); ierr == nil && s.saleNonDepleting(ctx, itm, cfg) {
 			flattened = append(flattened, explodedIngredient{SKU: itm.Sku, Quantity: ci.Quantity, Theoretical: true, RequestedUOM: ci.UOM, FinishedItemSKU: itm.Sku})
 			for _, ming := range s.modifierConsumption(ctx, tenantID, whID, ci.Modifiers, ci.Quantity) {
 				ming.FinishedItemSKU = itm.Sku
@@ -2052,8 +2053,10 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 				Where(item.TenantID(tenantID), item.Sku(stockSKU)).
 				WithUnits().
 				Only(ctx); ierr == nil {
-				if itm.Type == item.TypeRECIPE {
-					// A recipe item never tracks stock of its own: stock is tracked only through
+				// A production item (made in advance by a production BOM) holds its own stock and
+				// falls through to the direct deduction below, like goods.
+				if itm.Type == item.TypeRECIPE && !s.isProductionItem(ctx, itm) {
+					// A menu recipe item never tracks stock of its own: stock is tracked only through
 					// its ingredients. With no BOM configured there is nothing to deduct, so the
 					// sale is recorded as theoretical usage (visible in reports, flagged on Recipe
 					// Health as missing_bom) and the item's own balance is never touched. It used
@@ -2159,7 +2162,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 
 		// Non-depleting ingredient/goods (e.g. ice cubes flagged non_depleting): record
 		// theoretical usage only, per tenant policy.
-		if cl.Theoretical || isNonDepleting(itm, cfg) {
+		if cl.Theoretical || s.saleNonDepleting(ctx, itm, cfg) {
 			entry.Theoretical = true
 			if cfg == nil || cfg.RecordTheoreticalUsage {
 				consumptionItems = append(consumptionItems, entry)

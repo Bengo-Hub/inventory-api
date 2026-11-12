@@ -155,6 +155,39 @@ func (s *Service) itemNonDepletingLazy(ctx context.Context, itm *ent.Item) bool 
 	return isNonDepleting(itm, s.tenantConfig(ctx, itm.TenantID))
 }
 
+// isProductionItem reports whether a RECIPE item is made in advance by a production BOM: an
+// active recipe whose kind is not menu, matched by item_id or SKU (the same rule as AdjustStock
+// and items.holdsOwnStock). The production run consumed the ingredients and added the item's own
+// stock, so a sale draws that balance down like goods. A menu recipe is made to order: it holds
+// no stock and its sale deducts the ingredients.
+func (s *Service) isProductionItem(ctx context.Context, itm *ent.Item) bool {
+	if itm == nil || itm.Type != item.TypeRECIPE {
+		return false
+	}
+	ok, err := s.client.Recipe.Query().
+		Where(
+			recipe.TenantID(itm.TenantID),
+			recipe.Or(recipe.ItemID(itm.ID), recipe.Sku(itm.Sku)),
+			recipe.IsActive(true),
+			recipe.KindNEQ(recipe.KindMenu),
+		).
+		Exist(ctx)
+	return err == nil && ok
+}
+
+// saleNonDepleting is isNonDepleting for an item being sold or reserved. The tenant's default
+// that recipe items do not deplete is meant for menu recipes, so a production item left on the
+// default mode still depletes its own stock. An explicit non_depleting mode still wins.
+func (s *Service) saleNonDepleting(ctx context.Context, itm *ent.Item, cfg *ent.TenantInventoryConfig) bool {
+	if !isNonDepleting(itm, cfg) {
+		return false
+	}
+	if itm.StockTrackingMode == item.StockTrackingModeNonDepleting {
+		return true
+	}
+	return !s.isProductionItem(ctx, itm)
+}
+
 // ConvertToStockUnit converts a recipe-line/sale quantity into the item's stock unit. The
 // implementation lives in stockcalc so the items read model and recipe costing share it; see
 // stockcalc.ConvertToStockUnit for the resolution order.
@@ -163,8 +196,9 @@ func ConvertToStockUnit(itm *ent.Item, qty float64, fromUOM string) (float64, bo
 }
 
 // explodeBOM resolves a menu-item SKU to its raw-ingredient stock deductions using the
-// recipe/BOM table. Returns (nil, false) when the SKU has no active recipe or the recipe
-// has no ingredients — the caller consumes the SKU directly.
+// recipe/BOM table. Returns (nil, false) when the SKU has no active recipe, the recipe
+// has no ingredients, or it is a production BOM (isProductionItem): the caller consumes the
+// SKU directly.
 //
 // Ingredient quantities include the line's waste factor (matching recipe costing, so
 // theoretical usage and money agree) and are converted into each ingredient's stock
@@ -193,6 +227,12 @@ func (s *Service) explodeBOMDepth(ctx context.Context, tenantID, warehouseID uui
 		}).
 		Only(ctx)
 	if err != nil || len(r.Edges.Ingredients) == 0 {
+		return nil, false
+	}
+	// A sold production item was made in advance: its run already used the ingredients, so the
+	// sale takes the item's own stock (the caller's direct line), never the ingredients again.
+	// Deeper levels keep backflushing a prep sub-recipe as before.
+	if depth == 0 && r.Kind != recipe.KindMenu {
 		return nil, false
 	}
 

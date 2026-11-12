@@ -318,8 +318,8 @@ func (s *Service) ingredientAvailability(ctx context.Context, tx *ent.Tx, tenant
 // summary whose stock is held by its exploded ingredient lines. Release and consume must
 // skip it: moving the recipe item's own balance for it double-counts the sale and drives the
 // recipe item negative. Reservations written before the Composite tag existed are recognised
-// by the item being a RECIPE with an active, non-empty BOM (exactly when CreateReservation
-// exploded it). itm must be the line's item.
+// by the item being a RECIPE with an active, non-empty menu recipe (exactly when
+// CreateReservation explodes it). itm must be the line's item.
 func (s *Service) isCompositeReservationLine(ctx context.Context, tx *ent.Tx, tenantID uuid.UUID, ri entschema.ReservedItemJSON, itm *ent.Item) bool {
 	if ri.Composite {
 		return true
@@ -333,6 +333,8 @@ func (s *Service) isCompositeReservationLine(ctx context.Context, tx *ent.Tx, te
 			recipe.Sku(itm.Sku),
 			recipe.IsActive(true),
 			recipe.HasIngredients(),
+			// A production item is reserved as a direct line on its own balance, never exploded.
+			recipe.KindEQ(recipe.KindMenu),
 		).
 		Exist(ctx)
 	return err == nil && exists
