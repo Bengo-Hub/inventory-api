@@ -26,6 +26,8 @@ const (
 	FieldCustomerName = "customer_name"
 	// FieldCustomerPhone holds the string denoting the customer_phone field in the database.
 	FieldCustomerPhone = "customer_phone"
+	// FieldCrmContactID holds the string denoting the crm_contact_id field in the database.
+	FieldCrmContactID = "crm_contact_id"
 	// FieldServedByUserID holds the string denoting the served_by_user_id field in the database.
 	FieldServedByUserID = "served_by_user_id"
 	// FieldServedByName holds the string denoting the served_by_name field in the database.
@@ -79,6 +81,7 @@ var Columns = []string{
 	FieldOrderNumber,
 	FieldCustomerName,
 	FieldCustomerPhone,
+	FieldCrmContactID,
 	FieldServedByUserID,
 	FieldServedByName,
 	FieldWarehouseID,
@@ -162,6 +165,11 @@ func ByCustomerName(opts ...sql.OrderTermOption) OrderOption {
 // ByCustomerPhone orders the results by the customer_phone field.
 func ByCustomerPhone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCustomerPhone, opts...).ToFunc()
+}
+
+// ByCrmContactID orders the results by the crm_contact_id field.
+func ByCrmContactID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCrmContactID, opts...).ToFunc()
 }
 
 // ByServedByUserID orders the results by the served_by_user_id field.

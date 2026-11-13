@@ -33,9 +33,12 @@ type consumptionLineInput struct {
 	// orderNumber/customerName/customerPhone/servedByUserID/servedByName denormalize the
 	// triggering sale's own identity onto the line — see ConsumptionLine schema doc comment.
 	// Empty/nil on non-sale reasons (e.g. ordering-backend consumption with no POS order).
+	// crmContactID is the buyer's CRM contact for a linked sale. Only the id is stored; the
+	// stock-history ledger reads the name from marketflow-api when it renders the row.
 	orderNumber    string
 	customerName   string
 	customerPhone  string
+	crmContactID   *uuid.UUID
 	servedByUserID *uuid.UUID
 	servedByName   string
 	// Lot traceability (pharmacy DAWA use-case) — set when this line was drawn from a
@@ -79,6 +82,7 @@ func (s *Service) recordConsumptionLine(ctx context.Context, tx *ent.Tx, tenantI
 	if in.customerPhone != "" {
 		create.SetCustomerPhone(in.customerPhone)
 	}
+	create.SetNillableCrmContactID(in.crmContactID)
 	if in.servedByUserID != nil {
 		create.SetServedByUserID(*in.servedByUserID)
 	}

@@ -25,6 +25,7 @@ import (
 	"github.com/Bengo-Hub/httpware/tenantexport"
 	authclient "github.com/Bengo-Hub/shared-auth-client"
 	eventslib "github.com/Bengo-Hub/shared-events"
+	"github.com/Bengo-Hub/shared-service-client/crm"
 
 	"github.com/bengobox/inventory-service/internal/audit"
 	"github.com/bengobox/inventory-service/internal/config"
@@ -280,6 +281,11 @@ func New(ctx context.Context) (*App, error) {
 	treasuryClient := treasury.NewClient(cfg.Services.TreasuryURL, cfg.Auth.APIKey, cacheAside, log)
 	itemsSvc.SetTaxResolver(treasuryClient)
 	stockSvc := stock.NewService(ormClient, log)
+	// The CRM names a linked buyer on the stock-history ledger; inventory keeps only the id.
+	// Left unwired without a URL or key, so those rows show the generic fallback name.
+	if cfg.Services.MarketflowURL != "" && cfg.Auth.APIKey != "" {
+		stockSvc.WithContactResolver(crm.New(cfg.Services.MarketflowURL, cfg.Auth.APIKey, log))
+	}
 	recipeSvc := recipes.NewService(ormClient, log).WithItemsService(itemsSvc)
 	// A stock-unit change rescales the ingredient's cost per stock unit: recost its recipes.
 	itemsSvc.SetStockUnitChangedHook(func(ctx context.Context, tenantID, itemID uuid.UUID) {

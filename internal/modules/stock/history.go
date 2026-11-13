@@ -86,6 +86,9 @@ type MovementRow struct {
 	// overridden away from it by a transfer's transfer_date (see ledgerMovementDate) — never
 	// hides the real audit timestamp, just stops it from being the misleading headline date.
 	EnteredAt *time.Time `json:"entered_at,omitempty"`
+	// crmContactID is the CRM-linked buyer of a sale or return row that carries no name of its
+	// own; the counterparty is filled from the CRM once per page (resolveContactCounterparties).
+	crmContactID *uuid.UUID
 }
 
 // StockHistorySummary mirrors the Go-Digital quantities-in/out cards.
@@ -569,9 +572,17 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		if reference == "" {
 			reference = "Order " + shortID(c.OrderID)
 		}
+		// A CRM-linked buyer arrives with only crm_contact_id; the name is read from the CRM
+		// after paging, so no copy of it is stored here.
 		counterparty := c.CustomerName
+		var contactID *uuid.UUID
 		if counterparty == "" {
-			counterparty = "Walk-in"
+			if c.CrmContactID != nil {
+				counterparty = linkedBuyerFallback
+				contactID = c.CrmContactID
+			} else {
+				counterparty = "Walk-in"
+			}
 		}
 		var actorID *uuid.UUID
 		if c.ServedByUserID != nil {
@@ -604,7 +615,7 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 				Type: mvType, Label: label, ReversalKind: meta.Kind, Note: meta.Reason,
 				QuantityChange: qty, OccurredAt: c.ConsumedAt,
 				Reference: reference, WarehouseID: wid, Counterparty: counterparty,
-				ActorID: actorID, ActorName: c.ServedByName,
+				ActorID: actorID, ActorName: c.ServedByName, crmContactID: contactID,
 			})
 			continue
 		}
@@ -613,7 +624,7 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 			Type: "sale", Label: "Sold",
 			QuantityChange: -c.Quantity, OccurredAt: c.ConsumedAt,
 			Reference: reference, WarehouseID: wid, Counterparty: counterparty,
-			ActorID: actorID, ActorName: c.ServedByName,
+			ActorID: actorID, ActorName: c.ServedByName, crmContactID: contactID,
 		})
 	}
 
@@ -733,6 +744,8 @@ func (s *Service) ItemStockHistory(ctx context.Context, tenantID uuid.UUID, sku 
 		end = start + f.Limit
 	}
 	res.Movements = rows[start:end]
+	// Name CRM-linked buyers on this page only: one batch call, never one per row.
+	s.resolveContactCounterparties(ctx, tenantID, res.Movements)
 	return res, nil
 }
 

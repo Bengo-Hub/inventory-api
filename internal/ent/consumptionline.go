@@ -30,6 +30,8 @@ type ConsumptionLine struct {
 	CustomerName string `json:"customer_name,omitempty"`
 	// CustomerPhone holds the value of the "customer_phone" field.
 	CustomerPhone string `json:"customer_phone,omitempty"`
+	// Buyer's CRM contact (marketflow-api) when the sale was linked to one. The name is resolved from the CRM on read and never copied here; customer_name stays empty for a linked buyer
+	CrmContactID *uuid.UUID `json:"crm_contact_id,omitempty"`
 	// The cashier/staff who served the sale (POSOrder.served_by_user_id), for the stock-history ledger's User column
 	ServedByUserID *uuid.UUID `json:"served_by_user_id,omitempty"`
 	// Denormalized display name for served_by_user_id — avoids an S2S lookup per ledger row
@@ -78,7 +80,7 @@ func (*ConsumptionLine) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case consumptionline.FieldServedByUserID, consumptionline.FieldWarehouseID, consumptionline.FieldOutletID, consumptionline.FieldRecipeID, consumptionline.FieldLotID:
+		case consumptionline.FieldCrmContactID, consumptionline.FieldServedByUserID, consumptionline.FieldWarehouseID, consumptionline.FieldOutletID, consumptionline.FieldRecipeID, consumptionline.FieldLotID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case consumptionline.FieldTheoretical:
 			values[i] = new(sql.NullBool)
@@ -146,6 +148,13 @@ func (_m *ConsumptionLine) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field customer_phone", values[i])
 			} else if value.Valid {
 				_m.CustomerPhone = value.String
+			}
+		case consumptionline.FieldCrmContactID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field crm_contact_id", values[i])
+			} else if value.Valid {
+				_m.CrmContactID = new(uuid.UUID)
+				*_m.CrmContactID = *value.S.(*uuid.UUID)
 			}
 		case consumptionline.FieldServedByUserID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -326,6 +335,11 @@ func (_m *ConsumptionLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("customer_phone=")
 	builder.WriteString(_m.CustomerPhone)
+	builder.WriteString(", ")
+	if v := _m.CrmContactID; v != nil {
+		builder.WriteString("crm_contact_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.ServedByUserID; v != nil {
 		builder.WriteString("served_by_user_id=")

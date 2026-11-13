@@ -20542,6 +20542,7 @@ type ConsumptionLineMutation struct {
 	order_number       *string
 	customer_name      *string
 	customer_phone     *string
+	crm_contact_id     *uuid.UUID
 	served_by_user_id  *uuid.UUID
 	served_by_name     *string
 	warehouse_id       *uuid.UUID
@@ -20928,6 +20929,55 @@ func (m *ConsumptionLineMutation) CustomerPhoneCleared() bool {
 func (m *ConsumptionLineMutation) ResetCustomerPhone() {
 	m.customer_phone = nil
 	delete(m.clearedFields, consumptionline.FieldCustomerPhone)
+}
+
+// SetCrmContactID sets the "crm_contact_id" field.
+func (m *ConsumptionLineMutation) SetCrmContactID(u uuid.UUID) {
+	m.crm_contact_id = &u
+}
+
+// CrmContactID returns the value of the "crm_contact_id" field in the mutation.
+func (m *ConsumptionLineMutation) CrmContactID() (r uuid.UUID, exists bool) {
+	v := m.crm_contact_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCrmContactID returns the old "crm_contact_id" field's value of the ConsumptionLine entity.
+// If the ConsumptionLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsumptionLineMutation) OldCrmContactID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCrmContactID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCrmContactID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCrmContactID: %w", err)
+	}
+	return oldValue.CrmContactID, nil
+}
+
+// ClearCrmContactID clears the value of the "crm_contact_id" field.
+func (m *ConsumptionLineMutation) ClearCrmContactID() {
+	m.crm_contact_id = nil
+	m.clearedFields[consumptionline.FieldCrmContactID] = struct{}{}
+}
+
+// CrmContactIDCleared returns if the "crm_contact_id" field was cleared in this mutation.
+func (m *ConsumptionLineMutation) CrmContactIDCleared() bool {
+	_, ok := m.clearedFields[consumptionline.FieldCrmContactID]
+	return ok
+}
+
+// ResetCrmContactID resets all changes to the "crm_contact_id" field.
+func (m *ConsumptionLineMutation) ResetCrmContactID() {
+	m.crm_contact_id = nil
+	delete(m.clearedFields, consumptionline.FieldCrmContactID)
 }
 
 // SetServedByUserID sets the "served_by_user_id" field.
@@ -21874,7 +21924,7 @@ func (m *ConsumptionLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ConsumptionLineMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 27)
 	if m.tenant_id != nil {
 		fields = append(fields, consumptionline.FieldTenantID)
 	}
@@ -21892,6 +21942,9 @@ func (m *ConsumptionLineMutation) Fields() []string {
 	}
 	if m.customer_phone != nil {
 		fields = append(fields, consumptionline.FieldCustomerPhone)
+	}
+	if m.crm_contact_id != nil {
+		fields = append(fields, consumptionline.FieldCrmContactID)
 	}
 	if m.served_by_user_id != nil {
 		fields = append(fields, consumptionline.FieldServedByUserID)
@@ -21973,6 +22026,8 @@ func (m *ConsumptionLineMutation) Field(name string) (ent.Value, bool) {
 		return m.CustomerName()
 	case consumptionline.FieldCustomerPhone:
 		return m.CustomerPhone()
+	case consumptionline.FieldCrmContactID:
+		return m.CrmContactID()
 	case consumptionline.FieldServedByUserID:
 		return m.ServedByUserID()
 	case consumptionline.FieldServedByName:
@@ -22034,6 +22089,8 @@ func (m *ConsumptionLineMutation) OldField(ctx context.Context, name string) (en
 		return m.OldCustomerName(ctx)
 	case consumptionline.FieldCustomerPhone:
 		return m.OldCustomerPhone(ctx)
+	case consumptionline.FieldCrmContactID:
+		return m.OldCrmContactID(ctx)
 	case consumptionline.FieldServedByUserID:
 		return m.OldServedByUserID(ctx)
 	case consumptionline.FieldServedByName:
@@ -22124,6 +22181,13 @@ func (m *ConsumptionLineMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCustomerPhone(v)
+		return nil
+	case consumptionline.FieldCrmContactID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCrmContactID(v)
 		return nil
 	case consumptionline.FieldServedByUserID:
 		v, ok := value.(uuid.UUID)
@@ -22343,6 +22407,9 @@ func (m *ConsumptionLineMutation) ClearedFields() []string {
 	if m.FieldCleared(consumptionline.FieldCustomerPhone) {
 		fields = append(fields, consumptionline.FieldCustomerPhone)
 	}
+	if m.FieldCleared(consumptionline.FieldCrmContactID) {
+		fields = append(fields, consumptionline.FieldCrmContactID)
+	}
 	if m.FieldCleared(consumptionline.FieldServedByUserID) {
 		fields = append(fields, consumptionline.FieldServedByUserID)
 	}
@@ -22395,6 +22462,9 @@ func (m *ConsumptionLineMutation) ClearField(name string) error {
 		return nil
 	case consumptionline.FieldCustomerPhone:
 		m.ClearCustomerPhone()
+		return nil
+	case consumptionline.FieldCrmContactID:
+		m.ClearCrmContactID()
 		return nil
 	case consumptionline.FieldServedByUserID:
 		m.ClearServedByUserID()
@@ -22451,6 +22521,9 @@ func (m *ConsumptionLineMutation) ResetField(name string) error {
 		return nil
 	case consumptionline.FieldCustomerPhone:
 		m.ResetCustomerPhone()
+		return nil
+	case consumptionline.FieldCrmContactID:
+		m.ResetCrmContactID()
 		return nil
 	case consumptionline.FieldServedByUserID:
 		m.ResetServedByUserID()

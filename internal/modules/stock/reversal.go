@@ -327,6 +327,7 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 			orderNumber:      l.OrderNumber,
 			customerName:     l.CustomerName,
 			customerPhone:    l.CustomerPhone,
+			crmContactID:     l.CrmContactID,
 			servedByUserID:   l.ServedByUserID,
 			servedByName:     l.ServedByName,
 			warehouseID:      lineWarehouseID,

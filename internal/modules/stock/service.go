@@ -112,6 +112,7 @@ type ConsumptionRequest struct {
 	OrderNumber    string     `json:"order_number,omitempty"`
 	CustomerName   string     `json:"customer_name,omitempty"`
 	CustomerPhone  string     `json:"customer_phone,omitempty"`
+	CrmContactID   *uuid.UUID `json:"crm_contact_id,omitempty"` // linked buyer: no name/phone, read from the CRM
 	ServedByUserID *uuid.UUID `json:"served_by_user_id,omitempty"`
 	ServedByName   string     `json:"served_by_name,omitempty"`
 	// SaleDate, when set, is the date this consumption's ConsumptionLine rows are stamped
@@ -175,6 +176,9 @@ type Service struct {
 	// transferRecorder, when wired, lets BulkAdjustStock's destination-warehouse move give the
 	// result a transfer_number/audit record via transfers.Service — see transfer_recorder.go.
 	transferRecorder TransferRecorder
+	// contacts, when wired, names a CRM-linked buyer on the stock-history ledger (see
+	// history_contacts.go). Nil leaves those rows on the generic fallback name.
+	contacts ContactBatchGetter
 }
 
 // NewService creates a new stock service.
@@ -2172,6 +2176,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					orderNumber:      req.OrderNumber,
 					customerName:     req.CustomerName,
 					customerPhone:    req.CustomerPhone,
+					crmContactID:     req.CrmContactID,
 					servedByUserID:   req.ServedByUserID,
 					servedByName:     req.ServedByName,
 					warehouseID:      whID,
@@ -2325,6 +2330,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					orderNumber:      req.OrderNumber,
 					customerName:     req.CustomerName,
 					customerPhone:    req.CustomerPhone,
+					crmContactID:     req.CrmContactID,
 					servedByUserID:   req.ServedByUserID,
 					servedByName:     req.ServedByName,
 					warehouseID:      whID,
@@ -2364,6 +2370,7 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 					orderNumber:      req.OrderNumber,
 					customerName:     req.CustomerName,
 					customerPhone:    req.CustomerPhone,
+					crmContactID:     req.CrmContactID,
 					servedByUserID:   req.ServedByUserID,
 					servedByName:     req.ServedByName,
 					warehouseID:      whID,

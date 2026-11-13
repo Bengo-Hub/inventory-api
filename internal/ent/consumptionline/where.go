@@ -85,6 +85,11 @@ func CustomerPhone(v string) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldEQ(FieldCustomerPhone, v))
 }
 
+// CrmContactID applies equality check predicate on the "crm_contact_id" field. It's identical to CrmContactIDEQ.
+func CrmContactID(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldCrmContactID, v))
+}
+
 // ServedByUserID applies equality check predicate on the "served_by_user_id" field. It's identical to ServedByUserIDEQ.
 func ServedByUserID(v uuid.UUID) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldEQ(FieldServedByUserID, v))
@@ -528,6 +533,56 @@ func CustomerPhoneEqualFold(v string) predicate.ConsumptionLine {
 // CustomerPhoneContainsFold applies the ContainsFold predicate on the "customer_phone" field.
 func CustomerPhoneContainsFold(v string) predicate.ConsumptionLine {
 	return predicate.ConsumptionLine(sql.FieldContainsFold(FieldCustomerPhone, v))
+}
+
+// CrmContactIDEQ applies the EQ predicate on the "crm_contact_id" field.
+func CrmContactIDEQ(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldEQ(FieldCrmContactID, v))
+}
+
+// CrmContactIDNEQ applies the NEQ predicate on the "crm_contact_id" field.
+func CrmContactIDNEQ(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNEQ(FieldCrmContactID, v))
+}
+
+// CrmContactIDIn applies the In predicate on the "crm_contact_id" field.
+func CrmContactIDIn(vs ...uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIn(FieldCrmContactID, vs...))
+}
+
+// CrmContactIDNotIn applies the NotIn predicate on the "crm_contact_id" field.
+func CrmContactIDNotIn(vs ...uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotIn(FieldCrmContactID, vs...))
+}
+
+// CrmContactIDGT applies the GT predicate on the "crm_contact_id" field.
+func CrmContactIDGT(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGT(FieldCrmContactID, v))
+}
+
+// CrmContactIDGTE applies the GTE predicate on the "crm_contact_id" field.
+func CrmContactIDGTE(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldGTE(FieldCrmContactID, v))
+}
+
+// CrmContactIDLT applies the LT predicate on the "crm_contact_id" field.
+func CrmContactIDLT(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLT(FieldCrmContactID, v))
+}
+
+// CrmContactIDLTE applies the LTE predicate on the "crm_contact_id" field.
+func CrmContactIDLTE(v uuid.UUID) predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldLTE(FieldCrmContactID, v))
+}
+
+// CrmContactIDIsNil applies the IsNil predicate on the "crm_contact_id" field.
+func CrmContactIDIsNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldIsNull(FieldCrmContactID))
+}
+
+// CrmContactIDNotNil applies the NotNil predicate on the "crm_contact_id" field.
+func CrmContactIDNotNil() predicate.ConsumptionLine {
+	return predicate.ConsumptionLine(sql.FieldNotNull(FieldCrmContactID))
 }
 
 // ServedByUserIDEQ applies the EQ predicate on the "served_by_user_id" field.

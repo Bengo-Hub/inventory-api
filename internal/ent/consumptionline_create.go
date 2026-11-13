@@ -84,6 +84,20 @@ func (_c *ConsumptionLineCreate) SetNillableCustomerPhone(v *string) *Consumptio
 	return _c
 }
 
+// SetCrmContactID sets the "crm_contact_id" field.
+func (_c *ConsumptionLineCreate) SetCrmContactID(v uuid.UUID) *ConsumptionLineCreate {
+	_c.mutation.SetCrmContactID(v)
+	return _c
+}
+
+// SetNillableCrmContactID sets the "crm_contact_id" field if the given value is not nil.
+func (_c *ConsumptionLineCreate) SetNillableCrmContactID(v *uuid.UUID) *ConsumptionLineCreate {
+	if v != nil {
+		_c.SetCrmContactID(*v)
+	}
+	return _c
+}
+
 // SetServedByUserID sets the "served_by_user_id" field.
 func (_c *ConsumptionLineCreate) SetServedByUserID(v uuid.UUID) *ConsumptionLineCreate {
 	_c.mutation.SetServedByUserID(v)
@@ -500,6 +514,10 @@ func (_c *ConsumptionLineCreate) createSpec() (*ConsumptionLine, *sqlgraph.Creat
 		_spec.SetField(consumptionline.FieldCustomerPhone, field.TypeString, value)
 		_node.CustomerPhone = value
 	}
+	if value, ok := _c.mutation.CrmContactID(); ok {
+		_spec.SetField(consumptionline.FieldCrmContactID, field.TypeUUID, value)
+		_node.CrmContactID = &value
+	}
 	if value, ok := _c.mutation.ServedByUserID(); ok {
 		_spec.SetField(consumptionline.FieldServedByUserID, field.TypeUUID, value)
 		_node.ServedByUserID = &value
@@ -719,6 +737,24 @@ func (u *ConsumptionLineUpsert) UpdateCustomerPhone() *ConsumptionLineUpsert {
 // ClearCustomerPhone clears the value of the "customer_phone" field.
 func (u *ConsumptionLineUpsert) ClearCustomerPhone() *ConsumptionLineUpsert {
 	u.SetNull(consumptionline.FieldCustomerPhone)
+	return u
+}
+
+// SetCrmContactID sets the "crm_contact_id" field.
+func (u *ConsumptionLineUpsert) SetCrmContactID(v uuid.UUID) *ConsumptionLineUpsert {
+	u.Set(consumptionline.FieldCrmContactID, v)
+	return u
+}
+
+// UpdateCrmContactID sets the "crm_contact_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsert) UpdateCrmContactID() *ConsumptionLineUpsert {
+	u.SetExcluded(consumptionline.FieldCrmContactID)
+	return u
+}
+
+// ClearCrmContactID clears the value of the "crm_contact_id" field.
+func (u *ConsumptionLineUpsert) ClearCrmContactID() *ConsumptionLineUpsert {
+	u.SetNull(consumptionline.FieldCrmContactID)
 	return u
 }
 
@@ -1181,6 +1217,27 @@ func (u *ConsumptionLineUpsertOne) UpdateCustomerPhone() *ConsumptionLineUpsertO
 func (u *ConsumptionLineUpsertOne) ClearCustomerPhone() *ConsumptionLineUpsertOne {
 	return u.Update(func(s *ConsumptionLineUpsert) {
 		s.ClearCustomerPhone()
+	})
+}
+
+// SetCrmContactID sets the "crm_contact_id" field.
+func (u *ConsumptionLineUpsertOne) SetCrmContactID(v uuid.UUID) *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetCrmContactID(v)
+	})
+}
+
+// UpdateCrmContactID sets the "crm_contact_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertOne) UpdateCrmContactID() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateCrmContactID()
+	})
+}
+
+// ClearCrmContactID clears the value of the "crm_contact_id" field.
+func (u *ConsumptionLineUpsertOne) ClearCrmContactID() *ConsumptionLineUpsertOne {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearCrmContactID()
 	})
 }
 
@@ -1861,6 +1918,27 @@ func (u *ConsumptionLineUpsertBulk) UpdateCustomerPhone() *ConsumptionLineUpsert
 func (u *ConsumptionLineUpsertBulk) ClearCustomerPhone() *ConsumptionLineUpsertBulk {
 	return u.Update(func(s *ConsumptionLineUpsert) {
 		s.ClearCustomerPhone()
+	})
+}
+
+// SetCrmContactID sets the "crm_contact_id" field.
+func (u *ConsumptionLineUpsertBulk) SetCrmContactID(v uuid.UUID) *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.SetCrmContactID(v)
+	})
+}
+
+// UpdateCrmContactID sets the "crm_contact_id" field to the value that was provided on create.
+func (u *ConsumptionLineUpsertBulk) UpdateCrmContactID() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.UpdateCrmContactID()
+	})
+}
+
+// ClearCrmContactID clears the value of the "crm_contact_id" field.
+func (u *ConsumptionLineUpsertBulk) ClearCrmContactID() *ConsumptionLineUpsertBulk {
+	return u.Update(func(s *ConsumptionLineUpsert) {
+		s.ClearCrmContactID()
 	})
 }
 

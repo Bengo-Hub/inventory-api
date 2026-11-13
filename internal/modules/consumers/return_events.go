@@ -3,6 +3,7 @@ package consumers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,6 +38,8 @@ type returnEventPayload struct {
 	OrderID      string `json:"order_id"`
 	OrderNumber  string `json:"order_number"`
 	CustomerName string `json:"customer_name"`
+	// CrmContactID is sent instead of CustomerName when the buyer is a CRM contact.
+	CrmContactID string `json:"crm_contact_id"`
 	OutletID     string `json:"outlet_id"`
 	WarehouseID  string `json:"warehouse_id"`
 	Lines        []struct {
@@ -184,6 +187,7 @@ func (c *ReturnEventsConsumer) handle(msg *nats.Msg) {
 		OrderID:            parseUUIDOrNil(p.OrderID),
 		OrderNumber:        p.OrderNumber,
 		CustomerName:       p.CustomerName,
+		CrmContactID:       parseCRMContactID(p.CrmContactID),
 		OutletID:           parseUUIDOrNil(p.OutletID),
 		WarehouseID:        parseUUIDOrNil(p.WarehouseID),
 		IdempotencyKey:     keyPrefix + returnID.String(),
@@ -223,6 +227,16 @@ func (c *ReturnEventsConsumer) reportOutcome(ctx context.Context, log *zap.Logge
 	if err := c.stockSvc.PublishReturnRestockOutcome(ctx, tenantID, returnID, source, result, status, errMsg); err != nil {
 		log.Warn("return restock: outcome event not written", zap.Error(err))
 	}
+}
+
+// parseCRMContactID reads the buyer's optional crm_contact_id. Absent, empty, invalid or nil
+// gives nil, so the line simply carries no CRM link.
+func parseCRMContactID(s string) *uuid.UUID {
+	id, err := uuid.Parse(strings.TrimSpace(s))
+	if err != nil || id == uuid.Nil {
+		return nil
+	}
+	return &id
 }
 
 func parseUUIDOrNil(s string) uuid.UUID {

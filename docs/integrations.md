@@ -112,6 +112,10 @@ publishes that subject. Add a consumer again only when ordering ships returns.)
   shared-events envelope (`DecodeEvent`); gated by `basic_inventory_access` like the sale consumer.
   The outcome (status plus per-SKU warehouse) is published as `inventory.return.restocked`.
   Stock history labels these rows "Customer Return".
+- Buyer identity on both: a CRM-linked buyer arrives as `crm_contact_id` only (no `customer_name` or
+  `customer_phone`). Inventory stores just the id on the consumption line and reads the name from
+  marketflow-api (`POST /api/v1/internal/contacts/batch`, one call per ledger page) when the stock
+  history is shown; "Customer" when the CRM cannot name it, "Walk-in" when there was no buyer.
 - `POST /v1/{tenant}/inventory/consumption/reverse` (S2S, 2026-07-17) — BOM-accurate consumption
   reversal for pos-api's txn-reversal tool: returns the actually-deducted quantities (net of
   recorded shortfall/theoretical/unit-mismatch) to the balance, writes negative compensating

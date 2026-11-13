@@ -112,6 +112,9 @@ type ServicesConfig struct {
 	TreasuryURL string `envconfig:"TREASURY_SERVICE_URL" default:"https://booksapi.codevertexafrica.com"`
 	// POSURL is the pos-api base URL — source of POS units-sold (S2S) for menu-engineering/variance.
 	POSURL string `envconfig:"POS_SERVICE_URL" default:"https://posapi.codevertexafrica.com"`
+	// MarketflowURL is the marketflow-api base URL, the CRM that owns customer identity. The
+	// stock-history ledger reads a linked buyer's name from it (S2S, INTERNAL_SERVICE_KEY).
+	MarketflowURL string `envconfig:"MARKETFLOW_API_URL" default:"http://marketflow-api.marketflow.svc.cluster.local:4000"`
 }
 
 type AuthConfig struct {

@@ -38,6 +38,10 @@ func (ConsumptionLine) Fields() []ent.Field {
 			Comment("Buyer name snapshot from the triggering sale (\"Walk-in\" when absent) — the stock-history ledger's Customer/Supplier column for a sale row"),
 		field.String("customer_phone").
 			Optional(),
+		field.UUID("crm_contact_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("Buyer's CRM contact (marketflow-api) when the sale was linked to one. The name is resolved from the CRM on read and never copied here; customer_name stays empty for a linked buyer"),
 		field.UUID("served_by_user_id", uuid.UUID{}).
 			Optional().
 			Nillable().
@@ -109,5 +113,6 @@ func (ConsumptionLine) Indexes() []ent.Index {
 		index.Fields("tenant_id", "order_id"),
 		index.Fields("consumption_id"),
 		index.Fields("tenant_id", "lot_id"),
+		index.Fields("tenant_id", "crm_contact_id"),
 	}
 }

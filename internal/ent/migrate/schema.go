@@ -703,6 +703,7 @@ var (
 		{Name: "order_number", Type: field.TypeString, Nullable: true},
 		{Name: "customer_name", Type: field.TypeString, Nullable: true},
 		{Name: "customer_phone", Type: field.TypeString, Nullable: true},
+		{Name: "crm_contact_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "served_by_user_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "served_by_name", Type: field.TypeString, Nullable: true},
 		{Name: "warehouse_id", Type: field.TypeUUID, Nullable: true},
@@ -733,12 +734,12 @@ var (
 			{
 				Name:    "consumptionline_tenant_id_ingredient_item_id_consumed_at",
 				Unique:  false,
-				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[14], ConsumptionLinesColumns[22]},
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[15], ConsumptionLinesColumns[23]},
 			},
 			{
 				Name:    "consumptionline_tenant_id_recipe_id_consumed_at",
 				Unique:  false,
-				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[11], ConsumptionLinesColumns[22]},
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[12], ConsumptionLinesColumns[23]},
 			},
 			{
 				Name:    "consumptionline_tenant_id_order_id",
@@ -753,7 +754,12 @@ var (
 			{
 				Name:    "consumptionline_tenant_id_lot_id",
 				Unique:  false,
-				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[23]},
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[24]},
+			},
+			{
+				Name:    "consumptionline_tenant_id_crm_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConsumptionLinesColumns[1], ConsumptionLinesColumns[7]},
 			},
 		},
 	}

@@ -42,6 +42,7 @@ type ReturnRestockRequest struct {
 	OrderID        uuid.UUID
 	OrderNumber    string
 	CustomerName   string
+	CrmContactID   *uuid.UUID // buyer's CRM contact when linked; no name is sent then
 	OutletID       uuid.UUID
 	WarehouseID    uuid.UUID
 	Lines          []ReturnRestockLine
@@ -304,6 +305,7 @@ func (s *Service) directReturnRestock(ctx context.Context, tenantID uuid.UUID, r
 			orderID:          req.OrderID,
 			orderNumber:      req.OrderNumber,
 			customerName:     req.CustomerName,
+			crmContactID:     req.CrmContactID,
 			warehouseID:      whID,
 			outletID:         outletID,
 			recipeSKU:        l.SKU,

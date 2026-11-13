@@ -131,6 +131,26 @@ func (_u *ConsumptionLineUpdate) ClearCustomerPhone() *ConsumptionLineUpdate {
 	return _u
 }
 
+// SetCrmContactID sets the "crm_contact_id" field.
+func (_u *ConsumptionLineUpdate) SetCrmContactID(v uuid.UUID) *ConsumptionLineUpdate {
+	_u.mutation.SetCrmContactID(v)
+	return _u
+}
+
+// SetNillableCrmContactID sets the "crm_contact_id" field if the given value is not nil.
+func (_u *ConsumptionLineUpdate) SetNillableCrmContactID(v *uuid.UUID) *ConsumptionLineUpdate {
+	if v != nil {
+		_u.SetCrmContactID(*v)
+	}
+	return _u
+}
+
+// ClearCrmContactID clears the value of the "crm_contact_id" field.
+func (_u *ConsumptionLineUpdate) ClearCrmContactID() *ConsumptionLineUpdate {
+	_u.mutation.ClearCrmContactID()
+	return _u
+}
+
 // SetServedByUserID sets the "served_by_user_id" field.
 func (_u *ConsumptionLineUpdate) SetServedByUserID(v uuid.UUID) *ConsumptionLineUpdate {
 	_u.mutation.SetServedByUserID(v)
@@ -546,6 +566,12 @@ func (_u *ConsumptionLineUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if _u.mutation.CustomerPhoneCleared() {
 		_spec.ClearField(consumptionline.FieldCustomerPhone, field.TypeString)
 	}
+	if value, ok := _u.mutation.CrmContactID(); ok {
+		_spec.SetField(consumptionline.FieldCrmContactID, field.TypeUUID, value)
+	}
+	if _u.mutation.CrmContactIDCleared() {
+		_spec.ClearField(consumptionline.FieldCrmContactID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.ServedByUserID(); ok {
 		_spec.SetField(consumptionline.FieldServedByUserID, field.TypeUUID, value)
 	}
@@ -761,6 +787,26 @@ func (_u *ConsumptionLineUpdateOne) SetNillableCustomerPhone(v *string) *Consump
 // ClearCustomerPhone clears the value of the "customer_phone" field.
 func (_u *ConsumptionLineUpdateOne) ClearCustomerPhone() *ConsumptionLineUpdateOne {
 	_u.mutation.ClearCustomerPhone()
+	return _u
+}
+
+// SetCrmContactID sets the "crm_contact_id" field.
+func (_u *ConsumptionLineUpdateOne) SetCrmContactID(v uuid.UUID) *ConsumptionLineUpdateOne {
+	_u.mutation.SetCrmContactID(v)
+	return _u
+}
+
+// SetNillableCrmContactID sets the "crm_contact_id" field if the given value is not nil.
+func (_u *ConsumptionLineUpdateOne) SetNillableCrmContactID(v *uuid.UUID) *ConsumptionLineUpdateOne {
+	if v != nil {
+		_u.SetCrmContactID(*v)
+	}
+	return _u
+}
+
+// ClearCrmContactID clears the value of the "crm_contact_id" field.
+func (_u *ConsumptionLineUpdateOne) ClearCrmContactID() *ConsumptionLineUpdateOne {
+	_u.mutation.ClearCrmContactID()
 	return _u
 }
 
@@ -1208,6 +1254,12 @@ func (_u *ConsumptionLineUpdateOne) sqlSave(ctx context.Context) (_node *Consump
 	}
 	if _u.mutation.CustomerPhoneCleared() {
 		_spec.ClearField(consumptionline.FieldCustomerPhone, field.TypeString)
+	}
+	if value, ok := _u.mutation.CrmContactID(); ok {
+		_spec.SetField(consumptionline.FieldCrmContactID, field.TypeUUID, value)
+	}
+	if _u.mutation.CrmContactIDCleared() {
+		_spec.ClearField(consumptionline.FieldCrmContactID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.ServedByUserID(); ok {
 		_spec.SetField(consumptionline.FieldServedByUserID, field.TypeUUID, value)

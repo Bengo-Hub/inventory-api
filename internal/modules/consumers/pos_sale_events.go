@@ -139,6 +139,7 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 			OrderNumber    string `json:"order_number"`
 			CustomerName   string `json:"customer_name"`
 			CustomerPhone  string `json:"customer_phone"`
+			CrmContactID   string `json:"crm_contact_id"` // linked buyer instead of name/phone
 			ServedByUserID string `json:"served_by_user_id"`
 			ServedByName   string `json:"served_by_name"`
 			// SaleDate is the order's effective date (business_date backdate when set, else
@@ -229,6 +230,7 @@ func (c *POSSaleEventsConsumer) handleMessage(msg *nats.Msg) {
 		OrderNumber:    envelope.Payload.OrderNumber,
 		CustomerName:   envelope.Payload.CustomerName,
 		CustomerPhone:  envelope.Payload.CustomerPhone,
+		CrmContactID:   parseCRMContactID(envelope.Payload.CrmContactID),
 		ServedByUserID: servedByUserID,
 		ServedByName:   envelope.Payload.ServedByName,
 		SaleDate:       saleDate,
@@ -259,6 +261,7 @@ type saleFinalizedInfo struct {
 	OrderNumber    string
 	CustomerName   string
 	CustomerPhone  string
+	CrmContactID   *uuid.UUID
 	ServedByUserID *uuid.UUID
 	ServedByName   string
 	// SaleDate is the order's effective date (see envelope.Payload.SaleDate's doc comment).
@@ -332,6 +335,7 @@ func (c *POSSaleEventsConsumer) handleSaleFinalized(ctx context.Context, tenantI
 		OrderNumber:    saleInfo.OrderNumber,
 		CustomerName:   saleInfo.CustomerName,
 		CustomerPhone:  saleInfo.CustomerPhone,
+		CrmContactID:   saleInfo.CrmContactID,
 		ServedByUserID: saleInfo.ServedByUserID,
 		ServedByName:   saleInfo.ServedByName,
 		SaleDate:       saleInfo.SaleDate,
