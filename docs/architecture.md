@@ -289,6 +289,11 @@ index through the Ent and Atlas versioned migration workflow.
 - `PUT /inventory/settings` refuses a plan-locked toggle only when the request turns it on (stored
   false, sent true). The settings page sends every toggle on save, so a tenant that dropped to a
   lower plan with a toggle still on can keep saving its other settings and can always turn it off.
+- The SKU cap is a soft cap. It reads the active item count before the write, outside the write's
+  transaction, so two creates at the same moment can both pass and end one or two items over the
+  limit. A failed count lets the change through. This is by design: the cap is a plan boundary,
+  never a reason to block a till or a stock receipt, and the next create after the overshoot is
+  refused.
 
 ## Authentication
 
