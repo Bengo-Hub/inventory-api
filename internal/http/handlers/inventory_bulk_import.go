@@ -109,6 +109,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 	skuToImage := imagesBySKU(existingItems)
 	skuToMeta := metadataBySKU(existingItems)
 	variantParents := map[uuid.UUID]bool{}
+	skuGuard := h.newImportSKUGuard(r, tenantID)
 
 	rows, _ := reader.ReadAll()
 	var res importResult
@@ -137,7 +138,7 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 		if existingID, ok := skuToID[sku]; ok {
 			keepImageOnImport(&dto, skuToImage[sku])
 			keepMetadataOnImport(&dto, skuToMeta[sku])
-			if _, uErr := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); uErr != nil {
+			if _, uErr := h.itemsSvc.UpdateItem(skuGuard.ctx(), tenantID, existingID, dto); uErr != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, "sku="+sku+": "+uErr.Error())
 			} else {
@@ -148,7 +149,11 @@ func (h *InventoryHandler) bulkImportCSV(r *http.Request, tenantID uuid.UUID, fi
 			}
 		} else {
 			dto.OperatingOutletID = operatingOutletID(r)
-			if created, cErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); cErr != nil {
+			if limitErr := skuGuard.beforeCreate(dto); limitErr != nil {
+				res.Failed++
+				res.Errors = append(res.Errors, "sku="+sku+": "+limitErr.Error())
+			} else if created, cErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); cErr != nil {
+				skuGuard.release(dto)
 				res.Failed++
 				res.Errors = append(res.Errors, "sku="+sku+": "+cErr.Error())
 			} else {

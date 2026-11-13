@@ -278,6 +278,14 @@ index through the Ent and Atlas versioned migration workflow.
 
 - The SKU, warehouse and supplier caps count only active rows. Inactive and End-of-Life items,
   deactivated warehouses and archived suppliers do not use up a slot.
+- Bringing an inactive or End-of-Life item back (item edit, End-of-Life restore, bulk activate,
+  the variant matrix and imports) takes a slot again, so I check it against the SKU cap the same
+  way as creating an item. Editing an item that is already active is never refused.
+- Imports and the variant matrix also count new active items. An import checks row by row, so a
+  row past the cap fails with its own error and the rest carry on. A variant save counts its new
+  and reactivated children as one batch and is refused whole, with nothing written. The
+  composite menu-item save works the same way: the new menu item and every new ingredient are
+  one batch, while reusing an existing ingredient takes no slot.
 - `PUT /inventory/settings` refuses a plan-locked toggle only when the request turns it on (stored
   false, sent true). The settings page sends every toggle on save, so a tenant that dropped to a
   lower plan with a toggle still on can keep saving its other settings and can always turn it off.

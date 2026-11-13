@@ -152,7 +152,7 @@ func AssertFeature(w http.ResponseWriter, r *http.Request, featureCode, metric s
 
 // AssertLimit writes a structured 402 response when currentValue has reached/exceeded the
 // plan limit for limitKey. Returns true when the limit is exceeded (caller stops). The
-// `metric` is the UI-facing name (e.g. "warehouses", "products"); the body matches the
+// `metric` is the UI-facing name (e.g. "warehouses", "skus"); the body matches the
 // shared limit-reached modal contract. Inventory caps are structural → overage_eligible=false.
 func AssertLimit(w http.ResponseWriter, r *http.Request, metric, limitKey string, currentValue int) bool {
 	if CheckLimit(r, limitKey, currentValue) {

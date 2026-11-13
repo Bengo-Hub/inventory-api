@@ -101,6 +101,7 @@ func (h *InventoryHandler) parseXLSXItems(
 	colMap := xlsxColMap(rows)
 	var res importResult
 	variantParents := map[uuid.UUID]bool{}
+	skuGuard := h.newImportSKUGuard(r, tenantID)
 
 	for _, row := range rows[1:] { // skip header
 		if len(row) == 0 {
@@ -143,7 +144,7 @@ func (h *InventoryHandler) parseXLSXItems(
 		if existingID, ok := skuToID[sku]; ok {
 			keepImageOnImport(&dto, skuToImage[sku])
 			keepMetadataOnImport(&dto, skuToMeta[sku])
-			if _, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); err != nil {
+			if _, err := h.itemsSvc.UpdateItem(skuGuard.ctx(), tenantID, existingID, dto); err != nil {
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, err.Error()))
 			} else {
@@ -154,7 +155,11 @@ func (h *InventoryHandler) parseXLSXItems(
 			}
 		} else {
 			dto.OperatingOutletID = operatingOutletID(r)
-			if created, err := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); err != nil {
+			if limitErr := skuGuard.beforeCreate(dto); limitErr != nil {
+				res.Failed++
+				res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, limitErr.Error()))
+			} else if created, err := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); err != nil {
+				skuGuard.release(dto)
 				res.Failed++
 				res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: %s", sku, err.Error()))
 			} else {

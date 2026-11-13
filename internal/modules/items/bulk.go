@@ -137,6 +137,14 @@ func (s *Service) BulkItemAction(ctx context.Context, tenantID uuid.UUID, ids []
 	if len(toMutate) == 0 {
 		return res, nil
 	}
+	// Activating brings every remaining item back into the active catalog (already-active and
+	// End of Life items were skipped above), so the whole batch is checked against the plan's
+	// SKU limit before anything is written.
+	if action == BulkActionActivate {
+		if err := GuardActivation(ctx, len(toMutate)); err != nil {
+			return nil, err
+		}
+	}
 
 	tx, err := s.client.Tx(ctx)
 	if err != nil {

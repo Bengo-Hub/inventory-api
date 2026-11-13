@@ -156,6 +156,13 @@ func (h *InventoryHandler) CreateMenuItemComposite(w http.ResponseWriter, r *htt
 		req.Servings = 1
 	}
 
+	// The new menu item and every new ingredient take SKU slots. They are checked as one
+	// batch before anything is written, so a save past the plan's inventory_max_sku is refused
+	// with the 402 and leaves no half-made menu item behind.
+	if h.skuLimitReached(w, r, tenantID, h.compositeNewItems(r, tenantID, req)) {
+		return
+	}
+
 	// ── Step 1: Load category + unit maps ────────────────────────────────────
 	catMap := h.loadCategoryMap(r, tenantID)
 	unitMap := h.loadUnitMap(r, tenantID)
@@ -474,7 +481,6 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 	unitMap map[string]uuid.UUID,
 	seeds *[]ReorderSeed,
 ) (*items.ItemDTO, error) {
-	const inputTypes = "INGREDIENT,GOODS,RECIPE"
 	// RECIPE components are costed by their own BOM (Recipe.cost_per_portion) — never
 	// patch Item cost/purchase fields from a recipe line, it would corrupt nothing today
 	// but imply a purchase basis that doesn't exist.
@@ -485,24 +491,8 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 		return h.applyIngredientCost(r, tenantID, existing, dto)
 	}
 
-	// Try by SKU first (exact match; the list search is a contains-match).
-	if dto.SKU != "" {
-		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.SKU, nil, nil, "")
-		for _, it := range existingList {
-			if strings.EqualFold(it.SKU, dto.SKU) {
-				return resolve(it), nil
-			}
-		}
-	}
-
-	// Try by name (case-insensitive search).
-	if dto.Name != "" {
-		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, dto.Name, nil, nil, "")
-		for _, it := range existingList {
-			if strings.EqualFold(it.Name, dto.Name) {
-				return resolve(it), nil
-			}
-		}
+	if existing, ok := h.findIngredient(r, tenantID, dto.SKU, dto.Name); ok {
+		return resolve(existing), nil
 	}
 
 	// Create new ingredient.
@@ -529,6 +519,62 @@ func (h *InventoryHandler) resolveOrCreateIngredient(
 		zap.String("name", created.Name),
 	)
 	return created, nil
+}
+
+// findIngredient looks up an existing recipe input by exact SKU first, then by exact name (case
+// insensitive), across INGREDIENT, GOODS and RECIPE items, active or not.
+func (h *InventoryHandler) findIngredient(r *http.Request, tenantID uuid.UUID, sku, name string) (items.ItemDTO, bool) {
+	const inputTypes = "INGREDIENT,GOODS,RECIPE"
+	// Try by SKU first (exact match; the list search is a contains-match).
+	if sku != "" {
+		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, sku, nil, nil, "")
+		for _, it := range existingList {
+			if strings.EqualFold(it.SKU, sku) {
+				return it, true
+			}
+		}
+	}
+	// Try by name (case-insensitive search).
+	if name != "" {
+		existingList, _, _ := h.itemsSvc.ListItems(r.Context(), tenantID, inputTypes, "all", 5, 0, nil, nil, name, nil, nil, "")
+		for _, it := range existingList {
+			if strings.EqualFold(it.Name, name) {
+				return it, true
+			}
+		}
+	}
+	return items.ItemDTO{}, false
+}
+
+// compositeNewItems counts the items a menu-item save would add to the active catalog: the menu
+// item when its SKU does not name an active item, plus each ingredient line (quantity above zero)
+// that matches no existing item. Lines naming the same new ingredient count once, because the
+// first creates it and the rest reuse it. Reusing an existing ingredient takes no slot.
+func (h *InventoryHandler) compositeNewItems(r *http.Request, tenantID uuid.UUID, req MenuItemCompositeRequest) int {
+	n := 0
+	if req.SKU == "" {
+		n++
+	} else if _, err := h.itemsSvc.GetStockAvailability(r.Context(), tenantID, req.SKU); err != nil {
+		n++
+	}
+	seen := map[string]bool{}
+	for _, ing := range req.Ingredients {
+		if ing.Qty <= 0 {
+			continue
+		}
+		key := "sku:" + strings.ToLower(strings.TrimSpace(ing.IngredientSKU))
+		if ing.IngredientSKU == "" {
+			key = "name:" + strings.ToLower(strings.TrimSpace(ing.IngredientName))
+		}
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		if _, ok := h.findIngredient(r, tenantID, ing.IngredientSKU, ing.IngredientName); !ok {
+			n++
+		}
+	}
+	return n
 }
 
 // defaultFoodCostTarget is imported from costing.go; redeclare as local alias.

@@ -581,6 +581,24 @@ func (s *Service) SaveVariants(ctx context.Context, tenantID, parentID uuid.UUID
 		}
 	}
 
+	// Every active row that adds a new child, or turns a deactivated child back on, takes a SKU
+	// slot. They are checked as one batch before any write, so a save past the plan's limit writes
+	// nothing, and the per-child UpdateItem calls below run without the guard so a child is not
+	// checked a second time against a count that already includes the earlier ones.
+	joining := 0
+	for _, p := range plans {
+		if p.row.IsActive != nil && !*p.row.IsActive {
+			continue
+		}
+		if p.match == nil || !p.match.IsActive {
+			joining++
+		}
+	}
+	if err := GuardActivation(ctx, joining); err != nil {
+		return nil, err
+	}
+	ctx = WithActivationGuard(ctx, nil)
+
 	parentDTO := s.mapToDTO(parent)
 	kept := make(map[uuid.UUID]bool, len(plans))
 	for _, p := range plans {

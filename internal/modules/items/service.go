@@ -3227,6 +3227,13 @@ func (s *Service) UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UU
 		// Keep metadata.tax_code_source across the wholesale metadata replace below, and mark a
 		// changed code as chosen by hand.
 		stampTaxCodeSource(prevItm, &dto)
+		// An inactive or End of Life item turned active takes a SKU slot again; an item that
+		// was already active, or stays inactive, is never checked.
+		if !prevItm.IsActive && dto.IsActive {
+			if err = GuardActivation(ctx, 1); err != nil {
+				return nil, err
+			}
+		}
 	}
 	// A stock-unit change rescales every held quantity and per-unit price in this same
 	// transaction (see unit_rescale.go). Planned before validation/EP-cost so the request's

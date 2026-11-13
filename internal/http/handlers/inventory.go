@@ -32,7 +32,6 @@ import (
 	"github.com/bengobox/inventory-service/internal/modules/stock"
 	"github.com/bengobox/inventory-service/internal/modules/tickets"
 	"github.com/bengobox/inventory-service/internal/modules/units"
-	"github.com/bengobox/inventory-service/internal/platform/subscriptions"
 )
 
 // ItemsServicer defines the contract for item availability and CRUD operations.
@@ -1467,11 +1466,13 @@ func (h *InventoryHandler) SaveItemVariants(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	req.OperatingOutletID = operatingOutletID(r)
-	variants, err := h.itemsSvc.SaveVariants(r.Context(), tenantID, itemID, req)
+	variants, err := h.itemsSvc.SaveVariants(h.withSKULimitGuard(w, r, tenantID), tenantID, itemID, req)
 	if err != nil {
 		var inErr *items.VariantInputError
 		var dupErr *items.DuplicateSKUError
 		switch {
+		case errors.Is(err, items.ErrActivationRefused):
+			// The plan's 402 limit response is already written.
 		case errors.Is(err, items.ErrVariantParentNotFound):
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
 		case errors.As(err, &inErr):
@@ -1519,11 +1520,10 @@ func (h *InventoryHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Enforce the plan's inventory_max_sku structural cap (hard-block, no overage). Only active
-	// items count: inactive and End-of-Life items are not part of the live catalog.
-	if _, total, cerr := h.itemsSvc.ListItems(r.Context(), tenantID, "", "active", 1, 0, nil, nil, "", nil, nil, ""); cerr == nil {
-		if subscriptions.AssertLimit(w, r, "products", subscriptions.LimitSKU, total) {
-			return
-		}
+	// items count: inactive and End-of-Life items are not part of the live catalog. Reactivating an
+	// item runs the same check (withSKULimitGuard).
+	if h.skuLimitReached(w, r, tenantID, 1) {
+		return
 	}
 
 	result, err := h.itemsSvc.CreateItem(r.Context(), tenantID, req)
@@ -1576,8 +1576,13 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	prevCostPrice := avail // only used to check if cost changed
 	_ = prevCostPrice
 
-	result, err := h.itemsSvc.UpdateItem(r.Context(), tenantID, avail.ItemID, req)
+	// The lookup above only finds active items, so this edit cannot reactivate one today; the
+	// guard keeps the plan's SKU limit enforced if that ever changes.
+	result, err := h.itemsSvc.UpdateItem(h.withSKULimitGuard(w, r, tenantID), tenantID, avail.ItemID, req)
 	if err != nil {
+		if errors.Is(err, items.ErrActivationRefused) {
+			return // the plan's 402 limit response is already written
+		}
 		var unitErr *items.StockUnitChangeError
 		if errors.As(err, &unitErr) {
 			writeError(w, http.StatusUnprocessableEntity, "STOCK_UNIT_CHANGE_NEEDS_FACTOR", unitErr.Error())
@@ -2284,8 +2289,11 @@ func (h *InventoryHandler) RestoreItemEOL(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "MISSING_SKU", "SKU is required")
 		return
 	}
-	dto, err := h.itemsSvc.RestoreItemEOL(r.Context(), tenantID, sku)
+	dto, err := h.itemsSvc.RestoreItemEOL(h.withSKULimitGuard(w, r, tenantID), tenantID, sku)
 	if err != nil {
+		if errors.Is(err, items.ErrActivationRefused) {
+			return // the plan's 402 limit response is already written
+		}
 		if strings.Contains(err.Error(), "not found") {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "Item not found")
 			return
@@ -2887,6 +2895,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 		skuToID[it.SKU] = it.ID
 	}
 	skuToImage := imagesBySKU(existingItems)
+	skuGuard := h.newImportSKUGuard(r, tenantID)
 
 	var result importResult
 	rows, _ := reader.ReadAll()
@@ -2919,7 +2928,7 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 
 		if existingID, exists := skuToID[sku]; exists {
 			keepImageOnImport(&dto, skuToImage[sku])
-			if _, updateErr := h.itemsSvc.UpdateItem(r.Context(), tenantID, existingID, dto); updateErr != nil {
+			if _, updateErr := h.itemsSvc.UpdateItem(skuGuard.ctx(), tenantID, existingID, dto); updateErr != nil {
 				result.Failed++
 				result.Errors = append(result.Errors, "sku="+sku+": "+updateErr.Error())
 			} else {
@@ -2927,7 +2936,11 @@ func (h *InventoryHandler) ImportItems(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			dto.OperatingOutletID = operatingOutletID(r)
-			if created, createErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); createErr != nil {
+			if limitErr := skuGuard.beforeCreate(dto); limitErr != nil {
+				result.Failed++
+				result.Errors = append(result.Errors, "sku="+sku+": "+limitErr.Error())
+			} else if created, createErr := h.itemsSvc.CreateItem(r.Context(), tenantID, dto); createErr != nil {
+				skuGuard.release(dto)
 				result.Failed++
 				result.Errors = append(result.Errors, "sku="+sku+": "+createErr.Error())
 			} else {

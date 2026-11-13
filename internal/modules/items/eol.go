@@ -118,6 +118,13 @@ func (s *Service) setItemEOL(ctx context.Context, tenantID uuid.UUID, sku string
 		}
 		return nil, fmt.Errorf("items: query item: %w", err)
 	}
+	// Restoring re-activates the item, so an item outside the active catalog takes a SKU slot
+	// again and is checked against the plan's limit like a new item.
+	if !eol && !existing.IsActive {
+		if err := GuardActivation(ctx, 1); err != nil {
+			return nil, err
+		}
+	}
 
 	tx, err := s.client.Tx(ctx)
 	if err != nil {

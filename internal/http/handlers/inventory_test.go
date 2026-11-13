@@ -35,6 +35,8 @@ type mockItemsSvc struct {
 	listCategoriesFn func(ctx context.Context, tenantID uuid.UUID) ([]items.CategoryDTO, error)
 	createCategoryFn func(ctx context.Context, tenantID uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
 	updateCategoryFn func(ctx context.Context, tenantID, id uuid.UUID, dto items.CategoryDTO) (*items.CategoryDTO, error)
+	bulkActionFn     func(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID, action string) (*items.BulkActionResult, error)
+	restoreEOLFn     func(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error)
 }
 
 func (m *mockItemsSvc) GetStockAvailability(ctx context.Context, tenantID uuid.UUID, sku string) (*items.StockAvailability, error) {
@@ -65,6 +67,9 @@ func (m *mockItemsSvc) DeactivateItemBySKU(ctx context.Context, tenantID uuid.UU
 }
 
 func (m *mockItemsSvc) BulkItemAction(ctx context.Context, tenantID uuid.UUID, ids []uuid.UUID, action string) (*items.BulkActionResult, error) {
+	if m.bulkActionFn != nil {
+		return m.bulkActionFn(ctx, tenantID, ids, action)
+	}
 	return &items.BulkActionResult{Skipped: []items.BulkSkipped{}}, nil
 }
 
@@ -73,6 +78,9 @@ func (m *mockItemsSvc) MarkItemEOL(ctx context.Context, tenantID uuid.UUID, sku 
 }
 
 func (m *mockItemsSvc) RestoreItemEOL(ctx context.Context, tenantID uuid.UUID, sku string) (*items.ItemDTO, error) {
+	if m.restoreEOLFn != nil {
+		return m.restoreEOLFn(ctx, tenantID, sku)
+	}
 	return nil, fmt.Errorf("not implemented")
 }
 

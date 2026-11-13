@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/bengobox/inventory-service/internal/modules/items"
@@ -105,8 +106,11 @@ func (h *InventoryHandler) bulkItemAction(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "INVALID_IDS", msg)
 		return
 	}
-	res, err := h.itemsSvc.BulkItemAction(r.Context(), tenantID, ids, action)
+	res, err := h.itemsSvc.BulkItemAction(h.withSKULimitGuard(w, r, tenantID), tenantID, ids, action)
 	if err != nil {
+		if errors.Is(err, items.ErrActivationRefused) {
+			return // the plan's 402 limit response is already written
+		}
 		h.log.Error("bulk item action failed", zap.String("action", action), zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "BULK_ACTION_FAILED", "Bulk action failed")
 		return
