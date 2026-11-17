@@ -28,6 +28,16 @@ When a tenant has its own code for a band it wins over the platform-global one; 
 `UpdateItem` replaces metadata as a whole, so the stored marker is carried across every update and a
 client cannot set or drop it by resending metadata. Variants inherit their parent's marker.
 
+## Codes chosen on treasury invoices
+
+Treasury reads an item's code when an invoice line for it arrives without one, and uses band D
+(non-VAT) when the item has none. When a person picks a different code on an invoice line,
+treasury writes it back here after the invoice is saved, through `PATCH
+/v1/{tenant}/inventory/items/{sku}/tax-code` with the internal service key. That marks the item
+`manual`, so the background jobs below leave it alone from then on. Codes treasury filled in by
+itself are not written back. Treasury then moves the item to the new band at KRA on its existing
+item code when the tenant has eTIMS active. See treasury-api `docs/tax-and-compliance.md`.
+
 ## Background jobs
 
 All three run through the shared `bulkjobs` service (job type `item_tax_codes`), so each is a
