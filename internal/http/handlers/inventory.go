@@ -2137,14 +2137,19 @@ func (h *InventoryHandler) SetItemOutletMembership(w http.ResponseWriter, r *htt
 	}
 
 	var adjustedBy uuid.UUID
+	actorService := ""
 	if claims, ok := authclient.ClaimsFromContext(r.Context()); ok {
 		adjustedBy, _ = claims.UserID()
+		if claims.IsService {
+			actorService = claims.ServiceName
+		}
 	}
 
 	membershipReq := stock.SetItemOutletMembershipRequest{
 		ItemIDs:            itemIDs,
 		TargetWarehouseIDs: targetWHs,
 		AdjustedBy:         adjustedBy,
+		ActorService:       actorService,
 		Notes:              req.Notes,
 		MoveQuantity:       req.MoveQuantity,
 		ZeroStockMode:      req.ZeroStockMode,

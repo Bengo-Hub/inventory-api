@@ -25,7 +25,8 @@ import (
 // TestStrictOutletPredicate pins the strict outlet catalog used by ?outlet_strict=1: stock-tracked
 // items need an active balance at the outlet's own warehouse (a shared store is not enough), a
 // recipe needs one of its ingredients stocked there, and other made-to-order items must sit in a
-// category relevant to the outlet's use_case. Runs against a real Postgres
+// category relevant to the outlet's use_case. Recipes and services must also carry an item
+// use_case the outlet sells (AllowedItemUseCases). Runs against a real Postgres
 // (POSTGRES_URL), skipped when unset like TestOutletScope.
 func TestStrictOutletPredicate(t *testing.T) {
 	dsn := os.Getenv("POSTGRES_URL")
@@ -96,10 +97,21 @@ func TestStrictOutletPredicate(t *testing.T) {
 	}
 	link(recipeHere, ingredientHere)
 	link(recipeElsewhere, ingredientElsewhere)
+	withUseCase := func(it *ent.Item, uc item.UseCase) *ent.Item {
+		updated, err := client.Item.UpdateOne(it).SetUseCase(uc).Save(ctx)
+		require.NoError(t, err)
+		return updated
+	}
+	// A restaurant dish that shares an ingredient with the retail outlet still belongs to the
+	// restaurant: its FOOD_BEVERAGE use_case keeps it off the retail outlet.
+	recipeFood := withUseCase(mk("recipe-food", item.TypeRECIPE, nil), item.UseCaseFOOD_BEVERAGE)
+	link(recipeFood, ingredientHere)
 	serviceRetail := mk("service-retail", item.TypeSERVICE, retailCat)
 	serviceHosp := mk("service-hospitality", item.TypeSERVICE, hospCat)
 	serviceUniversal := mk("service-universal", item.TypeSERVICE, universalCat)
 	serviceNoCat := mk("service-nocat", item.TypeSERVICE, nil)
+	serviceSalon := withUseCase(mk("service-salon", item.TypeSERVICE, universalCat), item.UseCaseSALON_SERVICE)
+	serviceProfessional := withUseCase(mk("service-professional", item.TypeSERVICE, nil), item.UseCasePROFESSIONAL_SERVICE)
 
 	bal := func(it *ent.Item, wh *ent.Warehouse, removed bool) {
 		_, err := client.InventoryBalance.Create().SetTenantID(tenantID).SetItemID(it.ID).SetWarehouseID(wh.ID).SetRemovedFromLocation(removed).Save(ctx)
@@ -117,8 +129,8 @@ func TestStrictOutletPredicate(t *testing.T) {
 	got, err := client.Item.Query().Where(item.TenantIDEQ(tenantID), pred).IDs(ctx)
 	require.NoError(t, err)
 
-	require.ElementsMatch(t, []uuid.UUID{goodsHere.ID, ingredientHere.ID, recipeHere.ID, serviceRetail.ID, serviceUniversal.ID, serviceNoCat.ID}, got)
-	for _, hidden := range []*ent.Item{goodsElsewhere, goodsRemoved, goodsUnreceived, goodsSharedOnly, ingredientElsewhere, recipeElsewhere, serviceHosp} {
+	require.ElementsMatch(t, []uuid.UUID{goodsHere.ID, ingredientHere.ID, recipeHere.ID, serviceRetail.ID, serviceUniversal.ID, serviceNoCat.ID, serviceProfessional.ID}, got)
+	for _, hidden := range []*ent.Item{goodsElsewhere, goodsRemoved, goodsUnreceived, goodsSharedOnly, ingredientElsewhere, recipeElsewhere, serviceHosp, recipeFood, serviceSalon} {
 		require.NotContains(t, got, hidden.ID, hidden.Name)
 	}
 }

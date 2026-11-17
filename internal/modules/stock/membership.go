@@ -42,7 +42,11 @@ type SetItemOutletMembershipRequest struct {
 	ItemIDs            []uuid.UUID
 	TargetWarehouseIDs []uuid.UUID
 	AdjustedBy         uuid.UUID
-	Notes              string
+	// ActorService names the calling service when a service key made the request (no user id).
+	// The audit row then records uuid.Nil as adjusted_by, the codebase's system actor, and says
+	// which service it was in the notes.
+	ActorService string
+	Notes        string
 	// ZeroStockMode: dropped warehouses' stock is discarded rather than hidden/moved, and
 	// newly-added warehouses start at zero. Mutually exclusive with MoveWithStock.
 	ZeroStockMode bool
@@ -464,6 +468,38 @@ func (s *Service) addOrReactivateMembershipTarget(ctx context.Context, tx *ent.T
 // change. autoNotes explains WHAT happened (e.g. "Moved to X", "Hidden from outlet — N units
 // retained") and is combined with any free-text note the caller supplied, so neither is lost.
 func (s *Service) recordMembershipAdjustment(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, before, after float64, reason stockadjustment.Reason, autoNotes string, req SetItemOutletMembershipRequest, now time.Time) {
+	adj := newMembershipAdjustment(tx.StockAdjustment, tenantID, itemID, warehouseID, before, after, reason, autoNotes, req, now)
+	if _, err := adj.Save(ctx); err != nil {
+		s.log.Warn("membership adjustment audit row failed", zap.Error(err), zap.String("item_id", itemID.String()))
+	}
+}
+
+// newMembershipAdjustment builds the audit row recordMembershipAdjustment saves.
+func newMembershipAdjustment(c *ent.StockAdjustmentClient, tenantID, itemID, warehouseID uuid.UUID, before, after float64, reason stockadjustment.Reason, autoNotes string, req SetItemOutletMembershipRequest, now time.Time) *ent.StockAdjustmentCreate {
+	notes := membershipAuditNotes(autoNotes, req)
+	adj := c.Create().
+		SetTenantID(tenantID).
+		SetItemID(itemID).
+		SetWarehouseID(warehouseID).
+		SetQuantityBefore(before).
+		SetQuantityChange(after - before).
+		SetQuantityAfter(after).
+		SetReason(reason).
+		SetAdjustedAt(now).
+		// adjusted_by is required. A service-key caller has no user id, so it gets uuid.Nil, the
+		// system actor every other service-side stock write already uses (opening balances,
+		// consumer adjustments in stock.Service.Adjust).
+		SetAdjustedBy(req.AdjustedBy)
+	if notes != "" {
+		adj = adj.SetNotes(notes)
+	}
+	return adj
+}
+
+// membershipAuditNotes combines the caller's free-text note with what happened, and names the
+// calling service when a service key (no user) made the change, since adjusted_by is then the
+// system actor and would not say who it was.
+func membershipAuditNotes(autoNotes string, req SetItemOutletMembershipRequest) string {
 	notes := autoNotes
 	if req.Notes != "" {
 		if notes != "" {
@@ -472,24 +508,15 @@ func (s *Service) recordMembershipAdjustment(ctx context.Context, tx *ent.Tx, te
 			notes = req.Notes
 		}
 	}
-	adj := tx.StockAdjustment.Create().
-		SetTenantID(tenantID).
-		SetItemID(itemID).
-		SetWarehouseID(warehouseID).
-		SetQuantityBefore(before).
-		SetQuantityChange(after - before).
-		SetQuantityAfter(after).
-		SetReason(reason).
-		SetAdjustedAt(now)
-	if req.AdjustedBy != uuid.Nil {
-		adj = adj.SetAdjustedBy(req.AdjustedBy)
+	if req.AdjustedBy == uuid.Nil && req.ActorService != "" {
+		by := "By service " + req.ActorService
+		if notes != "" {
+			notes = notes + ". " + by
+		} else {
+			notes = by
+		}
 	}
-	if notes != "" {
-		adj = adj.SetNotes(notes)
-	}
-	if _, err := adj.Save(ctx); err != nil {
-		s.log.Warn("membership adjustment audit row failed", zap.Error(err), zap.String("item_id", itemID.String()))
-	}
+	return notes
 }
 
 // warehouseIDsOf extracts warehouse IDs from a slice of balances — used to build "Moved from …"

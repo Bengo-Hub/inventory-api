@@ -195,6 +195,27 @@ from its `pos-shred-` key, so BOI's 005924 shows as voided.
 - `GET /api/v1/s2s/{tenant}/taxes` - Tax codes with their KRA band (`kra_code`), resolved by band, never by spelling
 - `GET /api/v1/s2s/{tenant}/tax-profile` - `vat_active`
 
+**Item search for invoices (`GET /{tenant}/inventory/items?outlet_id=...&outlet_strict=1`)**:
+
+Treasury's invoice line search sends the outlet picked in the header with `outlet_strict=1` and
+`not_for_sale=exclude`, so a cashier at one branch sees only what that branch sells. With "All
+Outlets" it searches the whole tenant. The strict outlet catalog keeps:
+
+- goods, ingredients and equipment with an active balance in the outlet's own warehouses (a
+  shared central store only counts for an outlet that has no warehouse of its own);
+- recipes with at least one ingredient stocked there;
+- services and vouchers in a category relevant to the outlet's use case.
+
+Recipes, services and vouchers must also carry an item use case the outlet sells. The map lives in
+`internal/modules/items/use_case_scope.go` and copies `itemUseCases` in inventory-ui's
+`use-case-nomenclature.ts`: retail and manufacturing sell `RETAIL`; hospitality sells
+`FOOD_BEVERAGE`, the hotel use cases, `CONFERENCE`, `AMENITY` and `RETAIL`; quick service sells
+`FOOD_BEVERAGE` and `RETAIL`; pharmacy sells `PHARMACY`; services outlets sell the service trades
+and `AMENITY`; a warehouse holds `RETAIL`, `FOOD_BEVERAGE` and `PHARMACY`. `PROFESSIONAL_SERVICE`
+(delivery charges, consultations, fees) is allowed at every outlet. An outlet whose use case is not
+in the map (HQ, general, wholesale, hospital) is not narrowed. The eTIMS item master in treasury
+asks without `not_for_sale=exclude`, so ingredients and recipes stay registrable.
+
 **Events Published**:
 - `inventory.cost.allocated` - Cost allocation event
 - `inventory.usage.metered` - Usage tracking for billing

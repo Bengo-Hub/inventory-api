@@ -208,6 +208,9 @@ func strictOutletScope(ctx context.Context) bool {
 //   - A recipe item shows when at least one of its ingredients is stocked at the outlet.
 //   - Every other made-to-order item (services, vouchers) must sit in a category relevant to the
 //     outlet's use_case; an uncategorised item or an untagged category is universal.
+//   - Recipes and the other made-to-order items must also carry an item use_case the outlet sells
+//     (AllowedItemUseCases, the server copy of inventory-ui's itemUseCases). PROFESSIONAL_SERVICE
+//     is allowed everywhere; an outlet use_case outside the map is not restricted.
 func (s *Service) strictOutletPredicate(ctx context.Context, tenantID, outletID uuid.UUID) (predicate.Item, error) {
 	whIDs, err := s.client.Warehouse.Query().
 		Where(warehouse.TenantID(tenantID), warehouse.OutletIDEQ(outletID)).IDs(ctx)
@@ -252,14 +255,23 @@ func (s *Service) strictOutletPredicate(ctx context.Context, tenantID, outletID 
 		}
 	}
 	stockTracked := []item.Type{item.TypeGOODS, item.TypeINGREDIENT, item.TypeEQUIPMENT}
+	recipePreds := []predicate.Item{item.TypeEQ(item.TypeRECIPE), idInChunks(recipeItemIDs)}
+	madeToOrderPreds := []predicate.Item{
+		item.TypeNotIn(item.TypeGOODS, item.TypeINGREDIENT, item.TypeEQUIPMENT, item.TypeRECIPE),
+		item.Or(item.CategoryIDIsNil(), item.CategoryIDIn(relevant...)),
+	}
+	// Recipes and services hold no stock of their own, so the balance test above cannot place
+	// them. Their item use_case does: a FOOD_BEVERAGE recipe that shares sugar with a retail shop
+	// still belongs to the restaurant, and a salon service belongs to the salon.
+	if allowed, restricted := AllowedItemUseCases(useCase); restricted {
+		recipePreds = append(recipePreds, item.UseCaseIn(allowed...))
+		madeToOrderPreds = append(madeToOrderPreds, item.UseCaseIn(allowed...))
+	}
 	return item.Or(
 		item.And(item.TypeIn(stockTracked...), item.HasBalancesWith(
 			inventorybalance.WarehouseIDIn(whIDs...), inventorybalance.RemovedFromLocation(false))),
-		item.And(item.TypeEQ(item.TypeRECIPE), idInChunks(recipeItemIDs)),
-		item.And(
-			item.TypeNotIn(item.TypeGOODS, item.TypeINGREDIENT, item.TypeEQUIPMENT, item.TypeRECIPE),
-			item.Or(item.CategoryIDIsNil(), item.CategoryIDIn(relevant...)),
-		),
+		item.And(recipePreds...),
+		item.And(madeToOrderPreds...),
 	), nil
 }
 
