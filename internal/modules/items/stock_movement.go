@@ -27,7 +27,8 @@ var errReportDBMissing = errors.New("stock movement reports: report database not
 // deadstock even when it is heavily consumed in production. Reasons like opening_balance /
 // initial_count (stock-in) and purchase_return (reversal) are intentionally excluded: they are not
 // demand-driven usage.
-var usageReasons = []string{"sale", "pos_sale", "production", "conference_meal"}
+//   - sale_edit_increase: extra quantity added to a sale after it was rung up
+var usageReasons = []string{"sale", "pos_sale", "sale_edit_increase", "production", "conference_meal"}
 
 // movementCTE groups usage consumption lines per SKU since a floor date: when the SKU last moved
 // and how much moved from the window start on. Parameters: $1 tenant, $2 usage reasons, $3 window

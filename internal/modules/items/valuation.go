@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/Bengo-Hub/httpware/money"
 
@@ -12,7 +13,10 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
+	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/itembrand"
 	"github.com/bengobox/inventory-service/internal/ent/itemcategory"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/modules/units"
 )
 
@@ -25,6 +29,7 @@ type StockValuationItem struct {
 	SKU          string    `json:"sku"`
 	Name         string    `json:"name"`
 	CategoryName string    `json:"category_name,omitempty"`
+	BrandName    string    `json:"brand_name,omitempty"`
 	OnHand       float64   `json:"on_hand"`
 	UnitCost     float64   `json:"unit_cost"`
 	Value        float64   `json:"value"`
@@ -50,8 +55,24 @@ type StockValuation struct {
 	TotalUnits float64                  `json:"total_units"`
 	ItemCount  int                      `json:"item_count"`
 	ByCategory []StockValuationCategory `json:"by_category"`
-	TopItems   []StockValuationItem     `json:"top_items"`
+	ByBrand    []StockValuationBrand    `json:"by_brand"`
+	// TopItems is one page of items by value (Offset, Limit); totals cover every matching item.
+	TopItems []StockValuationItem `json:"top_items"`
+	Offset   int                  `json:"offset"`
+	Limit    int                  `json:"limit"`
 }
+
+// StockValuationBrand aggregates value by item brand.
+type StockValuationBrand struct {
+	BrandID    *uuid.UUID `json:"brand_id,omitempty"`
+	BrandName  string     `json:"brand_name"`
+	ItemCount  int        `json:"item_count"`
+	TotalUnits float64    `json:"total_units"`
+	TotalValue float64    `json:"total_value"`
+}
+
+// valuationTopLimit is the default page of listed items.
+const valuationTopLimit = 20
 
 // StockValuation computes each item's inventory value from its own InventoryLot cost layers
 // (Σ layer.quantity × layer.cost_price) — what was actually paid for the stock on hand, never a
@@ -61,13 +82,32 @@ type StockValuation struct {
 // report rather than silently blended in. Returns the grand total, a per-category breakdown, and
 // the top-20 items by value.
 //
-// warehouseID scopes the whole report to one location when set (uuid.Nil = tenant-wide, every
-// warehouse blended together) — a multi-outlet tenant needs each location's OWN valuation, not
-// one number dominated by whichever warehouse holds the most stock.
-func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid.UUID) (*StockValuation, error) {
+// warehouseIDs scopes the whole report to those locations (an outlet's own warehouses, or one
+// location; nil = tenant-wide, every warehouse blended together), the same scope Deadstock uses. A
+// non-nil empty scope (an outlet with no warehouse) is an empty report. f narrows by category,
+// brand and search and pages TopItems; totals and breakdowns cover every matching item.
+func (s *Service) StockValuation(ctx context.Context, tenantID uuid.UUID, warehouseIDs []uuid.UUID, f ReportFilter) (*StockValuation, error) {
+	offset, limit := f.page(valuationTopLimit)
+	if warehouseIDs != nil && len(warehouseIDs) == 0 {
+		return &StockValuation{Currency: "KES", Offset: offset, Limit: limit,
+			ByCategory: []StockValuationCategory{}, ByBrand: []StockValuationBrand{}, TopItems: []StockValuationItem{}}, nil
+	}
 	balQuery := s.client.InventoryBalance.Query().Where(inventorybalance.TenantID(tenantID))
-	if warehouseID != uuid.Nil {
-		balQuery = balQuery.Where(inventorybalance.WarehouseID(warehouseID))
+	if warehouseIDs != nil {
+		balQuery = balQuery.Where(inventorybalance.WarehouseIDIn(warehouseIDs...))
+	}
+	var itemPreds []predicate.Item
+	if len(f.CategoryIDs) > 0 {
+		itemPreds = append(itemPreds, entitem.CategoryIDIn(f.CategoryIDs...))
+	}
+	if len(f.BrandIDs) > 0 {
+		itemPreds = append(itemPreds, entitem.BrandIDIn(f.BrandIDs...))
+	}
+	if q := strings.TrimSpace(f.Search); q != "" {
+		itemPreds = append(itemPreds, entitem.Or(entitem.NameContainsFold(q), entitem.SkuContainsFold(q)))
+	}
+	if len(itemPreds) > 0 {
+		balQuery = balQuery.Where(inventorybalance.HasItemWith(itemPreds...))
 	}
 	balances, err := balQuery.WithItem(func(q *ent.ItemQuery) { q.WithUnits() }).All(ctx)
 	if err != nil {
@@ -79,6 +119,19 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 	for _, c := range cats {
 		catName[c.ID] = c.Name
 	}
+	brands, _ := s.client.ItemBrand.Query().Where(itembrand.TenantID(tenantID)).All(ctx)
+	brandName := make(map[uuid.UUID]string, len(brands))
+	for _, b := range brands {
+		brandName[b.ID] = b.Name
+	}
+	scopedItems := make([]uuid.UUID, 0, len(balances))
+	seenItem := make(map[uuid.UUID]bool, len(balances))
+	for _, b := range balances {
+		if !seenItem[b.ItemID] {
+			seenItem[b.ItemID] = true
+			scopedItems = append(scopedItems, b.ItemID)
+		}
+	}
 
 	// Per-item layer totals: quantity + value across every active, cost-recorded lot (real lots
 	// AND internal cost layers — same table). Scoped to the same warehouse as the balance query
@@ -86,8 +139,12 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 	// at that location — mixing in another warehouse's layers would misprice this one's stock.
 	lotQuery := s.client.InventoryLot.Query().
 		Where(entlot.TenantID(tenantID), entlot.StatusEQ(entlot.StatusActive), entlot.CostPriceNotNil())
-	if warehouseID != uuid.Nil {
-		lotQuery = lotQuery.Where(entlot.WarehouseID(warehouseID))
+	if warehouseIDs != nil {
+		lotQuery = lotQuery.Where(entlot.WarehouseIDIn(warehouseIDs...))
+	}
+	if len(itemPreds) > 0 {
+		// Only the filtered items' layers; without a filter every scoped layer is needed anyway.
+		lotQuery = lotQuery.Where(entlot.ItemIDIn(scopedItems...))
 	}
 	layers, err := lotQuery.All(ctx)
 	if err != nil {
@@ -108,8 +165,9 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 	type agg struct {
 		onHand, cost float64
 		sku, name    string
-		cat          string
+		cat, brand   string
 		catID        *uuid.UUID
+		brandID      *uuid.UUID
 	}
 	perItem := make(map[uuid.UUID]*agg)
 	for _, b := range balances {
@@ -133,14 +191,19 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 			if it.CategoryID != nil {
 				cn = catName[*it.CategoryID]
 			}
-			a = &agg{cost: cost, sku: it.Sku, name: it.Name, cat: cn, catID: it.CategoryID}
+			bn := ""
+			if it.BrandID != nil {
+				bn = brandName[*it.BrandID]
+			}
+			a = &agg{cost: cost, sku: it.Sku, name: it.Name, cat: cn, catID: it.CategoryID, brand: bn, brandID: it.BrandID}
 			perItem[it.ID] = a
 		}
 		a.onHand += b.OnHand
 	}
 
-	val := &StockValuation{Currency: "KES"}
+	val := &StockValuation{Currency: "KES", Offset: offset, Limit: limit, ByBrand: []StockValuationBrand{}}
 	catAgg := make(map[string]*StockValuationCategory)
+	brandAgg := make(map[string]*StockValuationBrand)
 	items := make([]StockValuationItem, 0, len(perItem))
 	for id, a := range perItem {
 		value := a.onHand * a.cost
@@ -168,8 +231,21 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 		c.TotalUnits += a.onHand
 		c.TotalValue += value
 
+		bn := a.brand
+		if bn == "" {
+			bn = "Unbranded"
+		}
+		b := brandAgg[bn]
+		if b == nil {
+			b = &StockValuationBrand{BrandName: bn, BrandID: a.brandID}
+			brandAgg[bn] = b
+		}
+		b.ItemCount++
+		b.TotalUnits += a.onHand
+		b.TotalValue += value
+
 		items = append(items, StockValuationItem{
-			ItemID: id, SKU: a.sku, Name: a.name, CategoryName: cn,
+			ItemID: id, SKU: a.sku, Name: a.name, CategoryName: cn, BrandName: a.brand,
 			OnHand: a.onHand, UnitCost: unitCost, Value: value, CostBasis: costBasis,
 		})
 	}
@@ -178,10 +254,21 @@ func (s *Service) StockValuation(ctx context.Context, tenantID, warehouseID uuid
 		val.ByCategory = append(val.ByCategory, *c)
 	}
 	sort.Slice(val.ByCategory, func(i, j int) bool { return val.ByCategory[i].TotalValue > val.ByCategory[j].TotalValue })
+	for _, b := range brandAgg {
+		val.ByBrand = append(val.ByBrand, *b)
+	}
+	sort.Slice(val.ByBrand, func(i, j int) bool { return val.ByBrand[i].TotalValue > val.ByBrand[j].TotalValue })
 
-	sort.Slice(items, func(i, j int) bool { return items[i].Value > items[j].Value })
-	if len(items) > 20 {
-		items = items[:20]
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].Value != items[j].Value {
+			return items[i].Value > items[j].Value
+		}
+		return items[i].ItemID.String() < items[j].ItemID.String()
+	})
+	if offset >= len(items) {
+		items = items[:0]
+	} else {
+		items = items[offset:min(offset+limit, len(items))]
 	}
 	val.TopItems = items
 

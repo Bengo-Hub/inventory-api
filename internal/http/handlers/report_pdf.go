@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/bengobox/inventory-service/internal/modules/docs"
@@ -147,16 +146,17 @@ func (h *InventoryHandler) StockValuationReportPDF(w http.ResponseWriter, r *htt
 		return
 	}
 	ctx := r.Context()
-	warehouseID := uuid.Nil
-	if wid := r.URL.Query().Get("warehouse_id"); wid != "" {
-		parsed, werr := uuid.Parse(wid)
-		if werr != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_WAREHOUSE_ID", "Invalid warehouse_id")
-			return
-		}
-		warehouseID = parsed
+	scope, serr := h.resolveReportScope(r, tenantID)
+	if serr != nil {
+		writeError(w, serr.status, serr.code, serr.message)
+		return
 	}
-	val, err := h.itemsSvc.StockValuation(ctx, tenantID, warehouseID)
+	f, ferr := parseReportFilter(r, true)
+	if ferr != nil {
+		writeError(w, ferr.status, ferr.code, ferr.message)
+		return
+	}
+	val, err := h.itemsSvc.StockValuation(ctx, tenantID, scope.warehouseIDs, f)
 	if err != nil {
 		h.log.Error("stock valuation report pdf failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute stock valuation")
@@ -164,11 +164,9 @@ func (h *InventoryHandler) StockValuationReportPDF(w http.ResponseWriter, r *htt
 	}
 	cur := currencyOr(val.Currency)
 
-	subtitle := "Inventory On-Hand Valuation — All Locations"
-	if warehouseID != uuid.Nil {
-		if wh, wErr := h.orm.Warehouse.Get(ctx, warehouseID); wErr == nil {
-			subtitle = "Inventory On-Hand Valuation — " + wh.Name
-		}
+	subtitle := "Inventory On-Hand Valuation, All Locations"
+	if scope.label != "" {
+		subtitle = "Inventory On-Hand Valuation, " + scope.label
 	}
 	rep := &docs.Report{
 		Title:       "Stock Valuation Report",
@@ -269,7 +267,12 @@ func (h *InventoryHandler) StockDeadstockReportPDF(w http.ResponseWriter, r *htt
 		writeError(w, serr.status, serr.code, serr.message)
 		return
 	}
-	dead, err := h.itemsSvc.StockDeadstock(ctx, tenantID, days, scope.warehouseIDs)
+	f, ferr := parseReportFilter(r, true)
+	if ferr != nil {
+		writeError(w, ferr.status, ferr.code, ferr.message)
+		return
+	}
+	dead, err := h.itemsSvc.StockDeadstock(ctx, tenantID, days, scope.warehouseIDs, f)
 	if err != nil {
 		h.log.Error("deadstock report pdf failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute deadstock report")
@@ -362,7 +365,12 @@ func (h *InventoryHandler) StockFastMovingReportPDF(w http.ResponseWriter, r *ht
 		writeError(w, serr.status, serr.code, serr.message)
 		return
 	}
-	fast, err := h.itemsSvc.StockFastMoving(ctx, tenantID, days, scope.warehouseIDs)
+	f, ferr := parseReportFilter(r, true)
+	if ferr != nil {
+		writeError(w, ferr.status, ferr.code, ferr.message)
+		return
+	}
+	fast, err := h.itemsSvc.StockFastMoving(ctx, tenantID, days, scope.warehouseIDs, f)
 	if err != nil {
 		h.log.Error("fast-moving report pdf failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute fast-moving report")

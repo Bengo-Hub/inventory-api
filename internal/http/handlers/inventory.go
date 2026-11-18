@@ -40,9 +40,9 @@ type ItemsServicer interface {
 	BulkAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.StockAvailability, error)
 	GetBOMAvailability(ctx context.Context, tenantID uuid.UUID, skus []string) ([]items.BOMAvailabilityResult, error)
 	GetInventorySummary(ctx context.Context, tenantID uuid.UUID) (*items.InventorySummary, error)
-	StockValuation(ctx context.Context, tenantID, warehouseID uuid.UUID) (*items.StockValuation, error)
-	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.DeadstockReport, error)
-	StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.FastMovingReport, error)
+	StockValuation(ctx context.Context, tenantID uuid.UUID, warehouseIDs []uuid.UUID, f items.ReportFilter) (*items.StockValuation, error)
+	StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID, f items.ReportFilter) (*items.DeadstockReport, error)
+	StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID, f items.ReportFilter) (*items.FastMovingReport, error)
 	CreateItem(ctx context.Context, tenantID uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	UpdateItem(ctx context.Context, tenantID uuid.UUID, id uuid.UUID, dto items.ItemDTO) (*items.ItemDTO, error)
 	DeactivateItemBySKU(ctx context.Context, tenantID uuid.UUID, sku string) error
@@ -1042,26 +1042,25 @@ func (h *InventoryHandler) GetInventorySummary(w http.ResponseWriter, r *http.Re
 }
 
 // StockValuationReport handles GET /v1/{tenant}/inventory/reports/stock-valuation?warehouse_id=
+// &category_id=&brand_id=&search=&offset=&limit=, scoped like Deadstock (resolveReportScope): one
+// location, else the selected outlet's own locations, else every location.
 func (h *InventoryHandler) StockValuationReport(w http.ResponseWriter, r *http.Request) {
 	tenantID, err := parseTenantID(r)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_TENANT", "Invalid tenant ID")
 		return
 	}
-	// An explicit ?warehouse_id= wins (the page's own location picker); an empty value means
-	// "All Locations" was chosen deliberately and stays tenant-wide — it does NOT fall back to
-	// the ambient X-Outlet-ID, unlike a write, so a report reader can always get the blended
-	// total by clearing the picker regardless of which outlet happens to be active up top.
-	warehouseID := uuid.Nil
-	if wid := r.URL.Query().Get("warehouse_id"); wid != "" {
-		parsed, werr := uuid.Parse(wid)
-		if werr != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_WAREHOUSE_ID", "Invalid warehouse_id")
-			return
-		}
-		warehouseID = parsed
+	scope, serr := h.resolveReportScope(r, tenantID)
+	if serr != nil {
+		writeError(w, serr.status, serr.code, serr.message)
+		return
 	}
-	val, err := h.itemsSvc.StockValuation(r.Context(), tenantID, warehouseID)
+	f, ferr := parseReportFilter(r, false)
+	if ferr != nil {
+		writeError(w, ferr.status, ferr.code, ferr.message)
+		return
+	}
+	val, err := h.itemsSvc.StockValuation(r.Context(), tenantID, scope.warehouseIDs, f)
 	if err != nil {
 		h.log.Error("stock valuation report failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute stock valuation")
@@ -1089,7 +1088,12 @@ func (h *InventoryHandler) StockDeadstockReport(w http.ResponseWriter, r *http.R
 		writeError(w, serr.status, serr.code, serr.message)
 		return
 	}
-	rep, err := h.itemsSvc.StockDeadstock(r.Context(), tenantID, days, scope.warehouseIDs)
+	f, ferr := parseReportFilter(r, false)
+	if ferr != nil {
+		writeError(w, ferr.status, ferr.code, ferr.message)
+		return
+	}
+	rep, err := h.itemsSvc.StockDeadstock(r.Context(), tenantID, days, scope.warehouseIDs, f)
 	if err != nil {
 		h.log.Error("deadstock report failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute deadstock report")
@@ -1117,7 +1121,12 @@ func (h *InventoryHandler) StockFastMovingReport(w http.ResponseWriter, r *http.
 		writeError(w, serr.status, serr.code, serr.message)
 		return
 	}
-	rep, err := h.itemsSvc.StockFastMoving(r.Context(), tenantID, days, scope.warehouseIDs)
+	f, ferr := parseReportFilter(r, false)
+	if ferr != nil {
+		writeError(w, ferr.status, ferr.code, ferr.message)
+		return
+	}
+	rep, err := h.itemsSvc.StockFastMoving(r.Context(), tenantID, days, scope.warehouseIDs, f)
 	if err != nil {
 		h.log.Error("fast-moving report failed", zap.Error(err))
 		writeError(w, http.StatusInternalServerError, "INTERNAL", "Failed to compute fast-moving report")

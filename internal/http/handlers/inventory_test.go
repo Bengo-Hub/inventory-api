@@ -88,15 +88,15 @@ func (m *mockItemsSvc) HardDeleteItemBySKU(ctx context.Context, tenantID uuid.UU
 	return nil
 }
 
-func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID, warehouseID uuid.UUID) (*items.StockValuation, error) {
+func (m *mockItemsSvc) StockValuation(ctx context.Context, tenantID uuid.UUID, warehouseIDs []uuid.UUID, f items.ReportFilter) (*items.StockValuation, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockItemsSvc) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.DeadstockReport, error) {
+func (m *mockItemsSvc) StockDeadstock(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID, f items.ReportFilter) (*items.DeadstockReport, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockItemsSvc) StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*items.FastMovingReport, error) {
+func (m *mockItemsSvc) StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID, f items.ReportFilter) (*items.FastMovingReport, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 

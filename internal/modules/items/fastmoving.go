@@ -25,20 +25,23 @@ type FastMovingItem struct {
 type FastMovingReport struct {
 	Days      int              `json:"days"`
 	ItemCount int              `json:"item_count"`
+	Offset    int              `json:"offset"`
+	Limit     int              `json:"limit"`
 	Items     []FastMovingItem `json:"items"`
 }
 
-// fastMovingLimit caps the listed lines; ItemCount still covers every item that moved.
+// fastMovingLimit is the default page of listed lines; ItemCount still covers every item that moved.
 const fastMovingLimit = 100
 
 // StockFastMoving ranks stocked items by outbound movement quantity (usageReasons) within the last
 // `days` days, busiest first. warehouseIDs scopes stock and movement to those warehouses; nil means
-// every warehouse.
-func (s *Service) StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID) (*FastMovingReport, error) {
+// every warehouse. f narrows by category, brand and search and pages the list.
+func (s *Service) StockFastMoving(ctx context.Context, tenantID uuid.UUID, days int, warehouseIDs []uuid.UUID, f ReportFilter) (*FastMovingReport, error) {
 	if days <= 0 {
 		days = 90
 	}
-	rep := &FastMovingReport{Days: days, Items: []FastMovingItem{}}
+	offset, limit := f.page(fastMovingLimit)
+	rep := &FastMovingReport{Days: days, Offset: offset, Limit: limit, Items: []FastMovingItem{}}
 	if warehouseIDs != nil && len(warehouseIDs) == 0 {
 		return rep, nil
 	}
@@ -53,9 +56,11 @@ FROM stock st
 JOIN items i ON i.id = st.item_id
 JOIN moved m ON m.sku = upper(btrim(i.sku))
 LEFT JOIN item_categories cat ON cat.id = i.category_id
+WHERE `+itemFilterSQL("$8", "$9", "$10")+`
 ORDER BY m.qty_in_window DESC, i.id
-LIMIT $6`,
-		tenantID, usageReasons, since, since, warehouseParam(warehouseIDs), fastMovingLimit)
+LIMIT $6 OFFSET $7`,
+		tenantID, usageReasons, since, since, warehouseParam(warehouseIDs), limit, offset,
+		uuidParam(f.CategoryIDs), uuidParam(f.BrandIDs), f.searchPattern())
 	if err != nil {
 		return nil, fmt.Errorf("fastmoving: query: %w", err)
 	}
