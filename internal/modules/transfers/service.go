@@ -320,6 +320,7 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 		"shipping_charges": req.ShippingCharges,
 		"carrier":          req.Carrier,
 		"freight_notes":    req.FreightNotes,
+		// outlet_id lets logistics put the transfer task on the sending outlet's dispatch board.
 		"from_warehouse": map[string]any{
 			"id":        srcWH.ID.String(),
 			"name":      srcWH.Name,
@@ -327,6 +328,7 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 			"address":   srcWH.Address,
 			"latitude":  srcWH.Latitude,
 			"longitude": srcWH.Longitude,
+			"outlet_id": uuidString(srcWH.OutletID),
 		},
 		"to_warehouse": map[string]any{
 			"id":        destWH.ID.String(),
@@ -335,6 +337,7 @@ func (s *Service) CreateTransfer(ctx context.Context, tenantID uuid.UUID, req Cr
 			"address":   destWH.Address,
 			"latitude":  destWH.Latitude,
 			"longitude": destWH.Longitude,
+			"outlet_id": uuidString(destWH.OutletID),
 		},
 		"items": s.buildLineItems(lines),
 	})
@@ -1178,4 +1181,12 @@ func parseTransferStatuses(raw string) []stocktransfer.Status {
 		}
 	}
 	return out
+}
+
+// uuidString renders an optional id for an event payload: "" when unset.
+func uuidString(id *uuid.UUID) string {
+	if id == nil {
+		return ""
+	}
+	return id.String()
 }
