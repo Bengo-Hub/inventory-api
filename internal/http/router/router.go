@@ -178,7 +178,7 @@ func New(
 			})
 		}
 
-		api.Get("/openapi.json", handlers.OpenAPIJSON)
+		api.Get("/openapi.json", handlers.OpenAPIJSONFor(internalServiceKey))
 
 		// Platform admin routes (platform owner only)
 		api.Route("/admin", func(admin chi.Router) {

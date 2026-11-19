@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"crypto/subtle"
 	_ "embed"
 	"encoding/json"
 	"net/http"
 
+	"github.com/swaggo/swag"
 	"gopkg.in/yaml.v3"
 )
 
@@ -20,6 +22,28 @@ func init() {
 		if jsonData, err := json.Marshal(spec); err == nil {
 			swaggerSpec = jsonData
 		}
+	}
+}
+
+// OpenAPIJSONFor serves the full generated spec (swag init, internal/http/docs) to a caller that
+// presents the internal service key as X-API-Key, and the short public spec to everyone else.
+// MarketFlow's endpoint discovery reads the full one to find the read routes it may offer to
+// Vera. X-Docs-View says which one was served, the same header treasury and notifications send.
+func OpenAPIJSONFor(internalKey string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		key := r.Header.Get("X-API-Key")
+		if r.Method == http.MethodGet && internalKey != "" && key != "" &&
+			subtle.ConstantTimeCompare([]byte(key), []byte(internalKey)) == 1 {
+			if full, err := swag.ReadDoc(); err == nil && full != "" {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("X-Docs-View", "internal")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(full))
+				return
+			}
+		}
+		w.Header().Set("X-Docs-View", "external")
+		OpenAPIJSON(w, r)
 	}
 }
 
