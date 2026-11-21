@@ -16,6 +16,14 @@ Receiving goods creates a goods receipt (GRN) as a **draft**. Stock only moves w
 
 The order detail (`GET /purchase-orders/{id}`) returns `open_receipt` (`id`, `grn_number`, `approval_status`, `count`). The screen uses it to show "Awaiting receipt approval" and to hide Mark Received, Amend, Send and Cancel while a receipt waits.
 
+## Closing an order short (the rest will never come)
+
+A receipt books in what actually arrived: order 10, the supplier sends 6, enter 6 received and stock goes up by 6. The order is then `partially_received` and the other 4 stay outstanding for a later receipt. When the supplier will not send them (a shortage, not damage; damaged goods are rejected on the receipt instead), the order is closed short from its detail screen (Close Short) or `POST /purchase-orders/{id}/close-short` with an optional `reason`.
+
+- Only a `partially_received` order with no open receipt can be closed short; an order with nothing received is cancelled instead.
+- The order becomes `received`. The shortfall per line and the reason are appended to its notes and recorded in the audit log (`purchase_order.closed_short`). Stock is not touched: it already holds what came.
+- `purchase_order.received` goes out with `closed_short: true`, the received quantities, the received total and `not_delivered`. Treasury has already billed each receipt; it releases the budget still held for the undelivered goods instead of counting it as spent.
+
 ## When can a purchase order be amended?
 
 `PUT /purchase-orders/{id}/amend` replaces the whole order as the form shows it: lines, supplier, warehouse, payment terms, shipping, notes and dates.
