@@ -220,6 +220,7 @@ func (h *InventoryExtrasHandler) RegisterRoutes(r chi.Router) {
 	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/send", h.SendPurchaseOrder)
 	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/receive", h.ReceivePurchaseOrder)
 	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/cancel", h.CancelPurchaseOrder)
+	r.With(feat, perm(rbac.PermProcurementChange)).Post("/inventory/purchase-orders/{poID}/close-short", h.CloseShortPurchaseOrder)
 	r.With(feat, perm(rbac.PermProcurementChange)).Put("/inventory/purchase-orders/{poID}/amend", h.AmendPurchaseOrder)
 	r.With(feat, perm(rbac.PermProcurementChange)).Post("/inventory/purchase-orders/{poID}/submit-for-approval", h.SubmitPurchaseOrderForApproval)
 	// Permanent delete (?hard=true): platform owners only, checked in the handler against the

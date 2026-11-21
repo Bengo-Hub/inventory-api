@@ -975,7 +975,17 @@ func addPOLineInputVAT(line map[string]any, pl *ent.PurchaseOrderLine, amount fl
 
 // emitPurchaseOrderReceived writes the enriched purchase_order.received outbox
 // event (supplier payment details) that treasury consumes for auto-payout.
-func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, po *ent.PurchaseOrder, totalRebate float64) {
+//
+// extra is merged into the payload. With extra["closed_short"] = true (CloseShortPurchaseOrder) the
+// lines carry the quantities actually received, never the ordered ones, and total_amount is what was
+// received, so nothing downstream reads the never-delivered remainder as received.
+func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, po *ent.PurchaseOrder, totalRebate float64, extra ...map[string]any) {
+	closedShort := false
+	for _, e := range extra {
+		if v, ok := e["closed_short"].(bool); ok && v {
+			closedShort = true
+		}
+	}
 	payload := map[string]any{
 		"po_id": po.ID, "po_number": po.PoNumber, "tenant_id": tenantID,
 		"supplier_id": po.SupplierID, "total_amount": po.TotalAmount, "currency": po.Currency,
@@ -1024,11 +1034,16 @@ func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, p
 			}
 		}
 		lineArr := make([]map[string]any, 0, len(poLines))
+		receivedTotal := 0.0
 		for _, l := range poLines {
 			qty := l.QuantityReceived
-			if qty <= 0 {
+			if qty <= 0 && !closedShort {
 				qty = l.QuantityOrdered
 			}
+			if closedShort && qty <= 0 {
+				continue
+			}
+			receivedTotal += qty * l.UnitPrice
 			line := map[string]any{
 				"item_id":    l.ItemID,
 				"sku":        skus[l.ItemID],
@@ -1040,6 +1055,14 @@ func (h *InventoryExtrasHandler) emitPurchaseOrderReceived(tenantID uuid.UUID, p
 			lineArr = append(lineArr, line)
 		}
 		payload["lines"] = lineArr
+		if closedShort {
+			payload["total_amount"] = roundDecimal(receivedTotal)
+		}
+	}
+	for _, e := range extra {
+		for k, v := range e {
+			payload[k] = v
+		}
 	}
 
 	go func() {
