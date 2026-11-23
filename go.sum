@@ -10,6 +10,8 @@ github.com/Bengo-Hub/httpware v0.19.1 h1:0gn7TFGWOavoOTasboNo6LqBxGxjGvQh80NKW8j
 github.com/Bengo-Hub/httpware v0.19.1/go.mod h1:fQZJsyAaX8EjY5k57p36IbagSyOah/xKEAYrwgjz0Ec=
 github.com/Bengo-Hub/httpware v0.20.0 h1:RlpZl/idYnpYWpl8J+fA9aIErj8PRl6FJwp4223A0jY=
 github.com/Bengo-Hub/httpware v0.20.0/go.mod h1:R3ONgWWw090UmdllD0eanhMnT02l1AF+1uIDcV6/iVs=
+github.com/Bengo-Hub/httpware v0.26.0 h1:/MMP6CupmHjZW8yfYVsxLaIUlPxkfmrtLwp/EyS78iI=
+github.com/Bengo-Hub/httpware v0.26.0/go.mod h1:DVl7z6zy4Zy0HZgDabwexmHrQSya1yFssci2Y40lYcI=
 github.com/Bengo-Hub/pagination v0.5.0 h1:SWNO+Yh7A+0xUmiStT4vj2cL7CbHxxbFNG8xED3G34Y=
 github.com/Bengo-Hub/pagination v0.5.0/go.mod h1:qXxXpX45Shf6qplVtxqEeOMeKiSr/W4nT4nMLQqF4/g=
 github.com/Bengo-Hub/shared-events v0.10.1 h1:Rv2UEWbex6tJTrR9T7YIvA/z/Xc9u9ET07tKZxCM7go=

@@ -224,6 +224,12 @@ func (h *InventoryExtrasHandler) CreateSupplier(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusBadRequest, "MISSING_NAME", "Supplier name is required")
 		return
 	}
+	phone, ok := normalizeSupplierPhone(req.Phone)
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_PHONE", "Enter a valid phone number, for example +254 712 345 678")
+		return
+	}
+	req.Phone = phone
 
 	// Enforce the plan's max_suppliers structural cap (hard-block, no overage). Archived
 	// suppliers do not count.
@@ -334,6 +340,12 @@ func (h *InventoryExtrasHandler) UpdateSupplier(w http.ResponseWriter, r *http.R
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "Invalid request body")
 		return
 	}
+	phone, ok := normalizeSupplierPhone(req.Phone)
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_PHONE", "Enter a valid phone number, for example +254 712 345 678")
+		return
+	}
+	req.Phone = phone
 
 	update := h.orm.Supplier.UpdateOneID(existing.ID).
 		SetContactName(req.ContactPerson).
