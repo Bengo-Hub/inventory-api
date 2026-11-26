@@ -146,6 +146,16 @@ func (s *Service) RelocateItemLocation(ctx context.Context, tenantID uuid.UUID, 
 		destOnHandAfter := destOnHandBefore + srcOnHandBefore
 		destAvailableAfter := destAvailableBefore + srcAvailableBefore
 
+		// The item's cost layers follow its stock, at the costs they were bought at. Without this
+		// the destination had stock with no layer, and a sale there fell back to standard cost.
+		if srcOnHandBefore > 0 {
+			if mErr := s.MoveCostLayers(ctx, tx, tenantID, itemID, req.SourceWarehouseID, req.DestinationWarehouseID,
+				srcOnHandBefore, positiveGain(destOnHandBefore, destOnHandAfter), "location-move"); mErr != nil {
+				err = fmt.Errorf("stock: move cost layers for item %s: %w", itemID, mErr)
+				return nil, err
+			}
+		}
+
 		if _, uErr := tx.InventoryBalance.UpdateOne(srcBal).
 			SetOnHand(0).
 			SetAvailable(0).

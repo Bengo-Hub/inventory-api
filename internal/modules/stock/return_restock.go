@@ -277,10 +277,10 @@ func (s *Service) directReturnRestock(ctx context.Context, tenantID uuid.UUID, r
 		bal, berr := tx.InventoryBalance.Query().
 			Where(inventorybalance.TenantID(tenantID), inventorybalance.ItemID(itm.ID), inventorybalance.WarehouseID(whID)).
 			First(ctx)
-		before := 0.0
+		before, onHandBefore := 0.0, 0.0
 		switch {
 		case berr == nil:
-			before = bal.Available
+			before, onHandBefore = bal.Available, bal.OnHand
 			if _, err = tx.InventoryBalance.UpdateOne(bal).
 				SetOnHand(bal.OnHand + l.Quantity).
 				SetAvailable(bal.Available + l.Quantity).
@@ -300,6 +300,24 @@ func (s *Service) directReturnRestock(ctx context.Context, tenantID uuid.UUID, r
 		}
 		s.EmitStockChangeCascade(ctx, tx, tenantID, itm.ID, whID, before, before+l.Quantity, "customer_return")
 
+		// The returned units enter as a cost layer at what the sale charged for them when the
+		// sale is known here, else at the item's standard cost. Without a layer their next sale
+		// was costed at whatever the item cost that day.
+		unitCost := s.returnUnitCost(ctx, tx, tenantID, req.OrderID, itm)
+		if layerQty := positiveGain(onHandBefore, onHandBefore+l.Quantity); layerQty > 0 {
+			var cost *float64
+			if unitCost > 0 {
+				cost = &unitCost
+			}
+			if _, err = AddCostLayer(ctx, tx, tenantID, CostLayerIn{
+				ItemID: itm.ID, WarehouseID: whID, LotNumber: "RET-" + consumptionID.String()[:8] + "-" + itm.ID.String()[:8],
+				Quantity: layerQty, UnitCost: cost, ReceivedAt: now, SupplierReference: req.ReturnNumber,
+			}); err != nil {
+				return nil, nil, false, fmt.Errorf("stock: direct return restock cost layer sku=%s: %w", l.SKU, err)
+			}
+			s.reblendWavg(ctx, tx, tenantID, itm.ID, "customer_return")
+		}
+
 		s.recordConsumptionLine(ctx, tx, tenantID, consumptionLineInput{
 			consumptionID:    consumptionID,
 			orderID:          req.OrderID,
@@ -313,7 +331,7 @@ func (s *Service) directReturnRestock(ctx context.Context, tenantID uuid.UUID, r
 			ingredientItemID: itm.ID,
 			ingredientSKU:    l.SKU,
 			quantity:         -l.Quantity,
-			unitCost:         itemCostPrice(itm),
+			unitCost:         unitCost,
 			reason:           reversalReason,
 			consumedAt:       now,
 			skipRollup:       true,
@@ -352,6 +370,38 @@ func (s *Service) directReturnRestock(ctx context.Context, tenantID uuid.UUID, r
 		zap.String("return_number", req.ReturnNumber), zap.String("warehouse_id", whID.String()),
 		zap.Int("lines", len(restocked)))
 	return restocked, skipped, false, nil
+}
+
+// returnUnitCost is what the order's own sale charged per unit of this item, quantity-weighted
+// over its original consumption lines, so a returned unit re-enters at the cost that left. Falls
+// back to the item's standard cost when the order consumed none of it here. One indexed query on
+// (tenant_id, order_id).
+func (s *Service) returnUnitCost(ctx context.Context, tx *ent.Tx, tenantID, orderID uuid.UUID, itm *ent.Item) float64 {
+	if orderID != uuid.Nil {
+		rows, err := tx.ConsumptionLine.Query().
+			Where(
+				entconsumptionline.TenantID(tenantID),
+				entconsumptionline.OrderID(orderID),
+				entconsumptionline.IngredientItemID(itm.ID),
+				entconsumptionline.QuantityGT(0),
+			).
+			Select(entconsumptionline.FieldQuantity, entconsumptionline.FieldUnitCost, entconsumptionline.FieldReason).
+			All(ctx)
+		if err == nil {
+			var qty, value float64
+			for _, r := range rows {
+				if r.Reason == reversalReason {
+					continue
+				}
+				qty += r.Quantity
+				value += r.Quantity * r.UnitCost
+			}
+			if qty > 0 {
+				return round4(value / qty)
+			}
+		}
+	}
+	return itemCostPrice(itm)
 }
 
 // reversedLinesFor rebuilds a prior restock's per-SKU outcome from its compensating lines, so a

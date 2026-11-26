@@ -32,6 +32,14 @@ type StockCascader interface {
 	EmitStockChangeCascade(ctx context.Context, tx *ent.Tx, tenantID, itemID, warehouseID uuid.UUID, qtyBefore, qtyAfter float64, reason string)
 }
 
+// CostLayerMover is implemented by stock.Service too (the same value wired through
+// WithStockCascade). It moves an item's cost layers between warehouses at their own costs. A
+// separate optional interface, checked by type assertion, so a cascader without it (a test
+// double) keeps working and simply moves no layers.
+type CostLayerMover interface {
+	MoveCostLayers(ctx context.Context, tx *ent.Tx, tenantID, itemID, fromWarehouseID, toWarehouseID uuid.UUID, drawQty, landQty float64, ref string) error
+}
+
 // Service handles stock transfer business logic.
 type Service struct {
 	client *ent.Client
@@ -902,6 +910,16 @@ func (s *Service) ReceiveTransfer(ctx context.Context, tenantID, transferID uuid
 		}
 		if err = s.adjustBalance(ctx, tx, tenantID, line.ItemID, transfer.DestinationWarehouseID, receivedQty); err != nil {
 			return err
+		}
+		// Cost layers move on receipt, not on ship: while in transit they stay at the source,
+		// so a cancel needs no layer change and the stock keeps its value somewhere. The full
+		// shipped quantity leaves the source layers; only what arrived lands at the destination,
+		// at the source costs, and the units lost in transit leave the books with their cost.
+		if mover, ok := s.stockCascade.(CostLayerMover); ok {
+			if err = mover.MoveCostLayers(ctx, tx, tenantID, line.ItemID, transfer.SourceWarehouseID, transfer.DestinationWarehouseID,
+				line.Quantity, receivedQty, "transfer:"+transfer.TransferNumber); err != nil {
+				return fmt.Errorf("transfers: move cost layers: %w", err)
+			}
 		}
 		lineUpdate := tx.StockTransferLine.UpdateOne(line).SetReceivedQuantity(receivedQty)
 		if varianceReason != "" {

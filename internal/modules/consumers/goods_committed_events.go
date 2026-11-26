@@ -434,6 +434,10 @@ func (c *GoodsCommittedConsumer) handlePurchased(msg *nats.Msg) {
 func (c *GoodsCommittedConsumer) receiveDirectPurchase(ctx context.Context, tenantID, rootID, purchaseID uuid.UUID, p jobGoodsPurchasedPayload) (map[uuid.UUID]float64, error) {
 	bought := map[uuid.UUID]float64{}
 	skus := map[uuid.UUID]string{}
+	// Value and quantity of the priced lines per item, so the stock enters as a cost layer at what
+	// treasury actually paid (quantity-weighted when one item sits on several lines).
+	pricedValue := map[uuid.UUID]float64{}
+	pricedQty := map[uuid.UUID]float64{}
 	for _, l := range p.Lines {
 		itm := resolveSaleItem(ctx, c.orm, tenantID, l.ItemID, l.SKU)
 		if itm == nil || nonStockItemType(itm.Type) || float64(l.Quantity) <= 0 {
@@ -441,6 +445,10 @@ func (c *GoodsCommittedConsumer) receiveDirectPurchase(ctx context.Context, tena
 		}
 		bought[itm.ID] += float64(l.Quantity)
 		skus[itm.ID] = itm.Sku
+		if l.UnitCost > 0 {
+			pricedValue[itm.ID] += float64(l.Quantity) * float64(l.UnitCost)
+			pricedQty[itm.ID] += float64(l.Quantity)
+		}
 	}
 	ref := saleDocReference(rootID, "bought", purchaseID)
 	if done, err := c.orm.StockAdjustment.Query().Where(entadj.TenantID(tenantID), entadj.Reference(ref)).Exist(ctx); err != nil {
@@ -450,9 +458,14 @@ func (c *GoodsCommittedConsumer) receiveDirectPurchase(ctx context.Context, tena
 	}
 	warehouseID := resolveSaleWarehouse(ctx, c.orm, tenantID, p.OutletID)
 	for itemID, qty := range bought {
+		unitCost := 0.0 // no price on the event: AdjustStock falls back to the item's standard cost
+		if pricedQty[itemID] > 0 {
+			unitCost = pricedValue[itemID] / pricedQty[itemID]
+		}
 		if _, err := c.stockSvc.AdjustStock(ctx, tenantID, stock.AdjustStockRequest{
 			SKU: skus[itemID], Adjustment: qty, Reason: "transfer_in", Reference: ref, WarehouseID: warehouseID,
-			Notes: fmt.Sprintf("Bought directly for job %s (paid from a bank in treasury).", p.RootNumber),
+			CostLayerUnitCost: unitCost,
+			Notes:             fmt.Sprintf("Bought directly for job %s (paid from a bank in treasury).", p.RootNumber),
 			// The treasury purchase for the job reports this stock to KRA.
 			FiscalDocument: true,
 		}); err != nil {

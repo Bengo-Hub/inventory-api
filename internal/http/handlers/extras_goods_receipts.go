@@ -764,6 +764,18 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 		return false, err
 	}
 
+	// Recipes priced from an ingredient whose standard cost this receipt moved are recosted
+	// (with their parent recipes) in the background, now that the new cost is committed.
+	if h.recipeRecoster != nil {
+		var changed []uuid.UUID
+		for itemID, cc := range costChanges {
+			if cc != nil && cc.Changed {
+				changed = append(changed, itemID)
+			}
+		}
+		h.recipeRecoster.RecostAfterCommit(ctx, tenantID, changed)
+	}
+
 	if h.auditSvc != nil {
 		for _, l := range grnLines {
 			cc, ok := costChanges[l.ItemID]

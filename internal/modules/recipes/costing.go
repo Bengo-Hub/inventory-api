@@ -71,14 +71,36 @@ func (s *Service) SetSellingPriceByItem(ctx context.Context, tenantID, itemID uu
 func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID uuid.UUID) error {
 	r, err := s.client.Recipe.Query().
 		Where(recipe.TenantID(tenantID), recipe.ID(recipeID)).
-		WithIngredients(func(q *ent.RecipeIngredientQuery) {
-			q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() }).WithSubRecipe()
-		}).
+		WithIngredients(withCostingEdges).
 		Only(ctx)
 	if err != nil {
 		return fmt.Errorf("load recipe: %w", err)
 	}
+	_, err = s.applyRecipeCosts(ctx, tenantID, r, func() *float64 { return s.defaultTargetMargin(ctx, tenantID) })
+	return err
+}
 
+// withCostingEdges loads what applyRecipeCosts reads from each ingredient line: the item with
+// its unit (for unit conversion and cost) and the sub-recipe (for its cost per portion).
+func withCostingEdges(q *ent.RecipeIngredientQuery) {
+	q.WithItem(func(iq *ent.ItemQuery) { iq.WithUnits() }).WithSubRecipe()
+}
+
+// defaultTargetMargin is the tenant's default target margin, nil when none is configured.
+func (s *Service) defaultTargetMargin(ctx context.Context, tenantID uuid.UUID) *float64 {
+	cfg, err := s.client.TenantInventoryConfig.Query().Where(entconfig.TenantID(tenantID)).Only(ctx)
+	if err != nil {
+		return nil
+	}
+	return cfg.DefaultTargetMarginPercent
+}
+
+// applyRecipeCosts computes and persists one recipe's costs from its already-loaded ingredient
+// edges (see withCostingEdges). defaultMargin is only called when the recipe has no margin of
+// its own, so a batch caller can load the tenant default once and share it. Returns whether the
+// cost per portion changed; false with nothing written when no ingredient carries a cost.
+func (s *Service) applyRecipeCosts(ctx context.Context, tenantID uuid.UUID, r *ent.Recipe, defaultMargin func() *float64) (bool, error) {
+	recipeID := r.ID
 	var totalCost float64
 	hasCost := false
 
@@ -126,7 +148,7 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 	}
 
 	if !hasCost {
-		return nil
+		return false, nil
 	}
 
 	outputQty := r.OutputQty
@@ -138,13 +160,8 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 
 	// Determine margin: per-recipe takes priority over tenant config default.
 	marginPct := r.TargetMarginPercent
-	if marginPct == nil {
-		cfg, cfgErr := s.client.TenantInventoryConfig.Query().
-			Where(entconfig.TenantID(tenantID)).
-			Only(ctx)
-		if cfgErr == nil && cfg.DefaultTargetMarginPercent != nil {
-			marginPct = cfg.DefaultTargetMarginPercent
-		}
+	if marginPct == nil && defaultMargin != nil {
+		marginPct = defaultMargin()
 	}
 
 	update := s.client.Recipe.UpdateOneID(recipeID).
@@ -163,7 +180,7 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 	}
 
 	if _, err := update.Save(ctx); err != nil {
-		return fmt.Errorf("update recipe costs: %w", err)
+		return false, fmt.Errorf("update recipe costs: %w", err)
 	}
 
 	// Write the recomputed cost through onto the recipe's owning Item.CostPrice — every existing
@@ -184,5 +201,6 @@ func (s *Service) RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID
 		zap.Float64("total_cost", totalCost),
 		zap.Float64("cost_per_portion", costPerPortion),
 	)
-	return nil
+	// Parents only need recosting when this recipe's cost per portion actually moved.
+	return r.CostPerPortion == nil || *r.CostPerPortion != costPerPortion, nil
 }

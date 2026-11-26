@@ -9,7 +9,6 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entinventorybalance "github.com/bengobox/inventory-service/internal/ent/inventorybalance"
-	entinventorylot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
 	entwarehouse "github.com/bengobox/inventory-service/internal/ent/warehouse"
 	"github.com/bengobox/inventory-service/internal/modules/items"
@@ -572,6 +571,11 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 			Reason:      reason,
 			Notes:       "Bulk import opening stock",
 			WarehouseID: whID,
+			// The batch/lot + expiry columns: AdjustStock records the added units as that lot
+			// (topping it up on a re-import) at the item's standard cost. Without a lot number the
+			// units still enter as an internal cost layer, so opening stock is never uncosted.
+			LotNumber: lotNumber,
+			LotExpiry: importLotExpiry(lotNumber, expiryStr, itm.ShelfLifeDays),
 		}); adjErr != nil {
 			res.Failed++
 			res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: stock adjustment: %s", itemSKU, adjErr.Error()))
@@ -579,35 +583,22 @@ func (h *InventoryHandler) parseXLSXInitialStock(
 		} else {
 			res.Created++
 		}
-
-		// Capture the batch/lot + expiry when supplied (previously the InitialStock sheet
-		// documented these columns but dropped them). Idempotent on re-import. Falls back to
-		// the item's default shelf life when no explicit expiry is given.
-		if lotNumber != "" && h.orm != nil {
-			lotExists, _ := h.orm.InventoryLot.Query().
-				Where(
-					entinventorylot.TenantID(tenantID),
-					entinventorylot.ItemID(itm.ID),
-					entinventorylot.WarehouseID(whID),
-					entinventorylot.LotNumber(lotNumber),
-				).Exist(r.Context())
-			if !lotExists {
-				lc := h.orm.InventoryLot.Create().
-					SetTenantID(tenantID).
-					SetItemID(itm.ID).
-					SetWarehouseID(whID).
-					SetLotNumber(lotNumber).
-					SetQuantity(qty)
-				if exp := parseTimePtr(expiryStr); exp != nil {
-					lc = lc.SetExpiryDate(*exp)
-				} else if itm.ShelfLifeDays != nil && *itm.ShelfLifeDays > 0 {
-					lc = lc.SetExpiryDate(time.Now().AddDate(0, 0, *itm.ShelfLifeDays))
-				}
-				if _, lerr := lc.Save(r.Context()); lerr != nil {
-					res.Errors = append(res.Errors, fmt.Sprintf("sku=%s: lot create: %s", itemSKU, lerr.Error()))
-				}
-			}
-		}
 	}
 	return res
+}
+
+// importLotExpiry is the expiry an imported lot gets: the sheet's date, else the item's default
+// shelf life from today. Nil without a lot number, since an internal cost layer has no expiry.
+func importLotExpiry(lotNumber, expiryStr string, shelfLifeDays *int) *time.Time {
+	if lotNumber == "" {
+		return nil
+	}
+	if exp := parseTimePtr(expiryStr); exp != nil {
+		return exp
+	}
+	if shelfLifeDays != nil && *shelfLifeDays > 0 {
+		t := time.Now().AddDate(0, 0, *shelfLifeDays)
+		return &t
+	}
+	return nil
 }

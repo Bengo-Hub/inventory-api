@@ -231,6 +231,7 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 		results       []ReversedIngredient
 		totalCost     float64
 		compensations []entschema.ConsumptionItemJSON
+		restoredItems = map[uuid.UUID]bool{}
 	)
 
 	for _, l := range origLines {
@@ -307,6 +308,16 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 						reason = "sale_reversal"
 					}
 					s.EmitStockChangeCascade(ctx, tx, tenantID, itm.ID, lineWarehouseID, beforeAvail, afterAvail, reason)
+					// The returned units go back into the layer they left, at the line's cost.
+					// Restoring only the balance left them uncosted, so their next sale fell back
+					// to the item's standard cost.
+					if lerr := restoreLineLayer(ctx, tx, tenantID, l, lineWarehouseID, stockReturn); lerr != nil {
+						err = fmt.Errorf("stock: reverse consumption: restore cost layer sku=%s: %w", l.IngredientSku, lerr)
+						return nil, err
+					}
+					if l.LotID != nil {
+						restoredItems[itm.ID] = true
+					}
 				case ent.IsNotFound(berr):
 					s.log.Warn("consumption reversal: no balance row — utilization compensated, no stock returned",
 						zap.String("sku", l.IngredientSku))
@@ -362,6 +373,11 @@ func (s *Service) ReverseConsumption(ctx context.Context, tenantID uuid.UUID, re
 	if len(results) == 0 {
 		_ = tx.Rollback()
 		return nil, fmt.Errorf("stock: reverse consumption: %w for order %s (already reversed or no matching lines)", ErrNothingToReverse, req.OrderID)
+	}
+	// Units came back at the cost the sale charged, which can differ from today's running
+	// average, so a wavg tenant's open layers reblend once per item.
+	for itemID := range restoredItems {
+		s.reblendWavg(ctx, tx, tenantID, itemID, "consumption_reversal")
 	}
 
 	builder := tx.Consumption.Create().

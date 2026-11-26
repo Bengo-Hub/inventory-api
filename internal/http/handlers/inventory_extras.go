@@ -51,7 +51,18 @@ type InventoryExtrasHandler struct {
 	// claims itself or every caller 401s (same gotcha inventory.go solves with
 	// requireAuthForFeatureGet).
 	authForFeatureGet func(http.Handler) http.Handler
+	// recipeRecoster recosts the recipes that use an item whose standard cost a goods receipt
+	// just moved. Nil leaves recipes at their old cost until someone recosts them by hand.
+	recipeRecoster recipeRecoster
 }
+
+// recipeRecoster is recipes.Service's background cascade (see RecostAfterCommit).
+type recipeRecoster interface {
+	RecostAfterCommit(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID)
+}
+
+// SetRecipeRecoster wires the recipe recost cascade run after a goods receipt changes costs.
+func (h *InventoryExtrasHandler) SetRecipeRecoster(r recipeRecoster) { h.recipeRecoster = r }
 
 // SetVendorBalances wires the treasury AP-balance mirror used to show what's owed to each
 // supplier on every supplier list/picker.

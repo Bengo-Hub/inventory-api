@@ -71,6 +71,50 @@ type StockValuationBrand struct {
 	TotalValue float64    `json:"total_value"`
 }
 
+// inventoryValueSQL is the whole-scope stock value in one statement: every active cost layer at
+// its own cost, plus, for each (item, warehouse) balance with no active cost-recorded layer, its
+// on-hand at the item's standard cost. Negative on-hand (an unsettled oversell) is not an asset,
+// so it counts as zero. $1 tenant, $2 warehouses (NULL = every warehouse).
+const inventoryValueSQL = `
+SELECT
+  coalesce((
+    SELECT sum(l.quantity * l.cost_price)
+    FROM inventory_lots l
+    WHERE l.tenant_id = $1 AND l.status = 'active' AND l.quantity > 0 AND l.cost_price IS NOT NULL
+      AND ($2::uuid[] IS NULL OR l.warehouse_id = ANY($2::uuid[]))
+  ), 0)
+  +
+  coalesce((
+    SELECT sum(greatest(b.on_hand, 0) * coalesce(i.cost_price, 0))
+    FROM inventory_balances b
+    JOIN items i ON i.id = b.item_id
+    WHERE b.tenant_id = $1
+      AND ($2::uuid[] IS NULL OR b.warehouse_id = ANY($2::uuid[]))
+      AND NOT EXISTS (
+        SELECT 1 FROM inventory_lots l
+        WHERE l.tenant_id = $1 AND l.item_id = b.item_id AND l.warehouse_id = b.warehouse_id
+          AND l.status = 'active' AND l.quantity > 0 AND l.cost_price IS NOT NULL
+      )
+  ), 0)`
+
+// InventoryValue is the total value of stock held in scope, computed in the database with one
+// aggregate (see inventoryValueSQL) so the dashboard never loads every balance and lot to add
+// them up. warehouseIDs scopes it the same way StockValuation does: nil is every warehouse, a
+// non-nil empty slice (an outlet with no warehouse) is zero.
+func (s *Service) InventoryValue(ctx context.Context, tenantID uuid.UUID, warehouseIDs []uuid.UUID) (float64, error) {
+	if warehouseIDs != nil && len(warehouseIDs) == 0 {
+		return 0, nil
+	}
+	if s.reportDB == nil {
+		return 0, errReportDBMissing
+	}
+	var total float64
+	if err := s.reportDB.QueryRowContext(ctx, inventoryValueSQL, tenantID, warehouseParam(warehouseIDs)).Scan(&total); err != nil {
+		return 0, fmt.Errorf("inventory value: %w", err)
+	}
+	return money.Round2(total), nil
+}
+
 // valuationTopLimit is the default page of listed items.
 const valuationTopLimit = 20
 

@@ -13,6 +13,7 @@ import (
 	"github.com/bengobox/inventory-service/internal/ent"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entitem "github.com/bengobox/inventory-service/internal/ent/item"
+	"github.com/bengobox/inventory-service/internal/ent/predicate"
 	"github.com/bengobox/inventory-service/internal/ent/recipe"
 	"github.com/bengobox/inventory-service/internal/ent/recipeingredient"
 	"github.com/bengobox/inventory-service/internal/ent/warehouse"
@@ -550,37 +551,112 @@ func (s *Service) writeOutboxEvent(ctx context.Context, tx *ent.Tx, tenantID, ag
 	platformevents.WriteOutboxTx(ctx, tx, s.log, tenantID, aggregateID, aggregateType, eventType, payload)
 }
 
+// maxRecostDepth bounds the parent-recipe cascade: a sauce inside a dish inside a combo is three
+// levels, so five covers any real menu while a misconfigured cycle still stops quickly.
+const maxRecostDepth = 5
+
 // RecalculateCostsForIngredient recalculates costs for all recipes that use the given
 // ingredient item ID. Called when an ingredient's cost_price changes.
 func (s *Service) RecalculateCostsForIngredient(ctx context.Context, tenantID, ingredientItemID uuid.UUID) error {
-	// Find all recipes that reference this ingredient.
-	rIngredients, err := s.client.RecipeIngredient.Query().
-		Where(recipeingredient.ItemID(ingredientItemID)).
-		All(ctx)
-	if err != nil {
-		return fmt.Errorf("recipes: find affected recipes for ingredient %s: %w", ingredientItemID, err)
+	return s.RecalculateCostsForIngredients(ctx, tenantID, []uuid.UUID{ingredientItemID})
+}
+
+// RecalculateCostsForIngredients recosts every recipe of this tenant that uses any of the given
+// items, then every recipe that uses one of those recipes (as a sub-recipe line, or through the
+// recipe's own item), level by level up to maxRecostDepth. Each level is one tenant-scoped
+// lookup plus one batch load of the affected recipes with their ingredient edges, and the
+// tenant's default margin is read at most once, instead of a Recipe.Get and a config query per
+// recipe. Levels run in order, so a parent always reads its sub-recipe's fresh cost.
+//
+// Cycle guard: a recipe is recosted at most once per level, a level only follows recipes that
+// were actually recosted, and the depth cap ends any cycle (A uses B uses A). One recipe failing
+// is logged and skipped; the rest still recost.
+func (s *Service) RecalculateCostsForIngredients(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID) error {
+	if len(itemIDs) == 0 {
+		return nil
 	}
-
-	seen := make(map[uuid.UUID]struct{}, len(rIngredients))
-	for _, ri := range rIngredients {
-		recipeID := ri.RecipeID
-		if _, ok := seen[recipeID]; ok {
-			continue
+	var (
+		marginLoaded bool
+		margin       *float64
+	)
+	defaultMargin := func() *float64 {
+		if !marginLoaded {
+			margin, marginLoaded = s.defaultTargetMargin(ctx, tenantID), true
 		}
-		seen[recipeID] = struct{}{}
+		return margin
+	}
+	recosted := make(map[uuid.UUID]int) // recipe id -> last level it was recosted at
+	itemFrontier, recipeFrontier := uniqueIDs(itemIDs), []uuid.UUID(nil)
 
-		// Verify the recipe belongs to the same tenant.
-		r, rErr := s.client.Recipe.Get(ctx, recipeID)
-		if rErr != nil || r.TenantID != tenantID {
-			continue
+	for level := 0; level < maxRecostDepth && (len(itemFrontier) > 0 || len(recipeFrontier) > 0); level++ {
+		refs := []predicate.RecipeIngredient{}
+		if len(itemFrontier) > 0 {
+			refs = append(refs, recipeingredient.ItemIDIn(itemFrontier...))
 		}
-
-		if calcErr := s.RecalculateRecipeCosts(ctx, tenantID, recipeID); calcErr != nil {
-			s.log.Warn("recipes: cascade recalc failed",
-				zap.String("recipe_id", recipeID.String()),
-				zap.Error(calcErr),
-			)
+		if len(recipeFrontier) > 0 {
+			refs = append(refs, recipeingredient.SubRecipeIDIn(recipeFrontier...))
+		}
+		var rows []struct {
+			RecipeID uuid.UUID `json:"recipe_id"`
+		}
+		if err := s.client.RecipeIngredient.Query().
+			Where(recipeingredient.Or(refs...), recipeingredient.HasRecipeWith(recipe.TenantID(tenantID))).
+			Unique(true).
+			Select(recipeingredient.FieldRecipeID).
+			Scan(ctx, &rows); err != nil {
+			return fmt.Errorf("recipes: find recipes affected by a cost change: %w", err)
+		}
+		ids := make([]uuid.UUID, len(rows))
+		for i, row := range rows {
+			ids[i] = row.RecipeID
+		}
+		next := make([]uuid.UUID, 0, len(ids))
+		for _, id := range uniqueIDs(ids) {
+			if last, ok := recosted[id]; ok && last == level {
+				continue
+			}
+			next = append(next, id)
+		}
+		if len(next) == 0 {
+			break
+		}
+		recs, err := s.client.Recipe.Query().
+			Where(recipe.TenantID(tenantID), recipe.IDIn(next...)).
+			WithIngredients(withCostingEdges).
+			All(ctx)
+		if err != nil {
+			return fmt.Errorf("recipes: load recipes to recost: %w", err)
+		}
+		itemFrontier, recipeFrontier = nil, nil
+		for _, r := range recs {
+			recosted[r.ID] = level
+			changed, cErr := s.applyRecipeCosts(ctx, tenantID, r, defaultMargin)
+			if cErr != nil {
+				s.log.Warn("recipes: cascade recalc failed", zap.String("recipe_id", r.ID.String()), zap.Error(cErr))
+				continue
+			}
+			if !changed {
+				continue
+			}
+			recipeFrontier = append(recipeFrontier, r.ID)
+			if r.ItemID != nil {
+				itemFrontier = append(itemFrontier, *r.ItemID)
+			}
 		}
 	}
 	return nil
+}
+
+// uniqueIDs drops duplicates and uuid.Nil, keeping first-seen order.
+func uniqueIDs(ids []uuid.UUID) []uuid.UUID {
+	seen := make(map[uuid.UUID]bool, len(ids))
+	out := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		if id == uuid.Nil || seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	return out
 }

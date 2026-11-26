@@ -566,11 +566,31 @@ func (h *AnalyticsHandler) EnhancedSummary(w http.ResponseWriter, r *http.Reques
 	}
 	pendingPOs, _ := poQuery.Count(ctx)
 
+	// Stock value over the same warehouse scope as the stock counts above, aggregated in SQL
+	// (active layers at their own cost, unlayered balances at standard cost). The field used to
+	// be declared but never set, so the dashboard always showed zero.
+	var totalValue float64
+	if h.itemsSvc != nil {
+		var scope []uuid.UUID
+		if outletID != nil {
+			scope = warehouseIDs
+			if scope == nil {
+				scope = []uuid.UUID{}
+			}
+		}
+		v, vErr := h.itemsSvc.InventoryValue(ctx, tenantID, scope)
+		if vErr != nil {
+			h.log.Warn("analytics: summary inventory value failed", zap.Error(vErr))
+		}
+		totalValue = v
+	}
+
 	writeJSON(w, http.StatusOK, enhancedSummaryDTO{
-		TotalItems:      totalItems,
-		LowStockCount:   lowStock,
-		OutOfStockCount: outOfStock,
-		WarehouseCount:  0, // populated separately by /inventory/summary
-		PendingPOCount:  pendingPOs,
+		TotalItems:          totalItems,
+		LowStockCount:       lowStock,
+		OutOfStockCount:     outOfStock,
+		WarehouseCount:      0, // populated separately by /inventory/summary
+		PendingPOCount:      pendingPOs,
+		TotalInventoryValue: totalValue,
 	})
 }

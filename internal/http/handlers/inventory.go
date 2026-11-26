@@ -105,6 +105,9 @@ type RecipesServicer interface {
 	GetRecipeBySKU(ctx context.Context, tenantID uuid.UUID, sku string) (*recipes.RecipeDTO, error)
 	// RecalculateCostsForIngredient cascades cost recalculation to all recipes using the given ingredient.
 	RecalculateCostsForIngredient(ctx context.Context, tenantID, ingredientItemID uuid.UUID) error
+	// RecostAfterCommit runs that cascade (parents included) in the background, detached from
+	// the request, for items whose cost change has already committed.
+	RecostAfterCommit(ctx context.Context, tenantID uuid.UUID, itemIDs []uuid.UUID)
 	// RecalculateRecipeCosts recomputes total/unit cost for a single recipe from current ingredient prices.
 	RecalculateRecipeCosts(ctx context.Context, tenantID, recipeID uuid.UUID) error
 	// AuditRecipeUnits lists existing recipe lines whose units cannot deduct stock.
@@ -1581,10 +1584,6 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Capture cost_price before update for cascade detection.
-	prevCostPrice := avail // only used to check if cost changed
-	_ = prevCostPrice
-
 	// The lookup above only finds active items, so this edit cannot reactivate one today; the
 	// guard keeps the plan's SKU limit enforced if that ever changes.
 	result, err := h.itemsSvc.UpdateItem(h.withSKULimitGuard(w, r, tenantID), tenantID, avail.ItemID, req)
@@ -1612,13 +1611,11 @@ func (h *InventoryHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Cascade: if cost_price changed on an INGREDIENT, recalculate all recipe costs that use it.
+	// Cascade: if cost_price changed on an INGREDIENT, recalculate all recipe costs that use it,
+	// and their parent recipes. The update has committed; the recost runs detached from this
+	// request, which ends as soon as the response is written.
 	if req.CostPrice != nil && h.recipeSvc != nil {
-		go func() {
-			if cErr := h.recipeSvc.RecalculateCostsForIngredient(r.Context(), tenantID, avail.ItemID); cErr != nil {
-				h.log.Warn("ingredient price cascade failed", zap.Error(cErr), zap.String("sku", sku))
-			}
-		}()
+		h.recipeSvc.RecostAfterCommit(r.Context(), tenantID, []uuid.UUID{avail.ItemID})
 	}
 
 	writeJSON(w, http.StatusOK, result)

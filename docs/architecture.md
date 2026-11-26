@@ -196,8 +196,21 @@ Posting a goods receipt (`postGoodsReceiptCore`, also behind PO **Mark Received*
 layer per accepted line and then calls `stock.RecomputeStandardCost` once per item:
 
 - `cost_price` (per stock unit) becomes the newest layer's cost for fifo/lifo/fefo tenants, or the
-  quantity weighted average of open layers for wavg tenants. COGS and stock value still read each
-  layer's own cost, so stock on hand is never revalued.
+  quantity weighted average of open layers for wavg tenants. For wavg every open layer is also
+  set to that average: that is perpetual average costing, and the receipt's own cost stays on the
+  goods receipt line (`lot.goods_receipt_line_id`). For fifo/lifo/fefo each layer keeps the cost it
+  was bought at, so old stock sells at its old cost.
+
+## Actual sale cost (2026-11-26)
+
+`RecordConsumption` sums its consumption lines per sold SKU (each lot at its own cost, any
+uncovered remainder at the standard cost) in one grouped query. It returns them as `costs` and
+publishes `inventory.consumption.costed` (order, reason, costing method, per SKU total cost) in
+the same transaction. pos-api replaces each sold line's `unit_cost_at_sale` with it
+(`cost_source=inventory`). treasury-api posts the difference against the sale's COGS entry once
+per sale (reference `cogs_trueup`). Before this, POS margins and the ledger used the item's
+current cost, so under FIFO the old units sold after a restock at a new price were costed at the
+new price while inventory charged the old one.
 - `purchase_price` (price per purchase pack) follows the newest layer: unit cost times
   `purchase_pack_size`. The item form, the catalog cost column and the PO "last paid" prefill read
   `purchase_price` first, so before this it kept showing the old buying price after a new purchase.

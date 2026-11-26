@@ -221,6 +221,15 @@ type AdjustStockRequest struct {
 	// down the item's layers, so without this the returning units would carry no cost of their
 	// own. Set by the handler, never read from a request body.
 	CostLayerUnitCost float64 `json:"-"`
+	// IncomingLayers, on an UPWARD adjustment, are the source layers these units were drawn from
+	// (a bulk adjustment's transfer_out leg, see AdjustStockResponse.DrawnLayers). They land here
+	// at their own costs, so moving stock between warehouses never revalues it. Set by callers in
+	// this package, never read from a request body.
+	IncomingLayers []LotConsumption `json:"-"`
+	// LotNumber/LotExpiry, on an UPWARD adjustment, record the units as that supplier batch (a
+	// real lot) instead of an internal cost layer. Used by the opening-stock import sheet.
+	LotNumber string     `json:"-"`
+	LotExpiry *time.Time `json:"-"`
 	// FiscalDocument marks a movement that a treasury fiscal document already reports to KRA (goods
 	// out on an invoice, goods back on its credit note, goods bought for a job). Its stock.updated
 	// event says so, and treasury does not send it to KRA a second time. Set by the event consumers,
@@ -240,6 +249,9 @@ type AdjustStockResponse struct {
 	QtyChange  float64   `json:"quantity_change"`
 	QtyAfter   float64   `json:"quantity_after"`
 	AdjustedAt time.Time `json:"adjusted_at"`
+	// DrawnLayers are the cost layers a DOWNWARD adjustment drew, each at its own cost. A caller
+	// that moves the units elsewhere passes them on as the next AdjustStock's IncomingLayers.
+	DrawnLayers []LotConsumption `json:"-"`
 }
 
 // StockAdjustmentDTO represents a stock adjustment for listing.
@@ -485,18 +497,12 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 		return nil, fmt.Errorf("stock: create adjustment record: %w", err)
 	}
 
-	// Units coming back from repair re-enter as their own cost layer (same table the goods receipt
-	// and the opening-balance backfill use), so a later sale values them at what they cost, not at
-	// whatever layer happens to be oldest.
-	if qtyChange > 0 && req.CostLayerUnitCost > 0 {
-		if _, lerr := tx.InventoryLot.Create().
-			SetTenantID(tenantID).SetItemID(itm.ID).SetWarehouseID(whID).
-			SetLotNumber("SVC-" + adj.ID.String()).
-			SetQuantity(qtyChange).SetStatus("active").SetIsCostLayer(true).
-			SetCostPrice(req.CostLayerUnitCost).
-			SetReceivedAt(adjustedAt).
-			SetSupplierReference(req.Reference).
-			Save(ctx); lerr != nil {
+	// Every upward adjustment enters as cost layers, so the layer table keeps mirroring the
+	// balance and a later sale of these units is costed from a layer, not a fallback. Only the
+	// part that lifts on-hand above zero becomes a layer: units settling an oversell debt were
+	// already costed by the sale that ran short, and a layer for them would outlive the stock.
+	if layerQty := positiveGain(qtyBefore, qtyAfter); layerQty > 0 {
+		if lerr := s.adjustmentLayers(ctx, tx, tenantID, whID, itm, adj.ID, layerQty, adjustedAt, req); lerr != nil {
 			err = fmt.Errorf("stock: record cost layer for sku=%s: %w", req.SKU, lerr)
 			return nil, err
 		}
@@ -617,16 +623,17 @@ func (s *Service) AdjustStock(ctx context.Context, tenantID uuid.UUID, req Adjus
 	)
 
 	return &AdjustStockResponse{
-		ID:         adj.ID,
-		SKU:        req.SKU,
-		OnHand:     newOnHand,
-		Available:  newAvailable,
-		Reserved:   bal.Reserved,
-		Reason:     req.Reason,
-		QtyBefore:  qtyBefore,
-		QtyChange:  qtyChange,
-		QtyAfter:   qtyAfter,
-		AdjustedAt: adjustedAt,
+		ID:          adj.ID,
+		SKU:         req.SKU,
+		OnHand:      newOnHand,
+		Available:   newAvailable,
+		Reserved:    bal.Reserved,
+		Reason:      req.Reason,
+		QtyBefore:   qtyBefore,
+		QtyChange:   qtyChange,
+		QtyAfter:    qtyAfter,
+		AdjustedAt:  adjustedAt,
+		DrawnLayers: adjLots,
 	}, nil
 }
 
@@ -829,6 +836,9 @@ type LotConsumption struct {
 	// these on anything customer- or label-facing — they carry no lot identity a shopper or
 	// regulator should see.
 	IsCostLayer bool
+	// ReceivedAt is the layer's receipt date (created_at when none was recorded), carried over
+	// when moved units land in another warehouse so fifo/lifo order survives the move.
+	ReceivedAt *time.Time
 }
 
 // consumeLots draws down a quantity across a warehouse's active InventoryLot rows (real lots AND
@@ -885,6 +895,10 @@ func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 			s.log.Warn("consumeLots: update lot failed", zap.Error(e))
 			return drawn
 		}
+		receivedAt := lot.CreatedAt
+		if lot.ReceivedAt != nil {
+			receivedAt = *lot.ReceivedAt
+		}
 		drawn = append(drawn, LotConsumption{
 			LotID:       lot.ID,
 			LotNumber:   lot.LotNumber,
@@ -892,6 +906,7 @@ func (s *Service) consumeLots(ctx context.Context, tx *ent.Tx, tenantID, itemID,
 			QtyTaken:    take,
 			UnitCost:    lot.CostPrice,
 			IsCostLayer: lot.IsCostLayer,
+			ReceivedAt:  &receivedAt,
 		})
 		remaining -= take
 	}
@@ -1859,6 +1874,15 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 
 	method := s.costingMethod(ctx, tenantID)
 	var lotsConsumed []ConsumedLot
+	// The dispense is costed exactly like a direct sale: one ConsumptionLine per layer drawn at
+	// that layer's own cost (any uncovered remainder at standard cost) under a parent Consumption
+	// row, all in this transaction. Before this, a reservation-based dispense drew layers but left
+	// no cost record, so its COGS and the utilization report never saw it, and it could not be
+	// reversed. The reservation's pending/confirmed status guard keeps this one-shot.
+	consumptionID := uuid.New()
+	consumedAt := time.Now()
+	outletID := s.resolveOutletID(ctx, tx, whID)
+	var consumptionItems []entschema.ConsumptionItemJSON
 
 	for _, ri := range resv.Items {
 		if ri.ReservedQty <= 0 {
@@ -1940,7 +1964,30 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 		// server-verified batch/expiry per unit dispensed, only whatever a clinician typed in by
 		// hand. Reservations are already exploded down to raw SKUs at CreateReservation time, so
 		// no BOM/recipe handling is needed here (unlike RecordConsumption).
+		lineBase := consumptionLineInput{
+			consumptionID:    consumptionID,
+			orderID:          resv.OrderID,
+			warehouseID:      whID,
+			outletID:         outletID,
+			finishedItemSKU:  ri.SKU,
+			ingredientItemID: itm.ID,
+			ingredientSKU:    ri.SKU,
+			reason:           "sale",
+			consumedAt:       consumedAt,
+		}
+		var drawnQty float64
 		for _, lot := range s.consumeLots(ctx, tx, tenantID, itm.ID, whID, ri.ReservedQty, method) {
+			drawnQty += lot.QtyTaken
+			in := lineBase
+			lid := lot.LotID
+			in.quantity, in.unitCost, in.lotID = lot.QtyTaken, itemCostPrice(itm), &lid
+			if lot.UnitCost != nil {
+				in.unitCost = *lot.UnitCost
+			}
+			if !lot.IsCostLayer {
+				in.lotNumber, in.expiryDate = lot.LotNumber, lot.ExpiryDate
+			}
+			s.recordConsumptionLine(ctx, tx, tenantID, in)
 			if lot.IsCostLayer {
 				continue // no lot identity a caller should ever see
 			}
@@ -1952,9 +1999,32 @@ func (s *Service) ConsumeReservation(ctx context.Context, tenantID, reservationI
 				Quantity:   lot.QtyTaken,
 			})
 		}
+		if shortfall := round4(ri.ReservedQty - drawnQty); shortfall > 0 {
+			in := lineBase
+			in.quantity, in.unitCost = shortfall, itemCostPrice(itm)
+			s.recordConsumptionLine(ctx, tx, tenantID, in)
+		}
+		consumptionItems = append(consumptionItems, entschema.ConsumptionItemJSON{SKU: ri.SKU, Quantity: ri.ReservedQty})
 
 		// Check for low stock after consumption
 		s.checkAndPublishLowStock(ctx, tx, tenantID, itm, updatedBal, whID)
+	}
+
+	if len(consumptionItems) > 0 {
+		cb := tx.Consumption.Create().
+			SetID(consumptionID).
+			SetTenantID(tenantID).
+			SetOrderID(resv.OrderID).
+			SetItems(consumptionItems).
+			SetReason("sale").
+			SetStatus("processed").
+			SetProcessedAt(consumedAt)
+		if whID != uuid.Nil {
+			cb.SetWarehouseID(whID)
+		}
+		if _, err = cb.Save(ctx); err != nil {
+			return nil, fmt.Errorf("stock: record reservation consumption: %w", err)
+		}
 	}
 
 	now := time.Now()
@@ -2552,6 +2622,7 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID, outle
 		}
 
 		qty := ri.Quantity // fractional-capable restock
+		onHandBefore := 0.0
 		bal, err := tx.InventoryBalance.Query().
 			Where(
 				inventorybalance.TenantID(tenantID),
@@ -2571,12 +2642,19 @@ func (s *Service) RestockItems(ctx context.Context, tenantID, warehouseID, outle
 		} else if err != nil {
 			return fmt.Errorf("stock: query restock balance sku=%s: %w", ri.SKU, err)
 		} else {
+			onHandBefore = bal.OnHand
 			if _, uerr := tx.InventoryBalance.UpdateOne(bal).
 				SetOnHand(bal.OnHand + qty).
 				SetAvailable(bal.Available + qty).
 				Save(ctx); uerr != nil {
 				return fmt.Errorf("stock: restock balance sku=%s: %w", ri.SKU, uerr)
 			}
+		}
+		// Restocked units (a production batch, a cancelled production) enter as a cost layer at
+		// the item's standard cost, so the layer table keeps mirroring the balance.
+		if lerr := s.standardCostLayer(ctx, tx, tenantID, whID, itm, positiveGain(onHandBefore, onHandBefore+qty),
+			"RST-"+uuid.NewString(), time.Now(), idempotencyKey); lerr != nil {
+			return fmt.Errorf("stock: restock cost layer sku=%s: %w", ri.SKU, lerr)
 		}
 
 		// Cascade: unblock recipe items when all their ingredients are back in stock.

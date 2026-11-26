@@ -103,7 +103,7 @@ func (s *Service) BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req B
 			if qty < 0 {
 				qty = -qty
 			}
-			if _, err := s.AdjustStock(ctx, tenantID, AdjustStockRequest{
+			out, err := s.AdjustStock(ctx, tenantID, AdjustStockRequest{
 				SKU:         line.SKU,
 				Adjustment:  -qty,
 				Reason:      "transfer_out",
@@ -112,19 +112,23 @@ func (s *Service) BulkAdjustStock(ctx context.Context, tenantID uuid.UUID, req B
 				AdjustedBy:  req.AdjustedBy,
 				WarehouseID: req.WarehouseID,
 				OutletID:    req.OutletID,
-			}); err != nil {
+			})
+			if err != nil {
 				res.Skipped = append(res.Skipped, BulkAdjustSkipped{SKU: line.SKU, Reason: err.Error()})
 				continue
 			}
+			// The destination leg lands the very layers the source leg drew, at their own costs,
+			// so a move between warehouses never revalues the stock.
 			if _, err := s.AdjustStock(ctx, tenantID, AdjustStockRequest{
-				SKU:         line.SKU,
-				Adjustment:  qty,
-				Reason:      "transfer_in",
-				Reference:   req.Reference,
-				Notes:       req.Notes,
-				AdjustedBy:  req.AdjustedBy,
-				WarehouseID: *line.DestinationWarehouseID,
-				OutletID:    req.OutletID,
+				SKU:            line.SKU,
+				Adjustment:     qty,
+				Reason:         "transfer_in",
+				Reference:      req.Reference,
+				Notes:          req.Notes,
+				AdjustedBy:     req.AdjustedBy,
+				WarehouseID:    *line.DestinationWarehouseID,
+				OutletID:       req.OutletID,
+				IncomingLayers: out.DrawnLayers,
 			}); err != nil {
 				// The source leg already moved stock out — flag this distinctly rather than as a
 				// plain skip, since the item is now unaccounted for at neither warehouse and needs
