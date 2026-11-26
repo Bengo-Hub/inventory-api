@@ -13,6 +13,7 @@ import (
 
 	"github.com/bengobox/inventory-service/internal/ent"
 	entconsumption "github.com/bengobox/inventory-service/internal/ent/consumption"
+	entconsumptionline "github.com/bengobox/inventory-service/internal/ent/consumptionline"
 	"github.com/bengobox/inventory-service/internal/ent/inventorybalance"
 	entlot "github.com/bengobox/inventory-service/internal/ent/inventorylot"
 	entinvuser "github.com/bengobox/inventory-service/internal/ent/inventoryuser"
@@ -150,6 +151,9 @@ type ConsumptionResponse struct {
 	// read it (ordering-backend) are unaffected. pos-api uses this to stamp POSOrderLine's
 	// lot_number/expiry_date so the sold unit's batch is known on the receipt/regulator log.
 	LotsConsumed []ConsumedLot `json:"lots_consumed,omitempty"`
+	// Costs is the actual cost charged per sold SKU (lot costs, standard cost for any shortfall).
+	// Additive; the same figures go out on the inventory.consumption.costed event.
+	Costs []SoldSKUCost `json:"costs,omitempty"`
 }
 
 // ConsumedLot is one lot's contribution to a single SKU's consumption within a sale.
@@ -2417,6 +2421,30 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		return nil, fmt.Errorf("stock: create consumption: %w", err)
 	}
 
+	// The actual cost of what this consumption drew (each lot at its own cost, any uncovered
+	// remainder at the item's standard cost), per sold SKU. Inventory owns stock cost, so this is
+	// the number POS margins and the treasury COGS entry must use, not the item's current cost.
+	costs, cerr := s.consumptionCostBySoldSKU(ctx, tx, tenantID, consumptionID)
+	if cerr != nil {
+		s.log.Warn("consumption costed: aggregate failed", zap.Error(cerr), zap.String("consumption_id", consumptionID.String()))
+	} else if req.OrderID != uuid.Nil && len(costs) > 0 {
+		lines := make([]map[string]any, 0, len(costs))
+		var total float64
+		for _, c := range costs {
+			lines = append(lines, map[string]any{"sku": c.SKU, "total_cost": c.TotalCost})
+			total += c.TotalCost
+		}
+		s.writeOutboxEvent(ctx, tx, tenantID, req.OrderID, "inventory", "consumption.costed", map[string]any{
+			"order_id":        req.OrderID.String(),
+			"consumption_id":  consumptionID.String(),
+			"reason":          reason,
+			"idempotency_key": req.IdempotencyKey,
+			"costing_method":  method,
+			"total_cost":      round4(total),
+			"lines":           lines,
+		})
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("stock: commit consumption: %w", err)
 	}
@@ -2433,7 +2461,49 @@ func (s *Service) RecordConsumption(ctx context.Context, tenantID uuid.UUID, req
 		Status:       cons.Status,
 		ProcessedAt:  cons.ProcessedAt,
 		LotsConsumed: lotDraws,
+		Costs:        costs,
 	}, nil
+}
+
+// SoldSKUCost is the actual cost inventory charged for one sold SKU in a consumption.
+type SoldSKUCost struct {
+	SKU       string  `json:"sku"`
+	TotalCost float64 `json:"total_cost"`
+}
+
+// consumptionCostBySoldSKU sums the consumption's lines per sold SKU (finished_item_sku, or the
+// ingredient itself for a direct sale) in one grouped query.
+func (s *Service) consumptionCostBySoldSKU(ctx context.Context, tx *ent.Tx, tenantID, consumptionID uuid.UUID) ([]SoldSKUCost, error) {
+	var rows []struct {
+		FinishedItemSku string  `json:"finished_item_sku"`
+		IngredientSku   string  `json:"ingredient_sku"`
+		Sum             float64 `json:"sum"`
+	}
+	err := tx.ConsumptionLine.Query().
+		Where(entconsumptionline.TenantID(tenantID), entconsumptionline.ConsumptionID(consumptionID)).
+		GroupBy(entconsumptionline.FieldFinishedItemSku, entconsumptionline.FieldIngredientSku).
+		Aggregate(ent.Sum(entconsumptionline.FieldTotalCost)).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+	bySKU := map[string]float64{}
+	order := make([]string, 0, len(rows))
+	for _, r := range rows {
+		sku := r.FinishedItemSku
+		if sku == "" {
+			sku = r.IngredientSku
+		}
+		if _, seen := bySKU[sku]; !seen {
+			order = append(order, sku)
+		}
+		bySKU[sku] += r.Sum
+	}
+	out := make([]SoldSKUCost, 0, len(order))
+	for _, sku := range order {
+		out = append(out, SoldSKUCost{SKU: sku, TotalCost: round4(bySKU[sku])})
+	}
+	return out, nil
 }
 
 // writeOutboxEvent stores a domain event in the outbox within an Ent transaction.
