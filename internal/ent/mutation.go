@@ -30497,6 +30497,7 @@ type GoodsReceiptLineMutation struct {
 	unit_cost              *float64
 	addunit_cost           *float64
 	rejection_reason       *string
+	close_remaining        *bool
 	serials                *[]string
 	appendserials          []string
 	lot_number             *string
@@ -31047,6 +31048,42 @@ func (m *GoodsReceiptLineMutation) ResetRejectionReason() {
 	delete(m.clearedFields, goodsreceiptline.FieldRejectionReason)
 }
 
+// SetCloseRemaining sets the "close_remaining" field.
+func (m *GoodsReceiptLineMutation) SetCloseRemaining(b bool) {
+	m.close_remaining = &b
+}
+
+// CloseRemaining returns the value of the "close_remaining" field in the mutation.
+func (m *GoodsReceiptLineMutation) CloseRemaining() (r bool, exists bool) {
+	v := m.close_remaining
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCloseRemaining returns the old "close_remaining" field's value of the GoodsReceiptLine entity.
+// If the GoodsReceiptLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GoodsReceiptLineMutation) OldCloseRemaining(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCloseRemaining is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCloseRemaining requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCloseRemaining: %w", err)
+	}
+	return oldValue.CloseRemaining, nil
+}
+
+// ResetCloseRemaining resets all changes to the "close_remaining" field.
+func (m *GoodsReceiptLineMutation) ResetCloseRemaining() {
+	m.close_remaining = nil
+}
+
 // SetSerials sets the "serials" field.
 func (m *GoodsReceiptLineMutation) SetSerials(s []string) {
 	m.serials = &s
@@ -31426,7 +31463,7 @@ func (m *GoodsReceiptLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GoodsReceiptLineMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.tenant_id != nil {
 		fields = append(fields, goodsreceiptline.FieldTenantID)
 	}
@@ -31453,6 +31490,9 @@ func (m *GoodsReceiptLineMutation) Fields() []string {
 	}
 	if m.rejection_reason != nil {
 		fields = append(fields, goodsreceiptline.FieldRejectionReason)
+	}
+	if m.close_remaining != nil {
+		fields = append(fields, goodsreceiptline.FieldCloseRemaining)
 	}
 	if m.serials != nil {
 		fields = append(fields, goodsreceiptline.FieldSerials)
@@ -31498,6 +31538,8 @@ func (m *GoodsReceiptLineMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitCost()
 	case goodsreceiptline.FieldRejectionReason:
 		return m.RejectionReason()
+	case goodsreceiptline.FieldCloseRemaining:
+		return m.CloseRemaining()
 	case goodsreceiptline.FieldSerials:
 		return m.Serials()
 	case goodsreceiptline.FieldLotNumber:
@@ -31537,6 +31579,8 @@ func (m *GoodsReceiptLineMutation) OldField(ctx context.Context, name string) (e
 		return m.OldUnitCost(ctx)
 	case goodsreceiptline.FieldRejectionReason:
 		return m.OldRejectionReason(ctx)
+	case goodsreceiptline.FieldCloseRemaining:
+		return m.OldCloseRemaining(ctx)
 	case goodsreceiptline.FieldSerials:
 		return m.OldSerials(ctx)
 	case goodsreceiptline.FieldLotNumber:
@@ -31620,6 +31664,13 @@ func (m *GoodsReceiptLineMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRejectionReason(v)
+		return nil
+	case goodsreceiptline.FieldCloseRemaining:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCloseRemaining(v)
 		return nil
 	case goodsreceiptline.FieldSerials:
 		v, ok := value.([]string)
@@ -31846,6 +31897,9 @@ func (m *GoodsReceiptLineMutation) ResetField(name string) error {
 		return nil
 	case goodsreceiptline.FieldRejectionReason:
 		m.ResetRejectionReason()
+		return nil
+	case goodsreceiptline.FieldCloseRemaining:
+		m.ResetCloseRemaining()
 		return nil
 	case goodsreceiptline.FieldSerials:
 		m.ResetSerials()
@@ -64040,6 +64094,8 @@ type PurchaseOrderLineMutation struct {
 	addquantity_ordered   *float64
 	quantity_received     *float64
 	addquantity_received  *float64
+	quantity_closed       *float64
+	addquantity_closed    *float64
 	unit_price            *float64
 	addunit_price         *float64
 	total_price           *float64
@@ -64445,6 +64501,62 @@ func (m *PurchaseOrderLineMutation) AddedQuantityReceived() (r float64, exists b
 func (m *PurchaseOrderLineMutation) ResetQuantityReceived() {
 	m.quantity_received = nil
 	m.addquantity_received = nil
+}
+
+// SetQuantityClosed sets the "quantity_closed" field.
+func (m *PurchaseOrderLineMutation) SetQuantityClosed(f float64) {
+	m.quantity_closed = &f
+	m.addquantity_closed = nil
+}
+
+// QuantityClosed returns the value of the "quantity_closed" field in the mutation.
+func (m *PurchaseOrderLineMutation) QuantityClosed() (r float64, exists bool) {
+	v := m.quantity_closed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuantityClosed returns the old "quantity_closed" field's value of the PurchaseOrderLine entity.
+// If the PurchaseOrderLine object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PurchaseOrderLineMutation) OldQuantityClosed(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuantityClosed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuantityClosed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuantityClosed: %w", err)
+	}
+	return oldValue.QuantityClosed, nil
+}
+
+// AddQuantityClosed adds f to the "quantity_closed" field.
+func (m *PurchaseOrderLineMutation) AddQuantityClosed(f float64) {
+	if m.addquantity_closed != nil {
+		*m.addquantity_closed += f
+	} else {
+		m.addquantity_closed = &f
+	}
+}
+
+// AddedQuantityClosed returns the value that was added to the "quantity_closed" field in this mutation.
+func (m *PurchaseOrderLineMutation) AddedQuantityClosed() (r float64, exists bool) {
+	v := m.addquantity_closed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuantityClosed resets all changes to the "quantity_closed" field.
+func (m *PurchaseOrderLineMutation) ResetQuantityClosed() {
+	m.quantity_closed = nil
+	m.addquantity_closed = nil
 }
 
 // SetUnitPrice sets the "unit_price" field.
@@ -64949,7 +65061,7 @@ func (m *PurchaseOrderLineMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PurchaseOrderLineMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.purchase_order != nil {
 		fields = append(fields, purchaseorderline.FieldPoID)
 	}
@@ -64967,6 +65079,9 @@ func (m *PurchaseOrderLineMutation) Fields() []string {
 	}
 	if m.quantity_received != nil {
 		fields = append(fields, purchaseorderline.FieldQuantityReceived)
+	}
+	if m.quantity_closed != nil {
+		fields = append(fields, purchaseorderline.FieldQuantityClosed)
 	}
 	if m.unit_price != nil {
 		fields = append(fields, purchaseorderline.FieldUnitPrice)
@@ -65012,6 +65127,8 @@ func (m *PurchaseOrderLineMutation) Field(name string) (ent.Value, bool) {
 		return m.QuantityOrdered()
 	case purchaseorderline.FieldQuantityReceived:
 		return m.QuantityReceived()
+	case purchaseorderline.FieldQuantityClosed:
+		return m.QuantityClosed()
 	case purchaseorderline.FieldUnitPrice:
 		return m.UnitPrice()
 	case purchaseorderline.FieldTotalPrice:
@@ -65049,6 +65166,8 @@ func (m *PurchaseOrderLineMutation) OldField(ctx context.Context, name string) (
 		return m.OldQuantityOrdered(ctx)
 	case purchaseorderline.FieldQuantityReceived:
 		return m.OldQuantityReceived(ctx)
+	case purchaseorderline.FieldQuantityClosed:
+		return m.OldQuantityClosed(ctx)
 	case purchaseorderline.FieldUnitPrice:
 		return m.OldUnitPrice(ctx)
 	case purchaseorderline.FieldTotalPrice:
@@ -65115,6 +65234,13 @@ func (m *PurchaseOrderLineMutation) SetField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantityReceived(v)
+		return nil
+	case purchaseorderline.FieldQuantityClosed:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuantityClosed(v)
 		return nil
 	case purchaseorderline.FieldUnitPrice:
 		v, ok := value.(float64)
@@ -65186,6 +65312,9 @@ func (m *PurchaseOrderLineMutation) AddedFields() []string {
 	if m.addquantity_received != nil {
 		fields = append(fields, purchaseorderline.FieldQuantityReceived)
 	}
+	if m.addquantity_closed != nil {
+		fields = append(fields, purchaseorderline.FieldQuantityClosed)
+	}
 	if m.addunit_price != nil {
 		fields = append(fields, purchaseorderline.FieldUnitPrice)
 	}
@@ -65213,6 +65342,8 @@ func (m *PurchaseOrderLineMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedQuantityOrdered()
 	case purchaseorderline.FieldQuantityReceived:
 		return m.AddedQuantityReceived()
+	case purchaseorderline.FieldQuantityClosed:
+		return m.AddedQuantityClosed()
 	case purchaseorderline.FieldUnitPrice:
 		return m.AddedUnitPrice()
 	case purchaseorderline.FieldTotalPrice:
@@ -65245,6 +65376,13 @@ func (m *PurchaseOrderLineMutation) AddField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantityReceived(v)
+		return nil
+	case purchaseorderline.FieldQuantityClosed:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuantityClosed(v)
 		return nil
 	case purchaseorderline.FieldUnitPrice:
 		v, ok := value.(float64)
@@ -65358,6 +65496,9 @@ func (m *PurchaseOrderLineMutation) ResetField(name string) error {
 		return nil
 	case purchaseorderline.FieldQuantityReceived:
 		m.ResetQuantityReceived()
+		return nil
+	case purchaseorderline.FieldQuantityClosed:
+		m.ResetQuantityClosed()
 		return nil
 	case purchaseorderline.FieldUnitPrice:
 		m.ResetUnitPrice()

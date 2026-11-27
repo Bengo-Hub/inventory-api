@@ -30,14 +30,14 @@ import (
 // ─── Purchase Orders ──────────────────────────────────────────────────────────
 
 type purchaseOrderDTO struct {
-	ID                        uuid.UUID  `json:"id"`
-	PONumber                  string     `json:"po_number"`
-	SupplierName              string     `json:"supplier_name"`
-	SupplierID                uuid.UUID  `json:"supplier_id"`
-	WarehouseName             string     `json:"warehouse_name"`
-	WarehouseID               uuid.UUID  `json:"warehouse_id"`
-	Status                    string     `json:"status"`
-	TotalAmount               float64    `json:"total_amount"`
+	ID            uuid.UUID `json:"id"`
+	PONumber      string    `json:"po_number"`
+	SupplierName  string    `json:"supplier_name"`
+	SupplierID    uuid.UUID `json:"supplier_id"`
+	WarehouseName string    `json:"warehouse_name"`
+	WarehouseID   uuid.UUID `json:"warehouse_id"`
+	Status        string    `json:"status"`
+	TotalAmount   float64   `json:"total_amount"`
 	// OrderDate is the business date the order was raised — overrides CreatedAt for
 	// display/reporting when set (nil means "use created_at", the pre-feature default).
 	OrderDate                 *time.Time `json:"order_date"`
@@ -261,16 +261,19 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 	}
 
 	type lineDTO struct {
-		ID          uuid.UUID  `json:"id"`
-		ItemID      uuid.UUID  `json:"item_id"`
-		ItemName    string     `json:"item_name"`
-		ItemSKU     string     `json:"item_sku"`
-		Quantity    float64    `json:"quantity"`
-		ReceivedQty float64    `json:"received_qty"`
-		UnitCost    float64    `json:"unit_cost"`
-		TotalCost   float64    `json:"total_cost"`
-		UnitID      *uuid.UUID `json:"unit_id,omitempty"`
-		Unit        string     `json:"unit,omitempty"`
+		ID          uuid.UUID `json:"id"`
+		ItemID      uuid.UUID `json:"item_id"`
+		ItemName    string    `json:"item_name"`
+		ItemSKU     string    `json:"item_sku"`
+		Quantity    float64   `json:"quantity"`
+		ReceivedQty float64   `json:"received_qty"`
+		// ClosedQty is the part of the line settled as never coming (closed on a receipt or by
+		// closing the order short); outstanding = quantity - received_qty - closed_qty.
+		ClosedQty float64    `json:"closed_qty,omitempty"`
+		UnitCost  float64    `json:"unit_cost"`
+		TotalCost float64    `json:"total_cost"`
+		UnitID    *uuid.UUID `json:"unit_id,omitempty"`
+		Unit      string     `json:"unit,omitempty"`
 		// Selling-price adjustment decided at order time — carried through and applied when this
 		// line is actually received (see postGoodsReceiptCore). CurrentSellingPrice is context
 		// only (the item's price as of now), so the PO form can show "currently X" next to the
@@ -297,6 +300,7 @@ func (h *InventoryExtrasHandler) GetPurchaseOrder(w http.ResponseWriter, r *http
 			ItemSKU:             itemSKUs[l.ItemID],
 			Quantity:            l.QuantityOrdered,
 			ReceivedQty:         l.QuantityReceived,
+			ClosedQty:           l.QuantityClosed,
 			UnitCost:            l.UnitPrice,
 			TotalCost:           l.TotalPrice,
 			UnitID:              l.UnitID,
@@ -392,9 +396,9 @@ func (h *InventoryExtrasHandler) resolvePOLineTaxes(ctx context.Context, tenantI
 }
 
 type createPOInput struct {
-	SupplierID                uuid.UUID           `json:"supplier_id"`
-	WarehouseID               uuid.UUID           `json:"warehouse_id"`
-	ExpectedDate              *string             `json:"expected_date"` // accepts "YYYY-MM-DD" or RFC3339
+	SupplierID   uuid.UUID `json:"supplier_id"`
+	WarehouseID  uuid.UUID `json:"warehouse_id"`
+	ExpectedDate *string   `json:"expected_date"` // accepts "YYYY-MM-DD" or RFC3339
 	// OrderDate lets staff record the order under a business date other than today — e.g. a PO
 	// placed with the supplier by phone days ago, only entered into the system now. Accepts
 	// "YYYY-MM-DD" or RFC3339, same as ExpectedDate/PurchaseReturn's DateReturned. Blank/omitted
@@ -981,7 +985,7 @@ var errNothingToReceive = errors.New("nothing left to receive")
 func (h *InventoryExtrasHandler) createReceiveAllReceipt(ctx context.Context, tenantID uuid.UUID, po *ent.PurchaseOrder) (*ent.GoodsReceipt, error) {
 	var remaining []*ent.PurchaseOrderLine
 	for _, line := range po.Edges.Lines {
-		if line.QuantityOrdered > line.QuantityReceived {
+		if lineOutstanding(line) > 0 {
 			remaining = append(remaining, line)
 		}
 	}
@@ -1004,7 +1008,7 @@ func (h *InventoryExtrasHandler) createReceiveAllReceipt(ctx context.Context, te
 		return nil, err
 	}
 	for _, line := range remaining {
-		qty := line.QuantityOrdered - line.QuantityReceived
+		qty := lineOutstanding(line)
 		lineID := line.ID
 		lc := h.orm.GoodsReceiptLine.Create().
 			SetTenantID(tenantID).SetGoodsReceiptID(g.ID).SetItemID(line.ItemID).

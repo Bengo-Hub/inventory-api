@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -25,8 +26,90 @@ import (
 // actually came, writes the shortfall into its notes and the audit log, and tells treasury, which
 // releases the budget still held for the goods that never came instead of counting it as spent.
 
+// Closing single lines on a goods receipt (owner, 26 November 2026): an order of several items
+// where one item never arrives at all (0 of 100) used to leave the order partially received
+// after the receipt, one more open order in the list for every such delivery. Each receipt line
+// can now say the rest will not come (close_remaining); posting closes what is still outstanding
+// on that PO line (quantity_closed), and the order settles as received once every line is
+// received or closed. Closing the whole order short below records quantity_closed the same way.
+
+// lineOutstanding is what is still expected on a PO line: ordered less received and closed.
+func lineOutstanding(l *ent.PurchaseOrderLine) float64 {
+	rest := roundDecimal(l.QuantityOrdered - l.QuantityReceived - l.QuantityClosed)
+	if rest < 0 {
+		return 0
+	}
+	return rest
+}
+
+// validateReceiptClosures checks the close_remaining lines of a new receipt against the order.
+// It returns an error code and message, or "" when the receipt may be recorded.
+func validateReceiptClosures(lines []grnLinePayload, poLines []*ent.PurchaseOrderLine) (string, string) {
+	byID := make(map[uuid.UUID]*ent.PurchaseOrderLine, len(poLines))
+	anyBefore := false
+	for _, pl := range poLines {
+		byID[pl.ID] = pl
+		if pl.QuantityReceived > 0 {
+			anyBefore = true
+		}
+	}
+	closes, arrivedNow := false, false
+	for _, l := range lines {
+		if l.QuantityReceived > 0 || l.QuantityAccepted > 0 || l.QuantityRejected > 0 {
+			arrivedNow = true
+		}
+		if !l.CloseRemaining {
+			continue
+		}
+		closes = true
+		if l.PurchaseOrderLineID == nil {
+			return "CLOSE_NEEDS_ORDER_LINE", "A line can only be closed against its purchase order line"
+		}
+		pl, ok := byID[*l.PurchaseOrderLineID]
+		if !ok || pl.ItemID != l.ItemID {
+			return "CLOSE_NEEDS_ORDER_LINE", "A closed line does not belong to this purchase order"
+		}
+	}
+	if closes && !arrivedNow && !anyBefore {
+		return "NOTHING_RECEIVED", "Nothing on this order has arrived. Cancel the order instead of closing its lines."
+	}
+	return "", ""
+}
+
+// shortLinesPayload is the not_delivered list carried by the audit log and purchase_order.received.
+func shortLinesPayload(short []poShortLine, names map[uuid.UUID]string) []map[string]any {
+	out := make([]map[string]any, 0, len(short))
+	for _, s := range short {
+		m := map[string]any{"item_id": s.ItemID, "ordered": s.Ordered, "received": s.Received, "missing": s.Missing}
+		if n := names[s.ItemID]; n != "" {
+			m["name"] = n
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+// itemNamesByID resolves the item names of short lines, best effort.
+func (h *InventoryExtrasHandler) itemNamesByID(ctx context.Context, short []poShortLine) map[uuid.UUID]string {
+	names := map[uuid.UUID]string{}
+	if len(short) == 0 {
+		return names
+	}
+	ids := make([]uuid.UUID, 0, len(short))
+	for _, s := range short {
+		ids = append(ids, s.ItemID)
+	}
+	if items, err := h.orm.Item.Query().Where(entitem.IDIn(ids...)).Select(entitem.FieldID, entitem.FieldName).All(ctx); err == nil {
+		for _, it := range items {
+			names[it.ID] = it.Name
+		}
+	}
+	return names
+}
+
 // poShortLine is one order line that was not delivered in full.
 type poShortLine struct {
+	LineID    uuid.UUID
 	ItemID    uuid.UUID
 	Ordered   float64
 	Received  float64
@@ -43,7 +126,7 @@ func poShortfall(lines []*ent.PurchaseOrderLine) (short []poShortLine, anyReceiv
 		}
 		if l.QuantityReceived < l.QuantityOrdered {
 			short = append(short, poShortLine{
-				ItemID: l.ItemID, Ordered: l.QuantityOrdered, Received: l.QuantityReceived,
+				LineID: l.ID, ItemID: l.ItemID, Ordered: l.QuantityOrdered, Received: l.QuantityReceived,
 				Missing: roundDecimal(l.QuantityOrdered - l.QuantityReceived), UnitPrice: l.UnitPrice,
 			})
 		}
@@ -179,6 +262,16 @@ func (h *InventoryExtrasHandler) CloseShortPurchaseOrder(w http.ResponseWriter, 
 	if n == 0 {
 		writeError(w, http.StatusConflict, "INVALID_STATUS", "This order changed while it was being closed. Refresh and try again.")
 		return
+	}
+	// Record the never-delivered part on each line, as closing a line on a receipt does.
+	for _, l := range lines {
+		if rest := lineOutstanding(l); rest > 0 {
+			if _, err := tx.PurchaseOrderLine.UpdateOneID(l.ID).AddQuantityClosed(rest).Save(ctx); err != nil {
+				h.log.Error("close PO short: record closed quantity failed", zap.Error(err))
+				writeError(w, http.StatusInternalServerError, "CLOSE_FAILED", "Failed to close the order")
+				return
+			}
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		writeError(w, http.StatusInternalServerError, "CLOSE_FAILED", "Failed to close the order")

@@ -26,6 +26,7 @@ func (GoodsReceiptLine) Fields() []ent.Field {
 		field.Float("quantity_rejected").Default(0),
 		field.Float("unit_cost").Default(0),
 		field.Text("rejection_reason").Optional(),
+		field.Bool("close_remaining").Default(false).Comment("The rest of the order line will not be delivered: on post, what is still outstanding after this receipt is closed on the PO line (quantity_closed)"),
 		field.JSON("serials", []string{}).Optional().Comment("Serial numbers received on this line (serial-tracked items): one per unit accepted"),
 		field.String("lot_number").Optional().Comment("Batch/lot number for lot-tracked items received on this line"),
 		field.Time("expiry_date").Optional().Nillable().Comment("Lot expiry; seeded from item.shelf_life_days when blank for perishables"),

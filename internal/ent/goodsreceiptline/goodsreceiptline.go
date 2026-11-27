@@ -33,6 +33,8 @@ const (
 	FieldUnitCost = "unit_cost"
 	// FieldRejectionReason holds the string denoting the rejection_reason field in the database.
 	FieldRejectionReason = "rejection_reason"
+	// FieldCloseRemaining holds the string denoting the close_remaining field in the database.
+	FieldCloseRemaining = "close_remaining"
 	// FieldSerials holds the string denoting the serials field in the database.
 	FieldSerials = "serials"
 	// FieldLotNumber holds the string denoting the lot_number field in the database.
@@ -70,6 +72,7 @@ var Columns = []string{
 	FieldQuantityRejected,
 	FieldUnitCost,
 	FieldRejectionReason,
+	FieldCloseRemaining,
 	FieldSerials,
 	FieldLotNumber,
 	FieldExpiryDate,
@@ -97,6 +100,8 @@ var (
 	DefaultQuantityRejected float64
 	// DefaultUnitCost holds the default value on creation for the "unit_cost" field.
 	DefaultUnitCost float64
+	// DefaultCloseRemaining holds the default value on creation for the "close_remaining" field.
+	DefaultCloseRemaining bool
 	// DefaultPriceScope holds the default value on creation for the "price_scope" field.
 	DefaultPriceScope string
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -156,6 +161,11 @@ func ByUnitCost(opts ...sql.OrderTermOption) OrderOption {
 // ByRejectionReason orders the results by the rejection_reason field.
 func ByRejectionReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRejectionReason, opts...).ToFunc()
+}
+
+// ByCloseRemaining orders the results by the close_remaining field.
+func ByCloseRemaining(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCloseRemaining, opts...).ToFunc()
 }
 
 // ByLotNumber orders the results by the lot_number field.

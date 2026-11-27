@@ -35,6 +35,9 @@ func (PurchaseOrderLine) Fields() []ent.Field {
 			Default(0),
 		field.Float("quantity_received").
 			Default(0),
+		field.Float("quantity_closed").
+			Default(0).
+			Comment("Ordered quantity settled as never coming (supplier short): closed on a goods receipt line or by closing the order short. The line is settled when received + closed reaches ordered."),
 		field.Float("unit_price").
 			Default(0),
 		field.Float("total_price").

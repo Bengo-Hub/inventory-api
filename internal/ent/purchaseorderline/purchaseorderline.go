@@ -25,6 +25,8 @@ const (
 	FieldQuantityOrdered = "quantity_ordered"
 	// FieldQuantityReceived holds the string denoting the quantity_received field in the database.
 	FieldQuantityReceived = "quantity_received"
+	// FieldQuantityClosed holds the string denoting the quantity_closed field in the database.
+	FieldQuantityClosed = "quantity_closed"
 	// FieldUnitPrice holds the string denoting the unit_price field in the database.
 	FieldUnitPrice = "unit_price"
 	// FieldTotalPrice holds the string denoting the total_price field in the database.
@@ -63,6 +65,7 @@ var Columns = []string{
 	FieldUnitID,
 	FieldQuantityOrdered,
 	FieldQuantityReceived,
+	FieldQuantityClosed,
 	FieldUnitPrice,
 	FieldTotalPrice,
 	FieldRebatePercent,
@@ -88,6 +91,8 @@ var (
 	DefaultQuantityOrdered float64
 	// DefaultQuantityReceived holds the default value on creation for the "quantity_received" field.
 	DefaultQuantityReceived float64
+	// DefaultQuantityClosed holds the default value on creation for the "quantity_closed" field.
+	DefaultQuantityClosed float64
 	// DefaultUnitPrice holds the default value on creation for the "unit_price" field.
 	DefaultUnitPrice float64
 	// DefaultTotalPrice holds the default value on creation for the "total_price" field.
@@ -142,6 +147,11 @@ func ByQuantityOrdered(opts ...sql.OrderTermOption) OrderOption {
 // ByQuantityReceived orders the results by the quantity_received field.
 func ByQuantityReceived(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldQuantityReceived, opts...).ToFunc()
+}
+
+// ByQuantityClosed orders the results by the quantity_closed field.
+func ByQuantityClosed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuantityClosed, opts...).ToFunc()
 }
 
 // ByUnitPrice orders the results by the unit_price field.

@@ -1081,6 +1081,7 @@ var (
 		{Name: "quantity_rejected", Type: field.TypeFloat64, Default: 0},
 		{Name: "unit_cost", Type: field.TypeFloat64, Default: 0},
 		{Name: "rejection_reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "close_remaining", Type: field.TypeBool, Default: false},
 		{Name: "serials", Type: field.TypeJSON, Nullable: true},
 		{Name: "lot_number", Type: field.TypeString, Nullable: true},
 		{Name: "expiry_date", Type: field.TypeTime, Nullable: true},
@@ -1097,7 +1098,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "goods_receipt_lines_goods_receipts_lines",
-				Columns:    []*schema.Column{GoodsReceiptLinesColumns[15]},
+				Columns:    []*schema.Column{GoodsReceiptLinesColumns[16]},
 				RefColumns: []*schema.Column{GoodsReceiptsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1106,7 +1107,7 @@ var (
 			{
 				Name:    "goodsreceiptline_tenant_id_goods_receipt_id",
 				Unique:  false,
-				Columns: []*schema.Column{GoodsReceiptLinesColumns[1], GoodsReceiptLinesColumns[15]},
+				Columns: []*schema.Column{GoodsReceiptLinesColumns[1], GoodsReceiptLinesColumns[16]},
 			},
 			{
 				Name:    "goodsreceiptline_item_id",
@@ -2321,6 +2322,7 @@ var (
 		{Name: "unit_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "quantity_ordered", Type: field.TypeFloat64, Default: 0},
 		{Name: "quantity_received", Type: field.TypeFloat64, Default: 0},
+		{Name: "quantity_closed", Type: field.TypeFloat64, Default: 0},
 		{Name: "unit_price", Type: field.TypeFloat64, Default: 0},
 		{Name: "total_price", Type: field.TypeFloat64, Default: 0},
 		{Name: "rebate_percent", Type: field.TypeFloat64, Default: 0},
@@ -2339,7 +2341,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "purchase_order_lines_purchase_orders_lines",
-				Columns:    []*schema.Column{PurchaseOrderLinesColumns[14]},
+				Columns:    []*schema.Column{PurchaseOrderLinesColumns[15]},
 				RefColumns: []*schema.Column{PurchaseOrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2348,7 +2350,7 @@ var (
 			{
 				Name:    "purchaseorderline_po_id_item_id",
 				Unique:  true,
-				Columns: []*schema.Column{PurchaseOrderLinesColumns[14], PurchaseOrderLinesColumns[1]},
+				Columns: []*schema.Column{PurchaseOrderLinesColumns[15], PurchaseOrderLinesColumns[1]},
 			},
 		},
 	}

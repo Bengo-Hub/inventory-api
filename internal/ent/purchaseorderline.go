@@ -30,6 +30,8 @@ type PurchaseOrderLine struct {
 	QuantityOrdered float64 `json:"quantity_ordered,omitempty"`
 	// QuantityReceived holds the value of the "quantity_received" field.
 	QuantityReceived float64 `json:"quantity_received,omitempty"`
+	// Ordered quantity settled as never coming (supplier short): closed on a goods receipt line or by closing the order short. The line is settled when received + closed reaches ordered.
+	QuantityClosed float64 `json:"quantity_closed,omitempty"`
 	// UnitPrice holds the value of the "unit_price" field.
 	UnitPrice float64 `json:"unit_price,omitempty"`
 	// quantity_ordered * unit_price
@@ -81,7 +83,7 @@ func (*PurchaseOrderLine) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case purchaseorderline.FieldPriceIncludesTax:
 			values[i] = new(sql.NullBool)
-		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent, purchaseorderline.FieldNewSellingPrice, purchaseorderline.FieldTaxRate:
+		case purchaseorderline.FieldQuantityOrdered, purchaseorderline.FieldQuantityReceived, purchaseorderline.FieldQuantityClosed, purchaseorderline.FieldUnitPrice, purchaseorderline.FieldTotalPrice, purchaseorderline.FieldRebatePercent, purchaseorderline.FieldNewSellingPrice, purchaseorderline.FieldTaxRate:
 			values[i] = new(sql.NullFloat64)
 		case purchaseorderline.FieldPriceScope, purchaseorderline.FieldTaxCode:
 			values[i] = new(sql.NullString)
@@ -145,6 +147,12 @@ func (_m *PurchaseOrderLine) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field quantity_received", values[i])
 			} else if value.Valid {
 				_m.QuantityReceived = value.Float64
+			}
+		case purchaseorderline.FieldQuantityClosed:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field quantity_closed", values[i])
+			} else if value.Valid {
+				_m.QuantityClosed = value.Float64
 			}
 		case purchaseorderline.FieldUnitPrice:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -257,6 +265,9 @@ func (_m *PurchaseOrderLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("quantity_received=")
 	builder.WriteString(fmt.Sprintf("%v", _m.QuantityReceived))
+	builder.WriteString(", ")
+	builder.WriteString("quantity_closed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.QuantityClosed))
 	builder.WriteString(", ")
 	builder.WriteString("unit_price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UnitPrice))

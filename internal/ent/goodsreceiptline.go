@@ -38,6 +38,8 @@ type GoodsReceiptLine struct {
 	UnitCost float64 `json:"unit_cost,omitempty"`
 	// RejectionReason holds the value of the "rejection_reason" field.
 	RejectionReason string `json:"rejection_reason,omitempty"`
+	// The rest of the order line will not be delivered: on post, what is still outstanding after this receipt is closed on the PO line (quantity_closed)
+	CloseRemaining bool `json:"close_remaining,omitempty"`
 	// Serial numbers received on this line (serial-tracked items): one per unit accepted
 	Serials []string `json:"serials,omitempty"`
 	// Batch/lot number for lot-tracked items received on this line
@@ -85,6 +87,8 @@ func (*GoodsReceiptLine) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case goodsreceiptline.FieldSerials:
 			values[i] = new([]byte)
+		case goodsreceiptline.FieldCloseRemaining:
+			values[i] = new(sql.NullBool)
 		case goodsreceiptline.FieldQuantityReceived, goodsreceiptline.FieldQuantityAccepted, goodsreceiptline.FieldQuantityRejected, goodsreceiptline.FieldUnitCost, goodsreceiptline.FieldNewSellingPrice:
 			values[i] = new(sql.NullFloat64)
 		case goodsreceiptline.FieldRejectionReason, goodsreceiptline.FieldLotNumber, goodsreceiptline.FieldPriceScope:
@@ -168,6 +172,12 @@ func (_m *GoodsReceiptLine) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field rejection_reason", values[i])
 			} else if value.Valid {
 				_m.RejectionReason = value.String
+			}
+		case goodsreceiptline.FieldCloseRemaining:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field close_remaining", values[i])
+			} else if value.Valid {
+				_m.CloseRemaining = value.Bool
 			}
 		case goodsreceiptline.FieldSerials:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -278,6 +288,9 @@ func (_m *GoodsReceiptLine) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("rejection_reason=")
 	builder.WriteString(_m.RejectionReason)
+	builder.WriteString(", ")
+	builder.WriteString("close_remaining=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CloseRemaining))
 	builder.WriteString(", ")
 	builder.WriteString("serials=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Serials))

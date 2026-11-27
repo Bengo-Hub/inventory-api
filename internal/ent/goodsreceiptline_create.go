@@ -127,6 +127,20 @@ func (_c *GoodsReceiptLineCreate) SetNillableRejectionReason(v *string) *GoodsRe
 	return _c
 }
 
+// SetCloseRemaining sets the "close_remaining" field.
+func (_c *GoodsReceiptLineCreate) SetCloseRemaining(v bool) *GoodsReceiptLineCreate {
+	_c.mutation.SetCloseRemaining(v)
+	return _c
+}
+
+// SetNillableCloseRemaining sets the "close_remaining" field if the given value is not nil.
+func (_c *GoodsReceiptLineCreate) SetNillableCloseRemaining(v *bool) *GoodsReceiptLineCreate {
+	if v != nil {
+		_c.SetCloseRemaining(*v)
+	}
+	return _c
+}
+
 // SetSerials sets the "serials" field.
 func (_c *GoodsReceiptLineCreate) SetSerials(v []string) *GoodsReceiptLineCreate {
 	_c.mutation.SetSerials(v)
@@ -273,6 +287,10 @@ func (_c *GoodsReceiptLineCreate) defaults() {
 		v := goodsreceiptline.DefaultUnitCost
 		_c.mutation.SetUnitCost(v)
 	}
+	if _, ok := _c.mutation.CloseRemaining(); !ok {
+		v := goodsreceiptline.DefaultCloseRemaining
+		_c.mutation.SetCloseRemaining(v)
+	}
 	if _, ok := _c.mutation.PriceScope(); !ok {
 		v := goodsreceiptline.DefaultPriceScope
 		_c.mutation.SetPriceScope(v)
@@ -309,6 +327,9 @@ func (_c *GoodsReceiptLineCreate) check() error {
 	}
 	if _, ok := _c.mutation.UnitCost(); !ok {
 		return &ValidationError{Name: "unit_cost", err: errors.New(`ent: missing required field "GoodsReceiptLine.unit_cost"`)}
+	}
+	if _, ok := _c.mutation.CloseRemaining(); !ok {
+		return &ValidationError{Name: "close_remaining", err: errors.New(`ent: missing required field "GoodsReceiptLine.close_remaining"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "GoodsReceiptLine.created_at"`)}
@@ -383,6 +404,10 @@ func (_c *GoodsReceiptLineCreate) createSpec() (*GoodsReceiptLine, *sqlgraph.Cre
 	if value, ok := _c.mutation.RejectionReason(); ok {
 		_spec.SetField(goodsreceiptline.FieldRejectionReason, field.TypeString, value)
 		_node.RejectionReason = value
+	}
+	if value, ok := _c.mutation.CloseRemaining(); ok {
+		_spec.SetField(goodsreceiptline.FieldCloseRemaining, field.TypeBool, value)
+		_node.CloseRemaining = value
 	}
 	if value, ok := _c.mutation.Serials(); ok {
 		_spec.SetField(goodsreceiptline.FieldSerials, field.TypeJSON, value)
@@ -618,6 +643,18 @@ func (u *GoodsReceiptLineUpsert) UpdateRejectionReason() *GoodsReceiptLineUpsert
 // ClearRejectionReason clears the value of the "rejection_reason" field.
 func (u *GoodsReceiptLineUpsert) ClearRejectionReason() *GoodsReceiptLineUpsert {
 	u.SetNull(goodsreceiptline.FieldRejectionReason)
+	return u
+}
+
+// SetCloseRemaining sets the "close_remaining" field.
+func (u *GoodsReceiptLineUpsert) SetCloseRemaining(v bool) *GoodsReceiptLineUpsert {
+	u.Set(goodsreceiptline.FieldCloseRemaining, v)
+	return u
+}
+
+// UpdateCloseRemaining sets the "close_remaining" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsert) UpdateCloseRemaining() *GoodsReceiptLineUpsert {
+	u.SetExcluded(goodsreceiptline.FieldCloseRemaining)
 	return u
 }
 
@@ -933,6 +970,20 @@ func (u *GoodsReceiptLineUpsertOne) UpdateRejectionReason() *GoodsReceiptLineUps
 func (u *GoodsReceiptLineUpsertOne) ClearRejectionReason() *GoodsReceiptLineUpsertOne {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearRejectionReason()
+	})
+}
+
+// SetCloseRemaining sets the "close_remaining" field.
+func (u *GoodsReceiptLineUpsertOne) SetCloseRemaining(v bool) *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetCloseRemaining(v)
+	})
+}
+
+// UpdateCloseRemaining sets the "close_remaining" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertOne) UpdateCloseRemaining() *GoodsReceiptLineUpsertOne {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateCloseRemaining()
 	})
 }
 
@@ -1431,6 +1482,20 @@ func (u *GoodsReceiptLineUpsertBulk) UpdateRejectionReason() *GoodsReceiptLineUp
 func (u *GoodsReceiptLineUpsertBulk) ClearRejectionReason() *GoodsReceiptLineUpsertBulk {
 	return u.Update(func(s *GoodsReceiptLineUpsert) {
 		s.ClearRejectionReason()
+	})
+}
+
+// SetCloseRemaining sets the "close_remaining" field.
+func (u *GoodsReceiptLineUpsertBulk) SetCloseRemaining(v bool) *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.SetCloseRemaining(v)
+	})
+}
+
+// UpdateCloseRemaining sets the "close_remaining" field to the value that was provided on create.
+func (u *GoodsReceiptLineUpsertBulk) UpdateCloseRemaining() *GoodsReceiptLineUpsertBulk {
+	return u.Update(func(s *GoodsReceiptLineUpsert) {
+		s.UpdateCloseRemaining()
 	})
 }
 

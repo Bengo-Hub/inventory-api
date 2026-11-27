@@ -139,6 +139,27 @@ func (_u *PurchaseOrderLineUpdate) AddQuantityReceived(v float64) *PurchaseOrder
 	return _u
 }
 
+// SetQuantityClosed sets the "quantity_closed" field.
+func (_u *PurchaseOrderLineUpdate) SetQuantityClosed(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.ResetQuantityClosed()
+	_u.mutation.SetQuantityClosed(v)
+	return _u
+}
+
+// SetNillableQuantityClosed sets the "quantity_closed" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdate) SetNillableQuantityClosed(v *float64) *PurchaseOrderLineUpdate {
+	if v != nil {
+		_u.SetQuantityClosed(*v)
+	}
+	return _u
+}
+
+// AddQuantityClosed adds value to the "quantity_closed" field.
+func (_u *PurchaseOrderLineUpdate) AddQuantityClosed(v float64) *PurchaseOrderLineUpdate {
+	_u.mutation.AddQuantityClosed(v)
+	return _u
+}
+
 // SetUnitPrice sets the "unit_price" field.
 func (_u *PurchaseOrderLineUpdate) SetUnitPrice(v float64) *PurchaseOrderLineUpdate {
 	_u.mutation.ResetUnitPrice()
@@ -400,6 +421,12 @@ func (_u *PurchaseOrderLineUpdate) sqlSave(ctx context.Context) (_node int, err 
 	if value, ok := _u.mutation.AddedQuantityReceived(); ok {
 		_spec.AddField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.QuantityClosed(); ok {
+		_spec.SetField(purchaseorderline.FieldQuantityClosed, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedQuantityClosed(); ok {
+		_spec.AddField(purchaseorderline.FieldQuantityClosed, field.TypeFloat64, value)
+	}
 	if value, ok := _u.mutation.UnitPrice(); ok {
 		_spec.SetField(purchaseorderline.FieldUnitPrice, field.TypeFloat64, value)
 	}
@@ -604,6 +631,27 @@ func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityReceived(v *float64) *P
 // AddQuantityReceived adds value to the "quantity_received" field.
 func (_u *PurchaseOrderLineUpdateOne) AddQuantityReceived(v float64) *PurchaseOrderLineUpdateOne {
 	_u.mutation.AddQuantityReceived(v)
+	return _u
+}
+
+// SetQuantityClosed sets the "quantity_closed" field.
+func (_u *PurchaseOrderLineUpdateOne) SetQuantityClosed(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.ResetQuantityClosed()
+	_u.mutation.SetQuantityClosed(v)
+	return _u
+}
+
+// SetNillableQuantityClosed sets the "quantity_closed" field if the given value is not nil.
+func (_u *PurchaseOrderLineUpdateOne) SetNillableQuantityClosed(v *float64) *PurchaseOrderLineUpdateOne {
+	if v != nil {
+		_u.SetQuantityClosed(*v)
+	}
+	return _u
+}
+
+// AddQuantityClosed adds value to the "quantity_closed" field.
+func (_u *PurchaseOrderLineUpdateOne) AddQuantityClosed(v float64) *PurchaseOrderLineUpdateOne {
+	_u.mutation.AddQuantityClosed(v)
 	return _u
 }
 
@@ -897,6 +945,12 @@ func (_u *PurchaseOrderLineUpdateOne) sqlSave(ctx context.Context) (_node *Purch
 	}
 	if value, ok := _u.mutation.AddedQuantityReceived(); ok {
 		_spec.AddField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.QuantityClosed(); ok {
+		_spec.SetField(purchaseorderline.FieldQuantityClosed, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedQuantityClosed(); ok {
+		_spec.AddField(purchaseorderline.FieldQuantityClosed, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.UnitPrice(); ok {
 		_spec.SetField(purchaseorderline.FieldUnitPrice, field.TypeFloat64, value)

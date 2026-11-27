@@ -197,6 +197,20 @@ func (_u *GoodsReceiptLineUpdate) ClearRejectionReason() *GoodsReceiptLineUpdate
 	return _u
 }
 
+// SetCloseRemaining sets the "close_remaining" field.
+func (_u *GoodsReceiptLineUpdate) SetCloseRemaining(v bool) *GoodsReceiptLineUpdate {
+	_u.mutation.SetCloseRemaining(v)
+	return _u
+}
+
+// SetNillableCloseRemaining sets the "close_remaining" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdate) SetNillableCloseRemaining(v *bool) *GoodsReceiptLineUpdate {
+	if v != nil {
+		_u.SetCloseRemaining(*v)
+	}
+	return _u
+}
+
 // SetSerials sets the "serials" field.
 func (_u *GoodsReceiptLineUpdate) SetSerials(v []string) *GoodsReceiptLineUpdate {
 	_u.mutation.SetSerials(v)
@@ -406,6 +420,9 @@ func (_u *GoodsReceiptLineUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.RejectionReasonCleared() {
 		_spec.ClearField(goodsreceiptline.FieldRejectionReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.CloseRemaining(); ok {
+		_spec.SetField(goodsreceiptline.FieldCloseRemaining, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Serials(); ok {
 		_spec.SetField(goodsreceiptline.FieldSerials, field.TypeJSON, value)
@@ -660,6 +677,20 @@ func (_u *GoodsReceiptLineUpdateOne) ClearRejectionReason() *GoodsReceiptLineUpd
 	return _u
 }
 
+// SetCloseRemaining sets the "close_remaining" field.
+func (_u *GoodsReceiptLineUpdateOne) SetCloseRemaining(v bool) *GoodsReceiptLineUpdateOne {
+	_u.mutation.SetCloseRemaining(v)
+	return _u
+}
+
+// SetNillableCloseRemaining sets the "close_remaining" field if the given value is not nil.
+func (_u *GoodsReceiptLineUpdateOne) SetNillableCloseRemaining(v *bool) *GoodsReceiptLineUpdateOne {
+	if v != nil {
+		_u.SetCloseRemaining(*v)
+	}
+	return _u
+}
+
 // SetSerials sets the "serials" field.
 func (_u *GoodsReceiptLineUpdateOne) SetSerials(v []string) *GoodsReceiptLineUpdateOne {
 	_u.mutation.SetSerials(v)
@@ -899,6 +930,9 @@ func (_u *GoodsReceiptLineUpdateOne) sqlSave(ctx context.Context) (_node *GoodsR
 	}
 	if _u.mutation.RejectionReasonCleared() {
 		_spec.ClearField(goodsreceiptline.FieldRejectionReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.CloseRemaining(); ok {
+		_spec.SetField(goodsreceiptline.FieldCloseRemaining, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Serials(); ok {
 		_spec.SetField(goodsreceiptline.FieldSerials, field.TypeJSON, value)

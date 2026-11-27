@@ -84,6 +84,11 @@ func QuantityReceived(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityReceived, v))
 }
 
+// QuantityClosed applies equality check predicate on the "quantity_closed" field. It's identical to QuantityClosedEQ.
+func QuantityClosed(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityClosed, v))
+}
+
 // UnitPrice applies equality check predicate on the "unit_price" field. It's identical to UnitPriceEQ.
 func UnitPrice(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldUnitPrice, v))
@@ -362,6 +367,46 @@ func QuantityReceivedLT(v float64) predicate.PurchaseOrderLine {
 // QuantityReceivedLTE applies the LTE predicate on the "quantity_received" field.
 func QuantityReceivedLTE(v float64) predicate.PurchaseOrderLine {
 	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldQuantityReceived, v))
+}
+
+// QuantityClosedEQ applies the EQ predicate on the "quantity_closed" field.
+func QuantityClosedEQ(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldEQ(FieldQuantityClosed, v))
+}
+
+// QuantityClosedNEQ applies the NEQ predicate on the "quantity_closed" field.
+func QuantityClosedNEQ(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNEQ(FieldQuantityClosed, v))
+}
+
+// QuantityClosedIn applies the In predicate on the "quantity_closed" field.
+func QuantityClosedIn(vs ...float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldIn(FieldQuantityClosed, vs...))
+}
+
+// QuantityClosedNotIn applies the NotIn predicate on the "quantity_closed" field.
+func QuantityClosedNotIn(vs ...float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldNotIn(FieldQuantityClosed, vs...))
+}
+
+// QuantityClosedGT applies the GT predicate on the "quantity_closed" field.
+func QuantityClosedGT(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGT(FieldQuantityClosed, v))
+}
+
+// QuantityClosedGTE applies the GTE predicate on the "quantity_closed" field.
+func QuantityClosedGTE(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldGTE(FieldQuantityClosed, v))
+}
+
+// QuantityClosedLT applies the LT predicate on the "quantity_closed" field.
+func QuantityClosedLT(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLT(FieldQuantityClosed, v))
+}
+
+// QuantityClosedLTE applies the LTE predicate on the "quantity_closed" field.
+func QuantityClosedLTE(v float64) predicate.PurchaseOrderLine {
+	return predicate.PurchaseOrderLine(sql.FieldLTE(FieldQuantityClosed, v))
 }
 
 // UnitPriceEQ applies the EQ predicate on the "unit_price" field.

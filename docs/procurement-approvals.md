@@ -24,6 +24,18 @@ A receipt books in what actually arrived: order 10, the supplier sends 6, enter 
 - The order becomes `received`. The shortfall per line and the reason are appended to its notes and recorded in the audit log (`purchase_order.closed_short`). Stock is not touched: it already holds what came.
 - `purchase_order.received` goes out with `closed_short: true`, the received quantities, the received total and `not_delivered`. Treasury has already billed each receipt; it releases the budget still held for the undelivered goods instead of counting it as spent.
 
+### Closing single lines on the receipt
+
+An item that never arrives at all (ordered 100, received 0) is closed on the receipt itself, so the other items are received and the order settles in one step instead of piling up as partially received.
+
+- Each receipt line that leaves something outstanding shows "The remaining N will not be delivered". Ticking it sends `close_remaining: true` on that line (a line with 0 received is still sent when ticked).
+- Outstanding counts accepted units only, so rejected units stay outstanding (a supplier return opens for them). Tick the box when they will not be replaced either.
+- On post, whatever is still outstanding on the PO line after this receipt goes into `purchase_order_lines.quantity_closed`. A line is settled once received plus closed reaches ordered, and the order becomes `received` when every line is settled. Lines left unticked keep the order `partially_received` for a later receipt.
+- The closed lines are appended to the order notes and audited as `purchase_order.lines_closed`. When the order settles with any line short, `purchase_order.received` carries `closed_short: true` and `not_delivered`, the same payload as Close Short.
+- A receipt that only closes lines, on an order where nothing has ever arrived, is refused (`NOTHING_RECEIVED`): cancel that order instead.
+- Close Short also writes `quantity_closed` on every outstanding line. Outstanding everywhere (receipt dialog, Mark Received, 3-way match, where a settled short line shows as `closed_short`) is ordered less received less closed.
+- PO line quantities are counted in the PO line's own unit: a receipt for 5 kg of an item stocked in grams adds 5 to the line, not 5000 (fixed in the same change).
+
 ## When can a purchase order be amended?
 
 `PUT /purchase-orders/{id}/amend` replaces the whole order as the form shows it: lines, supplier, warehouse, payment terms, shipping, notes and dates.

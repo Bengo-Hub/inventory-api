@@ -101,6 +101,11 @@ func RejectionReason(v string) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldRejectionReason, v))
 }
 
+// CloseRemaining applies equality check predicate on the "close_remaining" field. It's identical to CloseRemainingEQ.
+func CloseRemaining(v bool) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldCloseRemaining, v))
+}
+
 // LotNumber applies equality check predicate on the "lot_number" field. It's identical to LotNumberEQ.
 func LotNumber(v string) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldLotNumber, v))
@@ -509,6 +514,16 @@ func RejectionReasonEqualFold(v string) predicate.GoodsReceiptLine {
 // RejectionReasonContainsFold applies the ContainsFold predicate on the "rejection_reason" field.
 func RejectionReasonContainsFold(v string) predicate.GoodsReceiptLine {
 	return predicate.GoodsReceiptLine(sql.FieldContainsFold(FieldRejectionReason, v))
+}
+
+// CloseRemainingEQ applies the EQ predicate on the "close_remaining" field.
+func CloseRemainingEQ(v bool) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldEQ(FieldCloseRemaining, v))
+}
+
+// CloseRemainingNEQ applies the NEQ predicate on the "close_remaining" field.
+func CloseRemainingNEQ(v bool) predicate.GoodsReceiptLine {
+	return predicate.GoodsReceiptLine(sql.FieldNEQ(FieldCloseRemaining, v))
 }
 
 // SerialsIsNil applies the IsNil predicate on the "serials" field.

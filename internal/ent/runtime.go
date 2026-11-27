@@ -748,12 +748,16 @@ func init() {
 	goodsreceiptlineDescUnitCost := goodsreceiptlineFields[8].Descriptor()
 	// goodsreceiptline.DefaultUnitCost holds the default value on creation for the unit_cost field.
 	goodsreceiptline.DefaultUnitCost = goodsreceiptlineDescUnitCost.Default.(float64)
+	// goodsreceiptlineDescCloseRemaining is the schema descriptor for close_remaining field.
+	goodsreceiptlineDescCloseRemaining := goodsreceiptlineFields[10].Descriptor()
+	// goodsreceiptline.DefaultCloseRemaining holds the default value on creation for the close_remaining field.
+	goodsreceiptline.DefaultCloseRemaining = goodsreceiptlineDescCloseRemaining.Default.(bool)
 	// goodsreceiptlineDescPriceScope is the schema descriptor for price_scope field.
-	goodsreceiptlineDescPriceScope := goodsreceiptlineFields[14].Descriptor()
+	goodsreceiptlineDescPriceScope := goodsreceiptlineFields[15].Descriptor()
 	// goodsreceiptline.DefaultPriceScope holds the default value on creation for the price_scope field.
 	goodsreceiptline.DefaultPriceScope = goodsreceiptlineDescPriceScope.Default.(string)
 	// goodsreceiptlineDescCreatedAt is the schema descriptor for created_at field.
-	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[15].Descriptor()
+	goodsreceiptlineDescCreatedAt := goodsreceiptlineFields[16].Descriptor()
 	// goodsreceiptline.DefaultCreatedAt holds the default value on creation for the created_at field.
 	goodsreceiptline.DefaultCreatedAt = goodsreceiptlineDescCreatedAt.Default.(func() time.Time)
 	// goodsreceiptlineDescID is the schema descriptor for id field.
@@ -1552,32 +1556,36 @@ func init() {
 	purchaseorderlineDescQuantityReceived := purchaseorderlineFields[6].Descriptor()
 	// purchaseorderline.DefaultQuantityReceived holds the default value on creation for the quantity_received field.
 	purchaseorderline.DefaultQuantityReceived = purchaseorderlineDescQuantityReceived.Default.(float64)
+	// purchaseorderlineDescQuantityClosed is the schema descriptor for quantity_closed field.
+	purchaseorderlineDescQuantityClosed := purchaseorderlineFields[7].Descriptor()
+	// purchaseorderline.DefaultQuantityClosed holds the default value on creation for the quantity_closed field.
+	purchaseorderline.DefaultQuantityClosed = purchaseorderlineDescQuantityClosed.Default.(float64)
 	// purchaseorderlineDescUnitPrice is the schema descriptor for unit_price field.
-	purchaseorderlineDescUnitPrice := purchaseorderlineFields[7].Descriptor()
+	purchaseorderlineDescUnitPrice := purchaseorderlineFields[8].Descriptor()
 	// purchaseorderline.DefaultUnitPrice holds the default value on creation for the unit_price field.
 	purchaseorderline.DefaultUnitPrice = purchaseorderlineDescUnitPrice.Default.(float64)
 	// purchaseorderlineDescTotalPrice is the schema descriptor for total_price field.
-	purchaseorderlineDescTotalPrice := purchaseorderlineFields[8].Descriptor()
+	purchaseorderlineDescTotalPrice := purchaseorderlineFields[9].Descriptor()
 	// purchaseorderline.DefaultTotalPrice holds the default value on creation for the total_price field.
 	purchaseorderline.DefaultTotalPrice = purchaseorderlineDescTotalPrice.Default.(float64)
 	// purchaseorderlineDescRebatePercent is the schema descriptor for rebate_percent field.
-	purchaseorderlineDescRebatePercent := purchaseorderlineFields[9].Descriptor()
+	purchaseorderlineDescRebatePercent := purchaseorderlineFields[10].Descriptor()
 	// purchaseorderline.DefaultRebatePercent holds the default value on creation for the rebate_percent field.
 	purchaseorderline.DefaultRebatePercent = purchaseorderlineDescRebatePercent.Default.(float64)
 	// purchaseorderlineDescPriceScope is the schema descriptor for price_scope field.
-	purchaseorderlineDescPriceScope := purchaseorderlineFields[11].Descriptor()
+	purchaseorderlineDescPriceScope := purchaseorderlineFields[12].Descriptor()
 	// purchaseorderline.DefaultPriceScope holds the default value on creation for the price_scope field.
 	purchaseorderline.DefaultPriceScope = purchaseorderlineDescPriceScope.Default.(string)
 	// purchaseorderlineDescTaxCode is the schema descriptor for tax_code field.
-	purchaseorderlineDescTaxCode := purchaseorderlineFields[12].Descriptor()
+	purchaseorderlineDescTaxCode := purchaseorderlineFields[13].Descriptor()
 	// purchaseorderline.DefaultTaxCode holds the default value on creation for the tax_code field.
 	purchaseorderline.DefaultTaxCode = purchaseorderlineDescTaxCode.Default.(string)
 	// purchaseorderlineDescTaxRate is the schema descriptor for tax_rate field.
-	purchaseorderlineDescTaxRate := purchaseorderlineFields[13].Descriptor()
+	purchaseorderlineDescTaxRate := purchaseorderlineFields[14].Descriptor()
 	// purchaseorderline.DefaultTaxRate holds the default value on creation for the tax_rate field.
 	purchaseorderline.DefaultTaxRate = purchaseorderlineDescTaxRate.Default.(float64)
 	// purchaseorderlineDescPriceIncludesTax is the schema descriptor for price_includes_tax field.
-	purchaseorderlineDescPriceIncludesTax := purchaseorderlineFields[14].Descriptor()
+	purchaseorderlineDescPriceIncludesTax := purchaseorderlineFields[15].Descriptor()
 	// purchaseorderline.DefaultPriceIncludesTax holds the default value on creation for the price_includes_tax field.
 	purchaseorderline.DefaultPriceIncludesTax = purchaseorderlineDescPriceIncludesTax.Default.(bool)
 	// purchaseorderlineDescID is the schema descriptor for id field.

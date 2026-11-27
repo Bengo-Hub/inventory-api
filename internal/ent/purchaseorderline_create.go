@@ -92,6 +92,20 @@ func (_c *PurchaseOrderLineCreate) SetNillableQuantityReceived(v *float64) *Purc
 	return _c
 }
 
+// SetQuantityClosed sets the "quantity_closed" field.
+func (_c *PurchaseOrderLineCreate) SetQuantityClosed(v float64) *PurchaseOrderLineCreate {
+	_c.mutation.SetQuantityClosed(v)
+	return _c
+}
+
+// SetNillableQuantityClosed sets the "quantity_closed" field if the given value is not nil.
+func (_c *PurchaseOrderLineCreate) SetNillableQuantityClosed(v *float64) *PurchaseOrderLineCreate {
+	if v != nil {
+		_c.SetQuantityClosed(*v)
+	}
+	return _c
+}
+
 // SetUnitPrice sets the "unit_price" field.
 func (_c *PurchaseOrderLineCreate) SetUnitPrice(v float64) *PurchaseOrderLineCreate {
 	_c.mutation.SetUnitPrice(v)
@@ -272,6 +286,10 @@ func (_c *PurchaseOrderLineCreate) defaults() {
 		v := purchaseorderline.DefaultQuantityReceived
 		_c.mutation.SetQuantityReceived(v)
 	}
+	if _, ok := _c.mutation.QuantityClosed(); !ok {
+		v := purchaseorderline.DefaultQuantityClosed
+		_c.mutation.SetQuantityClosed(v)
+	}
 	if _, ok := _c.mutation.UnitPrice(); !ok {
 		v := purchaseorderline.DefaultUnitPrice
 		_c.mutation.SetUnitPrice(v)
@@ -319,6 +337,9 @@ func (_c *PurchaseOrderLineCreate) check() error {
 	}
 	if _, ok := _c.mutation.QuantityReceived(); !ok {
 		return &ValidationError{Name: "quantity_received", err: errors.New(`ent: missing required field "PurchaseOrderLine.quantity_received"`)}
+	}
+	if _, ok := _c.mutation.QuantityClosed(); !ok {
+		return &ValidationError{Name: "quantity_closed", err: errors.New(`ent: missing required field "PurchaseOrderLine.quantity_closed"`)}
 	}
 	if _, ok := _c.mutation.UnitPrice(); !ok {
 		return &ValidationError{Name: "unit_price", err: errors.New(`ent: missing required field "PurchaseOrderLine.unit_price"`)}
@@ -393,6 +414,10 @@ func (_c *PurchaseOrderLineCreate) createSpec() (*PurchaseOrderLine, *sqlgraph.C
 	if value, ok := _c.mutation.QuantityReceived(); ok {
 		_spec.SetField(purchaseorderline.FieldQuantityReceived, field.TypeFloat64, value)
 		_node.QuantityReceived = value
+	}
+	if value, ok := _c.mutation.QuantityClosed(); ok {
+		_spec.SetField(purchaseorderline.FieldQuantityClosed, field.TypeFloat64, value)
+		_node.QuantityClosed = value
 	}
 	if value, ok := _c.mutation.UnitPrice(); ok {
 		_spec.SetField(purchaseorderline.FieldUnitPrice, field.TypeFloat64, value)
@@ -588,6 +613,24 @@ func (u *PurchaseOrderLineUpsert) UpdateQuantityReceived() *PurchaseOrderLineUps
 // AddQuantityReceived adds v to the "quantity_received" field.
 func (u *PurchaseOrderLineUpsert) AddQuantityReceived(v float64) *PurchaseOrderLineUpsert {
 	u.Add(purchaseorderline.FieldQuantityReceived, v)
+	return u
+}
+
+// SetQuantityClosed sets the "quantity_closed" field.
+func (u *PurchaseOrderLineUpsert) SetQuantityClosed(v float64) *PurchaseOrderLineUpsert {
+	u.Set(purchaseorderline.FieldQuantityClosed, v)
+	return u
+}
+
+// UpdateQuantityClosed sets the "quantity_closed" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsert) UpdateQuantityClosed() *PurchaseOrderLineUpsert {
+	u.SetExcluded(purchaseorderline.FieldQuantityClosed)
+	return u
+}
+
+// AddQuantityClosed adds v to the "quantity_closed" field.
+func (u *PurchaseOrderLineUpsert) AddQuantityClosed(v float64) *PurchaseOrderLineUpsert {
+	u.Add(purchaseorderline.FieldQuantityClosed, v)
 	return u
 }
 
@@ -892,6 +935,27 @@ func (u *PurchaseOrderLineUpsertOne) AddQuantityReceived(v float64) *PurchaseOrd
 func (u *PurchaseOrderLineUpsertOne) UpdateQuantityReceived() *PurchaseOrderLineUpsertOne {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.UpdateQuantityReceived()
+	})
+}
+
+// SetQuantityClosed sets the "quantity_closed" field.
+func (u *PurchaseOrderLineUpsertOne) SetQuantityClosed(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetQuantityClosed(v)
+	})
+}
+
+// AddQuantityClosed adds v to the "quantity_closed" field.
+func (u *PurchaseOrderLineUpsertOne) AddQuantityClosed(v float64) *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddQuantityClosed(v)
+	})
+}
+
+// UpdateQuantityClosed sets the "quantity_closed" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertOne) UpdateQuantityClosed() *PurchaseOrderLineUpsertOne {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateQuantityClosed()
 	})
 }
 
@@ -1387,6 +1451,27 @@ func (u *PurchaseOrderLineUpsertBulk) AddQuantityReceived(v float64) *PurchaseOr
 func (u *PurchaseOrderLineUpsertBulk) UpdateQuantityReceived() *PurchaseOrderLineUpsertBulk {
 	return u.Update(func(s *PurchaseOrderLineUpsert) {
 		s.UpdateQuantityReceived()
+	})
+}
+
+// SetQuantityClosed sets the "quantity_closed" field.
+func (u *PurchaseOrderLineUpsertBulk) SetQuantityClosed(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.SetQuantityClosed(v)
+	})
+}
+
+// AddQuantityClosed adds v to the "quantity_closed" field.
+func (u *PurchaseOrderLineUpsertBulk) AddQuantityClosed(v float64) *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.AddQuantityClosed(v)
+	})
+}
+
+// UpdateQuantityClosed sets the "quantity_closed" field to the value that was provided on create.
+func (u *PurchaseOrderLineUpsertBulk) UpdateQuantityClosed() *PurchaseOrderLineUpsertBulk {
+	return u.Update(func(s *PurchaseOrderLineUpsert) {
+		s.UpdateQuantityClosed()
 	})
 }
 

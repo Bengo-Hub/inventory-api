@@ -71,6 +71,10 @@ type grnLinePayload struct {
 	// sold through.
 	NewSellingPrice *float64 `json:"new_selling_price,omitempty"`
 	PriceScope      string   `json:"price_scope,omitempty"`
+	// CloseRemaining settles the rest of this order line as never coming: when the receipt
+	// posts, whatever is still outstanding after it (all of it when nothing arrived) is closed
+	// on the PO line, so the order can finish as received instead of staying partially received.
+	CloseRemaining bool `json:"close_remaining,omitempty"`
 }
 
 type grnPayload struct {
@@ -101,21 +105,22 @@ type grnLineDTO struct {
 	LotNumber        string   `json:"lot_number,omitempty"`
 	NewSellingPrice  *float64 `json:"new_selling_price,omitempty"`
 	PriceScope       string   `json:"price_scope,omitempty"`
+	CloseRemaining   bool     `json:"close_remaining,omitempty"`
 }
 
 type grnDTO struct {
-	ID              uuid.UUID    `json:"id"`
-	GrnNumber       string       `json:"grn_number"`
-	PurchaseOrderID uuid.UUID    `json:"purchase_order_id"`
-	SupplierID      *uuid.UUID   `json:"supplier_id"`
-	WarehouseID     *uuid.UUID   `json:"warehouse_id"`
+	ID              uuid.UUID  `json:"id"`
+	GrnNumber       string     `json:"grn_number"`
+	PurchaseOrderID uuid.UUID  `json:"purchase_order_id"`
+	SupplierID      *uuid.UUID `json:"supplier_id"`
+	WarehouseID     *uuid.UUID `json:"warehouse_id"`
 	// WarehouseName is the receiving outlet/warehouse's human name — enriched by the API so
 	// list/detail views never have to render (or re-fetch) a raw warehouse UUID.
-	WarehouseName string       `json:"warehouse_name,omitempty"`
-	Status        string       `json:"status"`
-	Notes         string       `json:"notes"`
-	ReceivedDate  time.Time    `json:"received_date"`
-	ReceivedBy    *uuid.UUID   `json:"received_by,omitempty"`
+	WarehouseName string     `json:"warehouse_name,omitempty"`
+	Status        string     `json:"status"`
+	Notes         string     `json:"notes"`
+	ReceivedDate  time.Time  `json:"received_date"`
+	ReceivedBy    *uuid.UUID `json:"received_by,omitempty"`
 	// ReceivedByName is ReceivedBy resolved to a display name — who actually received this
 	// stock, surfaced so admins/managers can audit purchases the same way as adjustments.
 	ReceivedByName string       `json:"received_by_name,omitempty"`
@@ -135,6 +140,7 @@ func grnToDTO(g *ent.GoodsReceipt, lines []*ent.GoodsReceiptLine) grnDTO {
 			QuantityRejected: l.QuantityRejected, UnitCost: l.UnitCost, RejectionReason: l.RejectionReason,
 			Serials: l.Serials, LotNumber: l.LotNumber,
 			NewSellingPrice: l.NewSellingPrice, PriceScope: l.PriceScope,
+			CloseRemaining: l.CloseRemaining,
 		})
 	}
 	return dto
@@ -433,6 +439,11 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusBadRequest, "INVALID_RECEIVED_DATE", derr.Error())
 		return
 	}
+	poLines, _ := h.orm.PurchaseOrderLine.Query().Where(entpoline.PoID(poID)).All(r.Context())
+	if code, msg := validateReceiptClosures(req.Lines, poLines); code != "" {
+		writeError(w, http.StatusUnprocessableEntity, code, msg)
+		return
+	}
 	grnNumber := "GRN-" + strings.ToUpper(uuid.New().String()[:8])
 	if h.docSvc != nil {
 		if n, derr := h.docSvc.Seq().GenerateNumber(r.Context(), tenantID, documents.DocTypeGRN); derr == nil && n != "" {
@@ -486,7 +497,8 @@ func (h *InventoryExtrasHandler) CreateGoodsReceipt(w http.ResponseWriter, r *ht
 			SetTenantID(tenantID).SetGoodsReceiptID(g.ID).SetItemID(l.ItemID).
 			SetQuantityReceived(l.QuantityReceived).SetQuantityAccepted(accepted).
 			SetQuantityRejected(l.QuantityRejected).SetUnitCost(l.UnitCost).SetRejectionReason(l.RejectionReason).
-			SetSerials(serials).SetLotNumber(strings.TrimSpace(l.LotNumber)).SetNillableExpiryDate(l.ExpiryDate)
+			SetSerials(serials).SetLotNumber(strings.TrimSpace(l.LotNumber)).SetNillableExpiryDate(l.ExpiryDate).
+			SetCloseRemaining(l.CloseRemaining)
 		if l.NewSellingPrice != nil && *l.NewSellingPrice > 0 {
 			lc = lc.SetNewSellingPrice(*l.NewSellingPrice)
 		}
@@ -653,14 +665,22 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	// commit (SetSellingPriceByItemID does its own writes, outside this transaction).
 	immediatePriceChanges := make(map[uuid.UUID]float64)
 	actor := actorFromContext(ctx)
+	// PO lines this receipt closed (the rest will not be delivered), for the order's notes.
+	var closedNow []poShortLine
 	for _, l := range grnLines {
+		// The PO line counts in its own unit: keep the accepted quantity as entered for it,
+		// before the conversion below rewrites the line into the stock unit.
+		acceptedInOrderUnit := l.QuantityAccepted
 		// The line was ordered in its PO line's unit (e.g. kg) which may differ from the item's
 		// stock unit (g): convert quantity and unit cost before anything touches the balance or
 		// the cost layer, otherwise receiving 5 kg added 5 g.
 		h.convertGRNLineToStockUnit(ctx, tx, tenantID, l)
-		if err = h.applyStockIn(ctx, tx, tenantID, warehouseID, l.ItemID, l.QuantityAccepted); err != nil {
-			_ = tx.Rollback()
-			return false, err
+		// A line where nothing was accepted (not delivered, or all rejected) moves no stock.
+		if l.QuantityAccepted > 0 {
+			if err = h.applyStockIn(ctx, tx, tenantID, warehouseID, l.ItemID, l.QuantityAccepted); err != nil {
+				_ = tx.Rollback()
+				return false, err
+			}
 		}
 		// Create a cost layer for EVERY accepted line, not just lot-tracked/perishable items —
 		// this is what lets a purchase at a new price adjust the cost of the NEW stock without
@@ -738,9 +758,25 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 			}
 		}
 		if l.PurchaseOrderLineID != nil {
-			if _, err = tx.PurchaseOrderLine.UpdateOneID(*l.PurchaseOrderLineID).AddQuantityReceived(l.QuantityAccepted).Save(ctx); err != nil {
+			pl, uerr := tx.PurchaseOrderLine.UpdateOneID(*l.PurchaseOrderLineID).AddQuantityReceived(acceptedInOrderUnit).Save(ctx)
+			if uerr != nil {
+				err = uerr
 				_ = tx.Rollback()
 				return false, err
+			}
+			// The rest of this line will not come: close what is still outstanding after this
+			// receipt, so the order can settle without waiting for it.
+			if l.CloseRemaining {
+				if rest := lineOutstanding(pl); rest > 0 {
+					if _, err = tx.PurchaseOrderLine.UpdateOneID(pl.ID).AddQuantityClosed(rest).Save(ctx); err != nil {
+						_ = tx.Rollback()
+						return false, err
+					}
+					closedNow = append(closedNow, poShortLine{
+						LineID: pl.ID, ItemID: pl.ItemID, Ordered: pl.QuantityOrdered, Received: pl.QuantityReceived,
+						Missing: rest, UnitPrice: pl.UnitPrice,
+					})
+				}
 			}
 		}
 	}
@@ -808,7 +844,8 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 		}
 	}
 
-	// Recompute PO status from line receipts (fully vs partially received).
+	// Recompute PO status from the lines: a line is settled once received plus closed (the
+	// part that will never come) reaches what was ordered. Every line settled means received.
 	poLines, _ := h.orm.PurchaseOrderLine.Query().Where(entpoline.PoID(po.ID)).All(ctx)
 	fully = len(poLines) > 0
 	anyReceived := false
@@ -816,18 +853,34 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 		if pl.QuantityReceived > 0 {
 			anyReceived = true
 		}
-		if pl.QuantityReceived < pl.QuantityOrdered {
+		if lineOutstanding(pl) > 0 {
 			fully = false
 		}
 	}
 	newStatus := po.Status.String()
 	if fully {
 		newStatus = "received"
-	} else if anyReceived {
+	} else if anyReceived || len(closedNow) > 0 {
 		newStatus = "partially_received"
 	}
-	if newStatus != po.Status.String() {
-		_, _ = h.orm.PurchaseOrder.UpdateOneID(po.ID).SetStatus(entpo.Status(newStatus)).Save(ctx)
+	if newStatus != po.Status.String() || len(closedNow) > 0 {
+		upd := h.orm.PurchaseOrder.UpdateOneID(po.ID).SetStatus(entpo.Status(newStatus))
+		if len(closedNow) > 0 {
+			upd = upd.SetNotes(closeShortNote(po.Notes, closedNow, h.itemNamesByID(ctx, closedNow), "goods receipt "+g.GrnNumber, time.Now()))
+		}
+		if _, uerr := upd.Save(ctx); uerr != nil {
+			h.log.Error("update purchase order status after goods receipt failed",
+				zap.String("po_id", po.ID.String()), zap.String("status", newStatus), zap.Error(uerr))
+		}
+	}
+	if len(closedNow) > 0 && h.auditSvc != nil {
+		h.auditSvc.Record(ctx, audit.Entry{
+			TenantID: tenantID, ActorUserID: actor,
+			Action: "purchase_order.lines_closed", EntityType: "purchase_order", EntityID: po.ID.String(),
+			Reason: "goods receipt " + g.GrnNumber,
+			Before: map[string]any{"status": po.Status.String()},
+			After:  map[string]any{"status": newStatus, "closed_on_receipt": g.GrnNumber, "not_delivered": shortLinesPayload(closedNow, nil)},
+		})
 	}
 
 	// Accrue supplier rebate from the PO lines' rebate_percent on the quantity received so far.
@@ -918,7 +971,18 @@ func (h *InventoryExtrasHandler) postGoodsReceiptCore(ctx context.Context, tenan
 	h.publishOutbox(ctx, tenantID, "inventory", g.ID, "goods_receipt.posted", grPayload)
 	// On full receipt, emit the enriched purchase_order.received event for treasury auto-payout.
 	if fully {
-		h.emitPurchaseOrderReceived(tenantID, po, totalRebate)
+		// Settled with lines that never fully came: tell treasury what was received, not ordered,
+		// so it releases the budget held for the rest (same payload as closing the order short).
+		if short, _ := poShortfall(poLines); len(short) > 0 {
+			h.emitPurchaseOrderReceived(tenantID, po, totalRebate, map[string]any{
+				"closed_short":        true,
+				"close_short_reason":  "closed on goods receipt " + g.GrnNumber,
+				"not_delivered":       shortLinesPayload(short, h.itemNamesByID(ctx, short)),
+				"not_delivered_value": shortfallValue(short),
+			})
+		} else {
+			h.emitPurchaseOrderReceived(tenantID, po, totalRebate)
+		}
 	}
 
 	// Rejected quantities auto-open a PENDING supplier return (prefilled items/qty/unit cost)
@@ -1134,14 +1198,17 @@ func (h *InventoryExtrasHandler) MatchPurchaseOrder(w http.ResponseWriter, r *ht
 		Status   string    `json:"status"`
 	}
 	lineMatches := make([]lineMatch, 0, len(poLines))
-	totalOrdered, totalReceived := 0.0, 0.0
+	totalOrdered, totalReceived, totalClosed := 0.0, 0.0, 0.0
 	for _, pl := range poLines {
 		totalOrdered += pl.QuantityOrdered
+		totalClosed += pl.QuantityClosed
 		totalReceived += pl.QuantityReceived
 		st := "matched"
 		switch {
 		case pl.QuantityReceived > pl.QuantityOrdered:
 			st = "over_received"
+		case pl.QuantityReceived < pl.QuantityOrdered && lineOutstanding(pl) == 0:
+			st = "closed_short" // the rest was closed as never coming; bill only what arrived
 		case pl.QuantityReceived < pl.QuantityOrdered:
 			st = "under_received"
 		}
@@ -1152,7 +1219,7 @@ func (h *InventoryExtrasHandler) MatchPurchaseOrder(w http.ResponseWriter, r *ht
 	switch {
 	case totalReceived > totalOrdered:
 		header = "over_received"
-	case totalReceived < totalOrdered:
+	case totalReceived+totalClosed < totalOrdered:
 		header = "under_received"
 	}
 	// price/qty variance vs the invoice figures the caller supplied (from treasury).
